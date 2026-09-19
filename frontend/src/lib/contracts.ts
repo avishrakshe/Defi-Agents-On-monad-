@@ -22,9 +22,9 @@ export const MONAD_CONTRACTS = {
   chainId: 10143,
   rpcUrl: process.env.NEXT_PUBLIC_MONAD_RPC_URL || "https://testnet-rpc.monad.xyz",
   usdc: process.env.NEXT_PUBLIC_MONAD_USDC_ADDRESS || "0x534b2f3A21130d7a60830c2Df862319e593943A3",
-  identityRegistry: process.env.NEXT_PUBLIC_IDENTITY_REGISTRY_ADDRESS || "0x5FbDB2315678afecb367f032d93F642f64180aa3",
-  reputationRegistry: process.env.NEXT_PUBLIC_REPUTATION_REGISTRY_ADDRESS || "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
-  stakeManager: process.env.NEXT_PUBLIC_STAKE_MANAGER_ADDRESS || "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+  identityRegistry: process.env.NEXT_PUBLIC_IDENTITY_REGISTRY_ADDRESS || "0xD62b32482874E447Beb60E6Df5A21E6ebaFf54ad",
+  reputationRegistry: process.env.NEXT_PUBLIC_REPUTATION_REGISTRY_ADDRESS || "0x7b398a8F83133d5E28b4cce7c3131b4Ba8C486E0",
+  stakeManager: process.env.NEXT_PUBLIC_STAKE_MANAGER_ADDRESS || "0xca1624702029E9B76c648f980a673F37758aa45a",
   explorer: "https://testnet.monadvision.com",
   faucet: "https://faucet.monad.xyz"
 };
@@ -36,7 +36,7 @@ const DEFAULT_AGENTS_METADATA = [
     skill: "contract-audit",
     endpoint: "http://localhost:4001",
     priceUSDC: "$0.001",
-    owner: "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+    owner: "0x39D17f02fA4A362902cA760aF830CEBA82bdC39B",
     description: "Monadscan verified source code static security analysis. Detects reentrancy, unchecked calls, authorization bypass, and gas optimizations.",
     dataSource: "Monadscan Public API + Static AST Analyzer",
     author: "Monad Security Guild"
@@ -47,7 +47,7 @@ const DEFAULT_AGENTS_METADATA = [
     skill: "token-risk-score",
     endpoint: "http://localhost:4002",
     priceUSDC: "$0.001",
-    owner: "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+    owner: "0x39D17f02fA4A362902cA760aF830CEBA82bdC39B",
     description: "Onchain inspection of ERC-20 tokens on Monad Testnet. Evaluates owner privileges, mint/freeze backdoors, and top-holder concentration.",
     dataSource: "Monad Testnet RPC eth_call & Event Logs",
     author: "Monad Risk Protocol"
@@ -58,7 +58,7 @@ const DEFAULT_AGENTS_METADATA = [
     skill: "gas-timing",
     endpoint: "http://localhost:4003",
     priceUSDC: "$0.001",
-    owner: "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
+    owner: "0x39D17f02fA4A362902cA760aF830CEBA82bdC39B",
     description: "Real-time fee oracle polling eth_gasPrice and eth_feeHistory. Computes congestion velocity and recommends optimal transaction submission windows.",
     dataSource: "Monad Testnet RPC eth_gasPrice & eth_feeHistory",
     author: "Monad FastPath Labs"
@@ -126,7 +126,7 @@ export async function fetchLiveAgents(): Promise<AgentData[]> {
             description: meta.description || "Autonomous specialist DeFi agent on Monad Testnet.",
             dataSource: meta.dataSource || "Monad Testnet RPC",
             author: meta.author,
-            stakedUSDC: stake || 100,
+            stakedUSDC: stake,
             avgScore,
             feedbackCount,
             owner: a.owner,
@@ -140,7 +140,6 @@ export async function fetchLiveAgents(): Promise<AgentData[]> {
     console.warn("Falling back to verified agent manifest:", err);
   }
 
-  // Fallback to verified agent manifest (reads live endpoints for real data)
   return DEFAULT_AGENTS_METADATA.map((a) => ({
     id: a.id,
     name: a.name,
@@ -151,7 +150,7 @@ export async function fetchLiveAgents(): Promise<AgentData[]> {
     description: a.description,
     dataSource: a.dataSource,
     author: a.author,
-    stakedUSDC: 100,
+    stakedUSDC: 0,
     avgScore: 0,
     feedbackCount: 0,
     owner: a.owner,
