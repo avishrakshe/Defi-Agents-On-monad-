@@ -103,6 +103,12 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenTaskModal }) => {
             <Link href="/wallet" className="hover:text-gray-900 transition-colors">
               Wallet
             </Link>
+            <Link href="/learn" className="hover:text-gray-900 transition-colors">
+              Academy
+            </Link>
+            <Link href="/dashboard" className="hover:text-gray-900 transition-colors">
+              Dashboard
+            </Link>
             <Link href="/about" className="hover:text-gray-900 transition-colors">
               About
             </Link>

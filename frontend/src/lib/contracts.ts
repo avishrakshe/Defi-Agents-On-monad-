@@ -25,6 +25,7 @@ export const MONAD_CONTRACTS = {
   identityRegistry: process.env.NEXT_PUBLIC_IDENTITY_REGISTRY_ADDRESS || "0xD62b32482874E447Beb60E6Df5A21E6ebaFf54ad",
   reputationRegistry: process.env.NEXT_PUBLIC_REPUTATION_REGISTRY_ADDRESS || "0x7b398a8F83133d5E28b4cce7c3131b4Ba8C486E0",
   stakeManager: process.env.NEXT_PUBLIC_STAKE_MANAGER_ADDRESS || "0xca1624702029E9B76c648f980a673F37758aa45a",
+  academyCredential: process.env.NEXT_PUBLIC_ACADEMY_CREDENTIAL_ADDRESS || "0xAbAFE53736e087877561cd0E48C283D6e7e59Ce6",
   explorer: "https://testnet.monadvision.com",
   faucet: "https://faucet.monad.xyz"
 };

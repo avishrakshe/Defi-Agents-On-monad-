@@ -65,6 +65,7 @@ All contracts are verified and deployed on Monad Testnet:
 | **IdentityRegistry** | `0xD62b32482874E447Beb60E6Df5A21E6ebaFf54ad` | [View on MonadVision](https://testnet.monadvision.com/address/0xD62b32482874E447Beb60E6Df5A21E6ebaFf54ad) | [View on Monadscan](https://testnet.monadscan.com/address/0xD62b32482874E447Beb60E6Df5A21E6ebaFf54ad) |
 | **ReputationRegistry** | `0x7b398a8F83133d5E28b4cce7c3131b4Ba8C486E0` | [View on MonadVision](https://testnet.monadvision.com/address/0x7b398a8F83133d5E28b4cce7c3131b4Ba8C486E0) | [View on Monadscan](https://testnet.monadscan.com/address/0x7b398a8F83133d5E28b4cce7c3131b4Ba8C486E0) |
 | **StakeManager** | `0xca1624702029E9B76c648f980a673F37758aa45a` | [View on MonadVision](https://testnet.monadvision.com/address/0xca1624702029E9B76c648f980a673F37758aa45a) | [View on Monadscan](https://testnet.monadscan.com/address/0xca1624702029E9B76c648f980a673F37758aa45a) |
+| **AcademyCredential (Soulbound NFT)** | `0xAbAFE53736e087877561cd0E48C283D6e7e59Ce6` | [View on MonadVision](https://testnet.monadvision.com/address/0xAbAFE53736e087877561cd0E48C283D6e7e59Ce6) | [View on Monadscan](https://testnet.monadscan.com/address/0xAbAFE53736e087877561cd0E48C283D6e7e59Ce6) |
 | **Testnet USDC** | `0x534b2f3A21130d7a60830c2Df862319e593943A3` | [View on MonadVision](https://testnet.monadvision.com/address/0x534b2f3A21130d7a60830c2Df862319e593943A3) | [View on Monadscan](https://testnet.monadscan.com/address/0x534b2f3A21130d7a60830c2Df862319e593943A3) |
 | **Deployer / Operator** | `0x39D17f02fA4A362902cA760aF830CEBA82bdC39B` | [View on MonadVision](https://testnet.monadvision.com/address/0x39D17f02fA4A362902cA760aF830CEBA82bdC39B) | [View on Monadscan](https://testnet.monadscan.com/address/0x39D17f02fA4A362902cA760aF830CEBA82bdC39B) |
 
@@ -110,6 +111,26 @@ The three specialist agents were registered in `IdentityRegistry` during testnet
 - **Modes**:
   - **Mode A (Autonomous)**: "Agents pay agents. No wallet required." Orchestrator settles payments using its internal agent pool.
   - **Mode B (Your Wallet)**: Client provides signed EIP-3009 authorizations.
+
+---
+
+## 🎓 Monad Academy & Completion Certificate
+
+Monad Academy is a comprehensive interactive curriculum and soulbound credential engine for developers building on Monad:
+
+- **Cross-Path Progress Tracking (`/dashboard`)**: Unified Zustand store tracking progress across three tracks:
+  1. `monad-fundamentals`: Monad Architecture & Parallel Execution (MonadBFT, Deferred Execution, MonadDB).
+  2. `tokenized-assets`: Tokenized Yield & Liquid Vaults (ERC-4626 vault standards, reentrancy guards, yield routing).
+  3. `x402-payments`: x402 Micropayments Protocol (HTTP 402, EIP-712 / EIP-3009 signed transfers, sub-cent agent fees).
+- **Interactive Split-Screen Reader & Quiz Engine (`/learn/[pathId]`)**: Real-time content delivery with live code snippets, retrieval quizzes, instant explanation feedback, and XP streaks.
+- **Completion Certificate (`/dashboard/certificate`)**: Once all 3 paths are completed, learners unlock a high-fidelity certificate:
+  - Header: *MONAD ACADEMY SCHOLAR* with purple gradient band and diamond-motif gold medal.
+  - Verification: Dynamic learner name, completion date, and SHA-256 / keccak256 credential hash.
+  - Action Rails: Download as PNG (`html-to-image`), Download as PDF (`jspdf`), Copy Share Link, and **Mint Soulbound Credential** on Monad Testnet (`AcademyCredential.sol`).
+- **DeFi Marketplace About Page (`/about`)**:
+  - Live onchain queries of registered specialist agents and verified contracts.
+  - Academy cross-link card prompting users to explore the developer curriculum.
+  - Mandatory disclaimer: *"Built for the Monad ecosystem. Not an official Monad Labs product unless otherwise stated."*
 
 ---
 
