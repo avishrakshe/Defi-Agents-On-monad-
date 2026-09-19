@@ -18,6 +18,10 @@ An autonomous, decentralized DeFi Agent Marketplace built natively for **Monad T
 
 > **"Monad's thesis is payments, tokenization, and agents at speed — this marketplace needs all three at once, and Monad is the only chain it could have been built on."**
 
+<p align="center">
+  <img src="docs/demo.gif" alt="DeFi Agent Marketplace on Monad - Live Demo Walkthrough" width="850" style="border-radius: 12px; box-shadow: 0 10px 40px rgba(131, 110, 249, 0.25);" />
+</p>
+
 ---
 
 ## 💡 The Problem & The Solution
