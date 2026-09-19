@@ -244,10 +244,11 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenTaskModal, onOpenRegisterM
 
   return (
     <header className="sticky top-4 z-50 w-full px-4 sm:px-8 max-w-7xl mx-auto">
-      {/* Light Glassmorphic Pill Bar Container (Previous Marketplace Style) */}
+      {/* Light Pill Bar Container (Previous Marketplace Style - 100% Solid Opaque) */}
       <div
         onMouseLeave={handleMouseLeaveNav}
-        className="relative bg-white/95 backdrop-blur-md border border-gray-200/90 rounded-full shadow-[0_4px_24px_rgba(0,0,0,0.04)] px-5 py-3 flex items-center justify-between transition-all"
+        style={{ backgroundColor: "#ffffff" }}
+        className="relative bg-white border border-gray-200/90 rounded-full shadow-[0_4px_24px_rgba(0,0,0,0.06)] px-5 py-3 flex items-center justify-between transition-all"
       >
         {/* Left: Brand & Nav Links */}
         <div className="flex items-center space-x-6 lg:space-x-8">
@@ -303,7 +304,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenTaskModal, onOpenRegisterM
               );
             })}
 
-            {/* Floating Dropdown Panel / Surface (Light Card with Clear Black Text) */}
+            {/* Floating Dropdown Panel / Surface (100% Solid Opaque White Card) */}
             <AnimatePresence>
               {activeTab && currentTab && currentTab.hasDropdown && currentTab.subItems && (
                 <motion.div
@@ -311,30 +312,33 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenTaskModal, onOpenRegisterM
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 6, scale: 0.98 }}
                   transition={{ type: "spring", bounce: 0.1, duration: 0.22 }}
-                  className="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-80 sm:w-96 bg-white/98 backdrop-blur-xl border border-gray-200 shadow-[0_16px_40px_rgba(0,0,0,0.12)] rounded-2xl p-3 z-50"
+                  style={{ backgroundColor: "#ffffff" }}
+                  className="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-80 sm:w-96 bg-white border border-gray-200 shadow-[0_20px_50px_rgba(0,0,0,0.18)] rounded-2xl p-3 z-[100]"
                 >
                   <div className="space-y-1">
                     {currentTab.subItems.map((item, idx) => (
                       <Link
                         key={idx}
                         href={item.href}
+                        target={item.href.startsWith("http") ? "_blank" : undefined}
+                        rel={item.href.startsWith("http") ? "noreferrer" : undefined}
                         onClick={() => {
                           setActiveTab(null);
                           if (item.onClick) item.onClick();
                         }}
                         className="group flex items-start space-x-3 p-2.5 rounded-xl hover:bg-gray-50 transition-colors"
                       >
-                        <span className="w-8 h-8 rounded-lg bg-gray-100 border border-gray-200/80 flex items-center justify-center text-sm shrink-0 group-hover:bg-[#ccff00]/40 group-hover:border-[#ccff00]/70 transition-colors shadow-2xs">
+                        <span className="w-8 h-8 rounded-lg bg-gray-100 border border-gray-200/80 flex items-center justify-center text-sm shrink-0 group-hover:bg-[#ccff00] group-hover:border-[#b8e600] transition-colors shadow-2xs">
                           {item.icon}
                         </span>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center space-x-2">
-                            {/* Crisp Dark Text - Fixing the issue in the picture */}
+                            {/* Crisp Dark Text - 100% High Contrast */}
                             <span className="text-xs font-bold text-gray-950 group-hover:text-black transition-colors leading-none">
                               {item.title}
                             </span>
                             {item.badge && (
-                              <span className="text-[9px] font-mono px-1.5 py-0.2 rounded-full bg-[#ccff00]/40 text-black border border-[#ccff00]/60 font-bold">
+                              <span className="text-[9px] font-mono px-1.5 py-0.5 rounded-full bg-[#ccff00] text-black border border-[#b8e600] font-bold">
                                 {item.badge}
                               </span>
                             )}
@@ -438,14 +442,15 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenTaskModal, onOpenRegisterM
         </div>
       </div>
 
-      {/* Mobile Drawer (Light Theme Accordion) */}
+      {/* Mobile Drawer (Light Theme Accordion - 100% Solid Opaque) */}
       <AnimatePresence>
         {mobileMenuOpen && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="lg:hidden mt-2 bg-white/98 backdrop-blur-xl border border-gray-200 rounded-3xl p-4 shadow-2xl overflow-hidden"
+            style={{ backgroundColor: "#ffffff" }}
+            className="lg:hidden mt-2 bg-white border border-gray-200 rounded-3xl p-4 shadow-2xl overflow-hidden z-[100]"
           >
             <div className="space-y-2">
               {NAV_TABS.map((tab) => {
