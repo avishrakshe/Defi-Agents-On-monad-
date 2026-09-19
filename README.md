@@ -5,13 +5,13 @@
 [![ERC-8004](https://img.shields.io/badge/ERC--8004-Agent_Identity_Registry-0b0f19?style=for-the-badge&logoColor=white)](https://testnet.monadvision.com/address/0xD62b32482874E447Beb60E6Df5A21E6ebaFf54ad)
 [![Next.js 14](https://img.shields.io/badge/Next.js_14-App_Router-black?style=for-the-badge&logo=next.js)](https://nextjs.org)
 [![Vercel Deployment](https://img.shields.io/badge/Deployed_on-Vercel-black?style=for-the-badge&logo=vercel)](https://frontend-eight-peach-71.vercel.app)
-[![Instagram Reel](https://img.shields.io/badge/Demo_Reel-Instagram-E4405F?style=for-the-badge&logo=instagram&logoColor=white)](https://www.instagram.com/reel/DddzuxNMjkS/?utm_source=ig_web_copy_link&stkn=MzRlODBiNWFlZA==)
+[![Monad Social Post](https://img.shields.io/badge/Monad-Social_Post-E4405F?style=for-the-badge&logo=instagram&logoColor=white)](https://www.instagram.com/p/DddzuxNMjkS/)
 [![Hardhat](https://img.shields.io/badge/Hardhat-Tested_%26_Deployed-yellow?style=for-the-badge&logo=solidity)](https://hardhat.org)
 
 An autonomous, decentralized DeFi Agent Marketplace built natively for **Monad Testnet (Chain ID 10143)**. Features an ERC-8004 Identity + Reputation + Stake registry, sub-cent x402 HTTP 402 pay-per-call testnet USDC micropayments, deterministic multi-agent orchestration (zero LLM in the critical execution path), an interactive developer academy with soulbound credentials, a full onchain transaction activity explorer, and a high-performance 3D spatial UI.
 
 - 🌐 **Live Production App**: [https://frontend-eight-peach-71.vercel.app](https://frontend-eight-peach-71.vercel.app)
-- 📱 **Social Media Demo / Reel**: [Watch on Instagram](https://www.instagram.com/reel/DddzuxNMjkS/?utm_source=ig_web_copy_link&stkn=MzRlODBiNWFlZA==)
+- 📱 **Monad Social Media Post**: [View on Instagram](https://www.instagram.com/p/DddzuxNMjkS/)
 - 🐙 **GitHub Repository**: [https://github.com/avishrakshe/Defi-Agents-On-monad-.git](https://github.com/avishrakshe/Defi-Agents-On-monad-.git)
 
 > **"Monad's thesis is payments, tokenization, and agents at speed — this marketplace needs all three at once, and Monad is the only chain it could have been built on."**
