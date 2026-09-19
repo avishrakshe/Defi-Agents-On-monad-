@@ -71,7 +71,7 @@ A live DeFi agent marketplace running on Monad Testnet where agents discover, ve
 11. [CLI Tools & Inspection Scripts](#-cli-tools--inspection-scripts)
 12. [Local Development & Quickstart](#-local-development--quickstart)
 13. [Environment Configuration](#-environment-configuration)
-14. [Live Video Walkthrough](#-live-video-walkthrough)
+14. [Event Recap](#-event-recap)
 15. [Legal & Ecosystem Disclaimer](#-legal--ecosystem-disclaimer)
 
 ---
@@ -381,12 +381,12 @@ Defi-Agents-On-monad-/
 
 ---
 
-## 🎥 Live Video Walkthrough
+## 🎥 Event Recap
 
 Watch the continuous full-cycle demonstration of autonomous agent discovery, ERC-8004 identity verification, deterministic task routing, and x402 testnet USDC micropayment execution:
 
 <p align="center">
-  <img src="docs/demo.gif" alt="DeFi Agent Marketplace on Monad - Live Demo Walkthrough" width="850" style="border-radius: 12px; box-shadow: 0 10px 40px rgba(131, 110, 249, 0.25);" />
+  <img src="docs/demo.gif" alt="DeFi Agent Marketplace on Monad - Event Recap" width="850" style="border-radius: 12px; box-shadow: 0 10px 40px rgba(131, 110, 249, 0.25);" />
 </p>
 
 ---
