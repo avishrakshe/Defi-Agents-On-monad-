@@ -20,3 +20,17 @@
 .card-elevated {
   @apply bg-white rounded-3xl border border-[#e2e8f0] shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)];
 }
+
+@keyframes gridPatternScroll {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 0 var(--grid-cell-size, 48px);
+  }
+}
+
+.grid-pattern-3d-anim {
+  animation: gridPatternScroll var(--grid-speed, 3.5s) linear infinite;
+  will-change: background-position;
+}
