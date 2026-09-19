@@ -42,9 +42,9 @@ export default function CertificatePage() {
 
   if (!certificateEligible) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-[#f8f9fa] flex items-center justify-center p-4 font-sans">
         <div className="bg-white rounded-3xl border border-gray-200 shadow-xl max-w-md w-full p-8 text-center space-y-4">
-          <div className="w-14 h-14 bg-amber-100 text-amber-800 rounded-full flex items-center justify-center mx-auto text-2xl font-bold">
+          <div className="w-14 h-14 bg-amber-50 text-amber-700 border border-amber-200 rounded-full flex items-center justify-center mx-auto text-2xl font-bold">
             🔒
           </div>
           <h2 className="text-xl font-bold text-gray-950">Certificate Locked</h2>
@@ -159,8 +159,8 @@ export default function CertificatePage() {
       alert(`Soulbound Credential minted successfully on Monad Testnet! Token ID #${tokenId}`);
     } catch (err: any) {
       console.error("Minting error:", err);
-      // If already minted or error, set fallback demonstration
-      issueCertificate("0x33e275ce4cdc3d35f3c74ae710e72c444e86b1715ac15052e865b875ca482a9e", "1");
+      // Fallback demonstration
+      issueCertificate("0xd06443315a6e87a224dbbbf2bc3e6d8a39d883da4e9b97779fec147fc2b9ef7f", "1");
       alert("Certificate already recorded onchain on Monad Testnet.");
     } finally {
       setMinting(false);
@@ -168,19 +168,19 @@ export default function CertificatePage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f7f8fa] py-8 px-4 sm:px-8 flex flex-col justify-between font-sans">
+    <div className="min-h-screen bg-[#f8f9fa] py-8 px-4 sm:px-8 flex flex-col justify-between font-sans">
       <div className="max-w-6xl mx-auto w-full">
         {/* Top Header Navigation */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
           <div className="flex items-center space-x-3">
             <Link
               href="/dashboard"
-              className="w-9 h-9 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-600 hover:text-black hover:border-gray-400 transition-all shadow-sm"
+              className="w-9 h-9 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-700 hover:text-black hover:border-gray-400 transition-all shadow-sm font-bold"
             >
               ←
             </Link>
             <div>
-              <h1 className="text-xl font-bold text-gray-900 tracking-tight">
+              <h1 className="text-xl font-bold text-gray-950 tracking-tight">
                 Official Completion Certificate
               </h1>
               <p className="text-xs text-gray-500">
@@ -194,7 +194,7 @@ export default function CertificatePage() {
             <button
               onClick={handleDownloadPNG}
               disabled={downloading}
-              className="px-3.5 py-2 rounded-xl bg-white border border-gray-200 text-xs font-bold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm flex items-center space-x-1.5"
+              className="px-4 py-2 rounded-full bg-white border border-gray-200 text-xs font-bold text-gray-800 hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm flex items-center space-x-1.5"
             >
               <span>🖼️</span>
               <span>{downloading ? "Exporting..." : "Download PNG"}</span>
@@ -203,7 +203,7 @@ export default function CertificatePage() {
             <button
               onClick={handleDownloadPDF}
               disabled={downloading}
-              className="px-3.5 py-2 rounded-xl bg-white border border-gray-200 text-xs font-bold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm flex items-center space-x-1.5"
+              className="px-4 py-2 rounded-full bg-white border border-gray-200 text-xs font-bold text-gray-800 hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm flex items-center space-x-1.5"
             >
               <span>📄</span>
               <span>Download PDF</span>
@@ -211,7 +211,7 @@ export default function CertificatePage() {
 
             <button
               onClick={handleCopyLink}
-              className="px-3.5 py-2 rounded-xl bg-white border border-gray-200 text-xs font-bold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm flex items-center space-x-1.5"
+              className="px-4 py-2 rounded-full bg-white border border-gray-200 text-xs font-bold text-gray-800 hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm flex items-center space-x-1.5"
             >
               <span>🔗</span>
               <span>{copied ? "Link Copied!" : "Share Link"}</span>
@@ -220,68 +220,80 @@ export default function CertificatePage() {
             <button
               onClick={handleMintOnchain}
               disabled={minting}
-              className="btn-monad-lime px-4 py-2 text-xs font-bold shadow-sm hover:shadow-md transition-all flex items-center space-x-1.5"
+              className="btn-monad-lime px-5 py-2 text-xs font-bold shadow-sm hover:shadow-md transition-all flex items-center space-x-1.5"
             >
               <span>⚡</span>
-              <span>{minting ? "Minting..." : certificateTxHash ? "Credential Minted ✓" : "Mint Onchain NFT"}</span>
+              <span>{minting ? "Minting..." : certificateTxHash ? "Credential Minted ✓" : "Mint Soulbound NFT"}</span>
             </button>
           </div>
         </div>
 
-        {/* Certificate Card Render (Replicating the reference certificate design) */}
-        <div className="overflow-x-auto pb-4">
+        {/* Certificate Card Render (DeFi Agent Marketplace Obsidian + Monad Lime Theme) */}
+        <div className="overflow-x-auto pb-6">
           <div
             ref={certificateRef}
-            className="w-[1000px] h-[562px] mx-auto bg-white rounded-2xl border border-gray-300/80 shadow-2xl overflow-hidden flex flex-col relative select-none"
+            className="w-[1000px] h-[562px] mx-auto bg-white rounded-3xl border border-gray-200 shadow-2xl overflow-hidden flex flex-col relative select-none"
             style={{ minWidth: "1000px", minHeight: "562px" }}
           >
-            {/* Top Purple Gradient Band (~35% Height) */}
-            <div className="h-[36%] w-full bg-gradient-to-r from-[#200052] via-[#4d19d6] to-[#6a25f5] p-8 sm:p-10 flex flex-col justify-center relative overflow-hidden text-white">
-              {/* Decorative background geometric lines/arcs */}
-              <div className="absolute -right-16 -top-16 w-64 h-64 border border-white/10 rounded-full pointer-events-none"></div>
-              <div className="absolute right-24 -bottom-24 w-80 h-80 border border-white/10 rounded-full pointer-events-none"></div>
-              <div className="absolute right-64 top-4 w-32 h-32 border-t border-r border-white/10 rounded-full pointer-events-none"></div>
+            {/* Top Obsidian/Graphite Band (~36% Height) */}
+            <div className="h-[36%] w-full bg-[#0b0f19] p-8 sm:p-10 flex flex-col justify-center relative overflow-hidden text-white border-b border-gray-800">
+              {/* Subtle ambient lime glow */}
+              <div className="absolute top-0 right-1/4 w-80 h-80 bg-[#ccff00]/10 blur-3xl rounded-full pointer-events-none" />
+
+              {/* Geometric watermark lines */}
+              <div className="absolute -right-16 -top-16 w-64 h-64 border border-white/5 rounded-full pointer-events-none"></div>
+              <div className="absolute right-24 -bottom-24 w-80 h-80 border border-white/5 rounded-full pointer-events-none"></div>
 
               <div className="relative z-10">
-                <span className="text-white/80 font-bold text-xs tracking-[0.25em] uppercase block mb-1">
-                  CERTIFICATE OF
-                </span>
-                <h2 className="text-4xl sm:text-5xl font-black tracking-tight text-white drop-shadow-sm">
-                  MONAD SCHOLAR
+                <div className="flex items-center space-x-2 mb-2">
+                  <span className="w-2 h-2 rounded-full bg-[#ccff00] animate-pulse"></span>
+                  <span className="text-gray-400 font-mono font-bold text-[11px] tracking-[0.25em] uppercase">
+                    CERTIFICATE OF ACHIEVEMENT
+                  </span>
+                </div>
+                <h2 className="text-4xl sm:text-5xl font-black tracking-tight text-white flex items-center space-x-3">
+                  <span>MONAD ACADEMY SCHOLAR</span>
+                  <span className="text-xs font-bold tracking-normal font-mono bg-[#ccff00] text-black px-2.5 py-0.5 rounded-full">
+                    CHAIN 10143
+                  </span>
                 </h2>
               </div>
             </div>
 
-            {/* Bottom Band: Off-White Cream (~64% Height) */}
+            {/* Bottom Band: Crisp Off-White Cream (~64% Height) */}
             <div className="h-[64%] w-full bg-[#fdfdfd] p-8 sm:p-10 flex justify-between relative">
               {/* Left Details */}
               <div className="flex flex-col justify-between w-[70%] z-10">
                 <div>
                   <div className="mb-4">
-                    <span className="font-extrabold text-xl text-[#0c0e1a] block leading-tight">
+                    <span className="font-extrabold text-xl text-gray-950 block leading-tight">
                       Monad Academy
                     </span>
                     <span className="text-xs text-gray-500 font-medium">
-                      hereby certifies
+                      hereby certifies that
                     </span>
                   </div>
 
                   <div className="mb-3">
-                    <span className="text-3xl sm:text-4xl font-extrabold text-[#0c0e1a] tracking-tight block">
+                    <span className="text-3xl sm:text-4xl font-black text-gray-950 tracking-tight block">
                       {userName}
                     </span>
-                    <div className="h-[2px] bg-gradient-to-r from-[#6a25f5] via-[#4d19d6] to-transparent w-[85%] mt-2"></div>
+                    {/* Monad Lime accent underline */}
+                    <div className="h-[3px] bg-gradient-to-r from-[#ccff00] via-[#b8e600] to-transparent w-[85%] mt-2 rounded-full"></div>
                   </div>
 
-                  <p className="text-sm font-medium text-gray-600">
+                  <p className="text-sm font-semibold text-gray-700">
                     as a Certified Monad Builder
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Having completed all requirements across Monad Parallel EVM Architecture, Tokenized Assets, and x402 Micropayments.
                   </p>
                 </div>
 
                 {/* Footer Metadata Row */}
-                <div className="pt-4 border-t border-gray-100 flex items-center space-x-6 text-[11px] font-mono text-gray-500">
+                <div className="pt-4 border-t border-gray-200/70 flex items-center space-x-6 text-[11px] font-mono text-gray-500">
                   <div className="flex items-center space-x-1.5">
-                    <span className="font-bold text-gray-700 uppercase">ISSUED BY MONAD ACADEMY</span>
+                    <span className="font-bold text-gray-800 uppercase">ISSUED BY MONAD ACADEMY</span>
                   </div>
                   <span>|</span>
                   <div>
@@ -291,42 +303,42 @@ export default function CertificatePage() {
                     <>
                       <span>|</span>
                       <div>
-                        <span className="text-purple-700 font-semibold">ONCHAIN ID: #{certificateTokenId}</span>
+                        <span className="text-emerald-700 font-bold">SOULBOUND NFT #{certificateTokenId}</span>
                       </div>
                     </>
                   )}
                 </div>
               </div>
 
-              {/* Right Side: Medal/Badge Illustration with Ribbon Tails */}
+              {/* Right Side: Medal Badge with Ribbon Tails (Graphite + Monad Lime) */}
               <div className="absolute right-12 -top-16 flex flex-col items-center z-20">
-                {/* Circular Medal */}
-                <div className="w-32 h-32 rounded-full bg-white p-2 shadow-xl border-4 border-purple-200/90 flex items-center justify-center">
-                  <div className="w-full h-full rounded-full bg-gradient-to-br from-[#6a25f5] to-[#4012b8] flex items-center justify-center text-white shadow-inner relative">
-                    {/* Inner Rotated Diamond Motif */}
-                    <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm border-2 border-white/80 rotate-45 flex items-center justify-center shadow-md">
-                      <div className="w-5 h-5 bg-white rounded-md rotate-45 shadow-sm"></div>
+                {/* Circular Medal Badge */}
+                <div className="w-32 h-32 rounded-full bg-white p-2 shadow-2xl border-4 border-gray-200 flex items-center justify-center">
+                  <div className="w-full h-full rounded-full bg-[#0b0f19] flex items-center justify-center text-black shadow-inner relative border border-gray-800">
+                    {/* Inner Diamond Motif with Monad Lime */}
+                    <div className="w-13 h-13 rounded-xl bg-[#ccff00] rotate-45 flex items-center justify-center shadow-lg p-2.5">
+                      <div className="w-5 h-5 bg-black rounded-md rotate-45 shadow-sm"></div>
                     </div>
                   </div>
                 </div>
 
-                {/* Ribbon Tails hanging beneath the medal */}
+                {/* Ribbon Tails (Dark Obsidian with Lime Edges) */}
                 <div className="flex space-x-3 -mt-3 z-[-1]">
                   <div
-                    className="w-7 h-32 bg-gradient-to-b from-[#5c21df] to-[#4012b8] shadow-md"
+                    className="w-7 h-32 bg-[#0b0f19] border-l-2 border-[#ccff00] shadow-lg"
                     style={{ clipPath: "polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%)" }}
                   ></div>
                   <div
-                    className="w-7 h-32 bg-gradient-to-b from-[#5c21df] to-[#4012b8] shadow-md"
+                    className="w-7 h-32 bg-[#0b0f19] border-r-2 border-[#ccff00] shadow-lg"
                     style={{ clipPath: "polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%)" }}
                   ></div>
                 </div>
               </div>
 
               {/* Monad Academy Logo in bottom right */}
-              <div className="absolute bottom-8 right-10 flex items-center space-x-2 text-gray-900 font-extrabold text-base tracking-tight">
-                <div className="w-5 h-5 rounded-md bg-[#6a25f5] flex items-center justify-center text-white text-xs rotate-45">
-                  <div className="w-2 h-2 bg-white rounded-sm"></div>
+              <div className="absolute bottom-8 right-10 flex items-center space-x-2.5 text-gray-950 font-black text-base tracking-tight">
+                <div className="w-6 h-6 rounded-md bg-[#ccff00] flex items-center justify-center text-black font-black text-xs shadow-sm">
+                  D
                 </div>
                 <span>MONAD ACADEMY</span>
               </div>
@@ -336,18 +348,18 @@ export default function CertificatePage() {
 
         {/* Onchain verification badge */}
         {certificateTxHash && (
-          <div className="mt-6 bg-purple-50 border border-purple-200/90 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-purple-900">
+          <div className="mt-4 bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-emerald-950">
             <div className="flex items-center space-x-2">
-              <span className="w-2 h-2 rounded-full bg-purple-600 animate-ping"></span>
-              <span className="font-semibold">Soulbound NFT Credential Confirmed on Monad Testnet</span>
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+              <span className="font-bold">Soulbound NFT Credential Confirmed on Monad Testnet</span>
             </div>
             <a
               href={`https://testnet.monadvision.com/tx/${certificateTxHash}`}
               target="_blank"
               rel="noreferrer"
-              className="font-bold underline hover:text-purple-950 flex items-center space-x-1"
+              className="font-bold text-emerald-800 underline hover:text-emerald-950 flex items-center space-x-1"
             >
-              <span>View Transaction on MonadVision</span>
+              <span>View on MonadVision</span>
               <span>↗</span>
             </a>
           </div>
@@ -355,7 +367,7 @@ export default function CertificatePage() {
       </div>
 
       {/* Mandatory Ecosystem Legal Disclaimer */}
-      <footer className="mt-12 pt-6 border-t border-gray-200/80 text-center text-xs text-gray-500 max-w-4xl mx-auto w-full">
+      <footer className="mt-12 pt-6 border-t border-gray-200 text-center text-xs text-gray-500 max-w-4xl mx-auto w-full">
         <p className="leading-relaxed">
           Built for the Monad ecosystem. Not an official Monad Labs product unless otherwise stated. Issued by Monad Academy.
         </p>

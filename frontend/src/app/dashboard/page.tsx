@@ -54,8 +54,8 @@ export default function DashboardPage() {
           {/* Dashboard Header */}
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-8">
             <div>
-              <div className="flex items-center space-x-2.5 mb-1.5">
-                <span className="text-xs font-bold tracking-wider text-purple-700 uppercase bg-purple-50 px-2.5 py-0.5 rounded-full border border-purple-200/80">
+              <div className="flex items-center space-x-2.5 mb-2">
+                <span className="text-xs font-bold tracking-wider text-black uppercase bg-[#ccff00]/30 px-3 py-1 rounded-full border border-[#ccff00]/60">
                   MONAD ACADEMY DASHBOARD
                 </span>
                 <span className="text-xs text-gray-500 font-medium">
@@ -72,13 +72,16 @@ export default function DashboardPage() {
 
             {/* Quick Stats: XP & Streak */}
             <div className="flex items-center space-x-4">
-              <div className="bg-white border border-gray-200/90 rounded-2xl p-4 shadow-sm text-center min-w-[100px]">
-                <span className="text-xs font-medium text-gray-400 block">Total XP</span>
-                <span className="text-2xl font-black text-purple-700">{totalXp}</span>
+              <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm text-center min-w-[110px]">
+                <span className="text-xs font-medium text-gray-400 block mb-0.5">Total XP</span>
+                <span className="text-2xl font-black text-gray-950 flex items-center justify-center space-x-1">
+                  <span>⚡</span>
+                  <span>{totalXp}</span>
+                </span>
               </div>
 
-              <div className="bg-white border border-gray-200/90 rounded-2xl p-4 shadow-sm text-center min-w-[100px]">
-                <span className="text-xs font-medium text-gray-400 block">Day Streak</span>
+              <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm text-center min-w-[110px]">
+                <span className="text-xs font-medium text-gray-400 block mb-0.5">Day Streak</span>
                 <span className="text-2xl font-black text-amber-500 flex items-center justify-center space-x-1">
                   <span>🔥</span>
                   <span>{currentStreak}</span>
@@ -93,27 +96,27 @@ export default function DashboardPage() {
             <div className="lg:col-span-8 bg-white rounded-3xl border border-gray-200 shadow-[0_4px_24px_rgba(0,0,0,0.03)] p-6 sm:p-8">
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h2 className="text-lg font-bold text-gray-900 tracking-tight">
+                  <h2 className="text-lg font-bold text-gray-950 tracking-tight">
                     Cross-Path Progress Tracking
                   </h2>
                   <p className="text-xs text-gray-500">
                     Complete all 3 paths to unlock your official Monad Scholar Certificate.
                   </p>
                 </div>
-                <span className="text-xs font-bold text-gray-700 font-mono bg-gray-100 px-3 py-1 rounded-full">
+                <span className="text-xs font-bold text-gray-900 font-mono bg-[#f1f3f5] px-3 py-1 rounded-full border border-gray-200">
                   {completedCount === 3 ? "All Complete ✓" : `${completedCount}/3 Ready`}
                 </span>
               </div>
 
               <div className="space-y-6">
                 {/* Path 1: Monad Fundamentals */}
-                <div className="p-4 rounded-2xl bg-gray-50 border border-gray-200/70 hover:border-purple-200 transition-all">
-                  <div className="flex items-center justify-between mb-2">
+                <div className="p-5 rounded-2xl bg-[#f8f9fa] border border-gray-200 hover:border-gray-300 transition-all">
+                  <div className="flex items-center justify-between mb-2.5">
                     <div className="flex items-center space-x-2.5">
-                      <span className="w-6 h-6 rounded-full bg-purple-100 text-purple-800 font-bold text-xs flex items-center justify-center">
+                      <span className="w-6 h-6 rounded-full bg-[#ccff00] text-black font-black text-xs flex items-center justify-center shadow-sm">
                         1
                       </span>
-                      <span className="text-sm font-bold text-gray-900">
+                      <span className="text-sm font-bold text-gray-950">
                         Monad Fundamentals
                       </span>
                     </div>
@@ -124,7 +127,7 @@ export default function DashboardPage() {
 
                   <div className="w-full h-2.5 bg-gray-200 rounded-full overflow-hidden mb-3">
                     <div
-                      className="h-full bg-gradient-to-r from-purple-600 to-[#ccff00] rounded-full transition-all duration-500"
+                      className="h-full bg-[#ccff00] rounded-full transition-all duration-500"
                       style={{ width: `${fundamentalsPercent}%` }}
                     ></div>
                   </div>
@@ -135,7 +138,7 @@ export default function DashboardPage() {
                     </span>
                     <Link
                       href="/learn/monad-fundamentals"
-                      className="font-bold text-purple-700 hover:underline flex items-center space-x-1"
+                      className="font-bold text-gray-950 hover:underline flex items-center space-x-1"
                     >
                       <span>{fundamentals.completed ? "Review Path" : "Continue"}</span>
                       <span>→</span>
@@ -144,13 +147,13 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Path 2: Tokenized Assets */}
-                <div className="p-4 rounded-2xl bg-gray-50 border border-gray-200/70 hover:border-purple-200 transition-all">
-                  <div className="flex items-center justify-between mb-2">
+                <div className="p-5 rounded-2xl bg-[#f8f9fa] border border-gray-200 hover:border-gray-300 transition-all">
+                  <div className="flex items-center justify-between mb-2.5">
                     <div className="flex items-center space-x-2.5">
-                      <span className="w-6 h-6 rounded-full bg-blue-100 text-blue-800 font-bold text-xs flex items-center justify-center">
+                      <span className="w-6 h-6 rounded-full bg-[#ccff00] text-black font-black text-xs flex items-center justify-center shadow-sm">
                         2
                       </span>
-                      <span className="text-sm font-bold text-gray-900">
+                      <span className="text-sm font-bold text-gray-950">
                         Tokenized Assets on Monad
                       </span>
                     </div>
@@ -161,7 +164,7 @@ export default function DashboardPage() {
 
                   <div className="w-full h-2.5 bg-gray-200 rounded-full overflow-hidden mb-3">
                     <div
-                      className="h-full bg-gradient-to-r from-blue-600 to-indigo-500 rounded-full transition-all duration-500"
+                      className="h-full bg-[#ccff00] rounded-full transition-all duration-500"
                       style={{ width: `${tokenizedPercent}%` }}
                     ></div>
                   </div>
@@ -172,7 +175,7 @@ export default function DashboardPage() {
                     </span>
                     <Link
                       href="/learn/tokenized-assets"
-                      className="font-bold text-blue-700 hover:underline flex items-center space-x-1"
+                      className="font-bold text-gray-950 hover:underline flex items-center space-x-1"
                     >
                       <span>{tokenized.completed ? "Review Path" : "Continue"}</span>
                       <span>→</span>
@@ -181,13 +184,13 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Path 3: x402 Payments */}
-                <div className="p-4 rounded-2xl bg-gray-50 border border-gray-200/70 hover:border-purple-200 transition-all">
-                  <div className="flex items-center justify-between mb-2">
+                <div className="p-5 rounded-2xl bg-[#f8f9fa] border border-gray-200 hover:border-gray-300 transition-all">
+                  <div className="flex items-center justify-between mb-2.5">
                     <div className="flex items-center space-x-2.5">
-                      <span className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-800 font-bold text-xs flex items-center justify-center">
+                      <span className="w-6 h-6 rounded-full bg-[#ccff00] text-black font-black text-xs flex items-center justify-center shadow-sm">
                         3
                       </span>
-                      <span className="text-sm font-bold text-gray-900">
+                      <span className="text-sm font-bold text-gray-950">
                         x402 Payments on Monad
                       </span>
                     </div>
@@ -198,7 +201,7 @@ export default function DashboardPage() {
 
                   <div className="w-full h-2.5 bg-gray-200 rounded-full overflow-hidden mb-3">
                     <div
-                      className="h-full bg-gradient-to-r from-emerald-600 to-[#ccff00] rounded-full transition-all duration-500"
+                      className="h-full bg-[#ccff00] rounded-full transition-all duration-500"
                       style={{ width: `${x402Percent}%` }}
                     ></div>
                   </div>
@@ -209,7 +212,7 @@ export default function DashboardPage() {
                     </span>
                     <Link
                       href="/learn/x402"
-                      className="font-bold text-emerald-700 hover:underline flex items-center space-x-1"
+                      className="font-bold text-gray-950 hover:underline flex items-center space-x-1"
                     >
                       <span>{x402.completed ? "Review Path" : "Continue"}</span>
                       <span>→</span>
@@ -219,19 +222,19 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Right 4 Cols: Certificate Unlock Card */}
+            {/* Right 4 Cols: Certificate Unlock Card (Marketplace Obsidian & Lime Aesthetic) */}
             <div className="lg:col-span-4">
               <div
                 className={`rounded-3xl border p-6 sm:p-8 flex flex-col justify-between min-h-[380px] transition-all shadow-md ${
                   certificateEligible
-                    ? "bg-gradient-to-br from-[#1b004a] via-[#4d19d6] to-[#6a25f5] text-white border-purple-500/80 shadow-purple-500/10"
+                    ? "bg-[#0b0f19] text-white border-gray-800 shadow-xl"
                     : "bg-white text-gray-900 border-gray-200"
                 }`}
               >
                 <div>
                   <div className="flex items-center justify-between mb-4">
                     <span
-                      className={`text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full tracking-wider ${
+                      className={`text-[10px] font-black uppercase px-3 py-1 rounded-full tracking-wider ${
                         certificateEligible
                           ? "bg-[#ccff00] text-black"
                           : "bg-gray-100 text-gray-500"
@@ -251,11 +254,11 @@ export default function DashboardPage() {
                   </h3>
 
                   {certificateEligible ? (
-                    <div className="space-y-3 text-xs text-purple-100 leading-relaxed">
+                    <div className="space-y-3 text-xs text-gray-300 leading-relaxed">
                       <p>
                         Congratulations! You have demonstrated mastery across all three Monad Academy curriculum paths.
                       </p>
-                      <p className="text-[#ccff00] font-semibold">
+                      <p className="text-[#ccff00] font-bold">
                         ✓ Certified Monad Builder Credential Ready
                       </p>
                     </div>
@@ -264,7 +267,7 @@ export default function DashboardPage() {
                       <p>
                         Your official completion certificate unlocks automatically once all three curriculum paths are completed.
                       </p>
-                      <div className="p-3 bg-gray-50 rounded-xl border border-gray-200/80">
+                      <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
                         <span className="text-[11px] font-bold text-gray-700 block mb-1">
                           Paths Remaining ({missingPaths.length}):
                         </span>
@@ -278,7 +281,7 @@ export default function DashboardPage() {
                   )}
                 </div>
 
-                <div className="pt-6 mt-4 border-t border-white/20">
+                <div className="pt-6 mt-4 border-t border-gray-200/20">
                   {certificateEligible ? (
                     <Link
                       href="/dashboard/certificate"
@@ -289,7 +292,7 @@ export default function DashboardPage() {
                   ) : (
                     <button
                       disabled
-                      className="w-full py-3 px-4 text-xs font-bold text-center block rounded-xl bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
+                      className="w-full py-3 px-4 text-xs font-bold text-center block rounded-full bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
                     >
                       Complete All 3 Paths to Unlock
                     </button>
@@ -301,8 +304,8 @@ export default function DashboardPage() {
 
           {/* Learner Settings & Instant Verification Sandbox */}
           <div className="bg-white rounded-3xl border border-gray-200 p-6 sm:p-8 shadow-sm">
-            <h3 className="text-sm font-bold text-gray-900 mb-4 tracking-tight uppercase">
-              Learner Profile & Evaluation Sandbox
+            <h3 className="text-xs font-bold text-gray-400 mb-4 tracking-wider uppercase">
+              LEARNER PROFILE & EVALUATION SANDBOX
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
@@ -317,11 +320,11 @@ export default function DashboardPage() {
                     value={nameInput}
                     onChange={(e) => setNameInput(e.target.value)}
                     placeholder="Enter your name..."
-                    className="flex-1 rounded-xl border border-gray-200 px-3.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-purple-600"
+                    className="flex-1 rounded-xl border border-gray-200 px-3.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-[#ccff00] focus:border-black"
                   />
                   <button
                     type="submit"
-                    className="px-4 py-2 rounded-xl bg-gray-900 text-white text-xs font-bold hover:bg-black transition-colors"
+                    className="px-4 py-2 rounded-xl bg-gray-950 text-white text-xs font-bold hover:bg-black transition-colors"
                   >
                     {nameSaved ? "Saved ✓" : "Update Name"}
                   </button>
@@ -335,35 +338,35 @@ export default function DashboardPage() {
               <div className="flex flex-wrap items-center gap-2.5">
                 <button
                   onClick={() => markPathComplete("monad-fundamentals")}
-                  className="px-3 py-2 rounded-xl bg-purple-50 border border-purple-200 text-purple-800 text-xs font-bold hover:bg-purple-100 transition-colors"
+                  className="px-3.5 py-2 rounded-xl bg-gray-100 border border-gray-200 text-gray-800 text-xs font-bold hover:bg-gray-200 transition-colors"
                 >
                   Complete Path 1
                 </button>
 
                 <button
                   onClick={() => markPathComplete("tokenized-assets")}
-                  className="px-3 py-2 rounded-xl bg-blue-50 border border-blue-200 text-blue-800 text-xs font-bold hover:bg-blue-100 transition-colors"
+                  className="px-3.5 py-2 rounded-xl bg-gray-100 border border-gray-200 text-gray-800 text-xs font-bold hover:bg-gray-200 transition-colors"
                 >
                   Complete Path 2
                 </button>
 
                 <button
                   onClick={() => markPathComplete("x402-payments")}
-                  className="px-3 py-2 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold hover:bg-emerald-100 transition-colors"
+                  className="px-3.5 py-2 rounded-xl bg-gray-100 border border-gray-200 text-gray-800 text-xs font-bold hover:bg-gray-200 transition-colors"
                 >
                   Complete Path 3
                 </button>
 
                 <button
                   onClick={markAllCompleteForDemo}
-                  className="px-3 py-2 rounded-xl bg-[#ccff00] text-gray-900 font-bold text-xs hover:bg-[#b8e600] transition-colors shadow-sm"
+                  className="px-4 py-2 rounded-xl bg-[#ccff00] text-black font-bold text-xs hover:bg-[#b8e600] transition-colors shadow-sm"
                 >
                   Complete All (Unlock Certificate)
                 </button>
 
                 <button
                   onClick={resetProgress}
-                  className="px-3 py-2 rounded-xl bg-gray-100 border border-gray-200 text-gray-600 text-xs font-semibold hover:bg-gray-200 transition-colors"
+                  className="px-3.5 py-2 rounded-xl bg-gray-100 border border-gray-200 text-gray-600 text-xs font-semibold hover:bg-gray-200 transition-colors"
                 >
                   Reset
                 </button>

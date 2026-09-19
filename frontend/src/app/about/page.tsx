@@ -17,17 +17,17 @@ export default function AboutPage() {
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col justify-between bg-[#fbfbfd]">
+    <div className="min-h-screen flex flex-col justify-between bg-[#f8f9fa]">
       <div>
         <Navbar />
 
         <main className="py-10 px-4 sm:px-8 max-w-7xl mx-auto">
           {/* Overview Section */}
-          <div className="bg-white rounded-3xl border border-gray-200/90 shadow-[0_4px_24px_rgba(0,0,0,0.03)] p-8 sm:p-12 mb-8 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-[#ccff00]/15 to-purple-500/10 blur-3xl rounded-full pointer-events-none -mr-20 -mt-20" />
+          <div className="bg-white rounded-3xl border border-gray-200 shadow-[0_4px_24px_rgba(0,0,0,0.03)] p-8 sm:p-12 mb-8 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-96 h-96 bg-[#ccff00]/10 blur-3xl rounded-full pointer-events-none -mr-20 -mt-20" />
             
             <div className="relative z-10">
-              <span className="text-xs font-bold tracking-wider text-purple-700 bg-purple-50 border border-purple-200/60 px-3 py-1 rounded-full uppercase">
+              <span className="text-xs font-bold tracking-wider text-black bg-[#ccff00]/30 border border-[#ccff00]/60 px-3 py-1 rounded-full uppercase">
                 Decentralized Autonomous Architecture
               </span>
               <h1 className="text-3xl sm:text-4xl font-black text-gray-950 tracking-tight mt-3 mb-4">
@@ -43,7 +43,7 @@ export default function AboutPage() {
                   <span>100% Real Monad Testnet Execution</span>
                 </div>
                 <div className="flex items-center space-x-2 text-xs font-medium text-gray-700 bg-gray-50 border border-gray-200 px-3.5 py-1.5 rounded-xl">
-                  <span className="font-mono text-purple-700 font-bold">x402</span>
+                  <span className="font-mono text-gray-950 font-bold">x402</span>
                   <span>EIP-712 Gasless / Micropayment Rail</span>
                 </div>
                 <div className="flex items-center space-x-2 text-xs font-medium text-gray-700 bg-gray-50 border border-gray-200 px-3.5 py-1.5 rounded-xl">
@@ -54,19 +54,19 @@ export default function AboutPage() {
             </div>
           </div>
 
-          {/* Monad Academy Cross-Link Card */}
-          <div className="bg-gradient-to-r from-[#1c0f38] via-[#2d1254] to-[#120824] text-white rounded-3xl border border-purple-900/40 shadow-xl p-8 sm:p-10 mb-8 relative overflow-hidden">
-            <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-10 w-80 h-80 bg-purple-500/20 blur-3xl rounded-full pointer-events-none" />
+          {/* Monad Academy Cross-Link Card - Styled to Match Marketplace Hero/Dark Card Theme */}
+          <div className="bg-[#0f172a] text-white rounded-3xl border border-gray-800 shadow-xl p-8 sm:p-10 mb-8 relative overflow-hidden">
+            <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-10 w-80 h-80 bg-[#ccff00]/10 blur-3xl rounded-full pointer-events-none" />
             <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
               <div className="max-w-2xl">
-                <div className="inline-flex items-center space-x-2 bg-purple-500/20 border border-purple-400/30 px-3 py-1 rounded-full text-xs font-semibold text-purple-200 mb-3">
+                <div className="inline-flex items-center space-x-2 bg-white/10 border border-white/20 px-3 py-1 rounded-full text-xs font-semibold text-gray-200 mb-3">
                   <span>🎓</span>
                   <span>Monad Academy</span>
                 </div>
                 <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white mb-2">
                   New to Monad? Learn the fundamentals in Monad Academy
                 </h2>
-                <p className="text-purple-200 text-sm leading-relaxed">
+                <p className="text-gray-300 text-sm leading-relaxed">
                   Master Monad architecture (parallel execution & MonadDB), build onchain tokenized yield primitives, and implement zero-custody x402 HTTP micropayment gateways. Complete all 3 learning paths to earn the official Soulbound Monad Academy Scholar credential.
                 </p>
               </div>
@@ -74,13 +74,13 @@ export default function AboutPage() {
               <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto shrink-0">
                 <Link
                   href="/learn"
-                  className="px-5 py-3 rounded-xl bg-[#ccff00] text-black font-bold text-sm text-center hover:bg-[#b8e600] transition-colors shadow-sm"
+                  className="px-5 py-3 rounded-full bg-[#ccff00] text-black font-bold text-sm text-center hover:bg-[#b8e600] transition-colors shadow-sm inline-flex items-center justify-center"
                 >
                   Explore Curriculum ↗
                 </Link>
                 <Link
                   href="/dashboard"
-                  className="px-5 py-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold text-sm text-center transition-colors"
+                  className="px-5 py-3 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold text-sm text-center transition-colors inline-flex items-center justify-center"
                 >
                   Learner Dashboard
                 </Link>
@@ -89,7 +89,7 @@ export default function AboutPage() {
           </div>
 
           {/* Verified Onchain Contracts Section */}
-          <div className="bg-white rounded-3xl border border-gray-200/90 shadow-[0_4px_24px_rgba(0,0,0,0.03)] p-8 sm:p-10 mb-8">
+          <div className="bg-white rounded-3xl border border-gray-200 shadow-[0_4px_24px_rgba(0,0,0,0.03)] p-8 sm:p-10 mb-8">
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-xl font-bold text-gray-950 tracking-tight">
@@ -168,13 +168,13 @@ export default function AboutPage() {
                 </a>
               </div>
 
-              <div className="p-5 bg-purple-50/60 rounded-2xl border border-purple-200/80 hover:border-purple-300 transition-all flex flex-col justify-between">
+              <div className="p-5 bg-gray-50 rounded-2xl border border-gray-200/80 hover:border-gray-300 transition-all flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-xs font-bold text-purple-950">AcademyCredential</span>
-                    <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-purple-200/80 text-purple-900">Soulbound</span>
+                    <span className="text-xs font-bold text-gray-900">AcademyCredential</span>
+                    <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-[#ccff00]/40 text-black font-semibold">Soulbound</span>
                   </div>
-                  <span className="font-mono text-[11px] text-purple-700 block mb-3 break-all">
+                  <span className="font-mono text-[11px] text-gray-600 block mb-3 break-all">
                     {MONAD_CONTRACTS.academyCredential}
                   </span>
                 </div>
@@ -182,7 +182,7 @@ export default function AboutPage() {
                   href={`https://testnet.monadvision.com/address/${MONAD_CONTRACTS.academyCredential}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-xs font-bold text-purple-800 hover:underline inline-flex items-center space-x-1"
+                  className="text-xs font-bold text-emerald-700 hover:underline inline-flex items-center space-x-1"
                 >
                   <span>View on MonadVision</span>
                   <span>↗</span>
@@ -192,7 +192,7 @@ export default function AboutPage() {
           </div>
 
           {/* Dynamic Registered Agent Profiles */}
-          <div className="bg-white rounded-3xl border border-gray-200/90 shadow-[0_4px_24px_rgba(0,0,0,0.03)] p-8 sm:p-10 mb-8">
+          <div className="bg-white rounded-3xl border border-gray-200 shadow-[0_4px_24px_rgba(0,0,0,0.03)] p-8 sm:p-10 mb-8">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
               <div>
                 <h2 className="text-xl font-bold text-gray-950 tracking-tight">
@@ -216,7 +216,7 @@ export default function AboutPage() {
                 {agents.map((agent) => (
                   <div
                     key={agent.id}
-                    className="p-6 bg-[#f8f9fa] rounded-2xl border border-gray-200/90 hover:border-gray-300 transition-all flex flex-col justify-between"
+                    className="p-6 bg-[#f8f9fa] rounded-2xl border border-gray-200 hover:border-gray-300 transition-all flex flex-col justify-between"
                   >
                     <div>
                       <div className="flex items-center justify-between mb-3">
@@ -232,7 +232,7 @@ export default function AboutPage() {
                         {agent.name}
                       </h3>
 
-                      <div className="text-xs font-mono text-purple-700 font-semibold mb-3">
+                      <div className="text-xs font-mono text-gray-700 font-semibold mb-3">
                         {agent.skill}
                       </div>
 
@@ -240,7 +240,7 @@ export default function AboutPage() {
                         {agent.description}
                       </p>
 
-                      <div className="space-y-2 text-xs text-gray-700 pt-3 border-t border-gray-200/80">
+                      <div className="space-y-2 text-xs text-gray-700 pt-3 border-t border-gray-200">
                         <div>
                           <span className="text-gray-400 block text-[10px] uppercase tracking-wider font-semibold">Data Source</span>
                           <span className="font-medium text-gray-800 line-clamp-1">{agent.dataSource}</span>
@@ -260,7 +260,7 @@ export default function AboutPage() {
                       </div>
                     </div>
 
-                    <div className="mt-4 pt-3 border-t border-gray-200/80 text-[11px] font-mono text-gray-400 flex items-center justify-between">
+                    <div className="mt-4 pt-3 border-t border-gray-200 text-[11px] font-mono text-gray-400 flex items-center justify-between">
                       <span title={agent.owner}>
                         {agent.owner.slice(0, 6)}...{agent.owner.slice(-4)}
                       </span>
@@ -277,10 +277,12 @@ export default function AboutPage() {
       {/* Mandatory Footer / Ecosystem Disclaimer */}
       <footer className="border-t border-gray-200/80 bg-white py-8 px-4 sm:px-8 mt-12 text-center">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-500">
-          <div>
-            <span className="font-bold text-gray-900">Monad DeFi Agent Marketplace</span>
-            <span className="mx-2">•</span>
-            <span>Monad Testnet Chain ID 10143</span>
+          <div className="flex items-center space-x-2">
+            <span className="w-5 h-5 rounded-full bg-[#ccff00] inline-flex items-center justify-center font-bold text-black text-[10px]">
+              D
+            </span>
+            <span className="font-bold text-gray-900">DeFi Agent Marketplace</span>
+            <span>• Monad Testnet (Chain ID 10143)</span>
           </div>
           <p className="text-gray-500 font-medium">
             Built for the Monad ecosystem. Not an official Monad Labs product unless otherwise stated.

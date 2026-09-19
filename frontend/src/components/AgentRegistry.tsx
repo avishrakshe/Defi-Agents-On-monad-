@@ -65,7 +65,7 @@ export const AgentRegistry: React.FC<AgentRegistryProps> = ({
                         {agent.name}
                       </h3>
                       {isCustom && (
-                        <span className="inline-block mt-1 px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 text-[10px] font-bold border border-purple-200/80">
+                        <span className="inline-block mt-1 px-2 py-0.5 rounded-md bg-[#ccff00]/30 text-black text-[10px] font-bold border border-[#ccff00]/60">
                           Community Agent
                         </span>
                       )}

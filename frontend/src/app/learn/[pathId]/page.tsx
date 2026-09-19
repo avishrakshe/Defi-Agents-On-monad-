@@ -39,9 +39,9 @@ const COURSES_DATA: Record<string, { title: string; storeKey: keyof AcademyProgr
             <p>
               <strong>Monad</strong> is a decentralized, high-performance Layer-1 blockchain that introduces pipelined parallel execution and asynchronous state commitments while retaining <strong>100% full EVM bytecode compatibility</strong>.
             </p>
-            <div className="p-4 bg-purple-50 rounded-2xl border border-purple-200/80 my-3">
-              <span className="font-bold text-purple-900 block mb-1">Core Performance Specs:</span>
-              <ul className="list-disc list-inside space-y-1 text-xs text-purple-800">
+            <div className="p-4 bg-gray-50 rounded-2xl border border-gray-200 my-3">
+              <span className="font-bold text-gray-950 block mb-1">Core Performance Specs:</span>
+              <ul className="list-disc list-inside space-y-1 text-xs text-gray-700">
                 <li><strong>Throughput:</strong> 10,000 real-world transactions per second (TPS)</li>
                 <li><strong>Block Frequency:</strong> 300 ms blocks (sub-second user experience)</li>
                 <li><strong>Single-Slot Finality:</strong> ~600 ms (two consecutive block confirmations)</li>
@@ -124,7 +124,7 @@ const COURSES_DATA: Record<string, { title: string; storeKey: keyof AcademyProgr
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 font-mono">
-                  <tr><td className="p-2 font-sans font-medium">Chain ID</td><td className="p-2 text-purple-700 font-bold">10143 (0x279f)</td></tr>
+                  <tr><td className="p-2 font-sans font-medium">Chain ID</td><td className="p-2 text-gray-950 font-bold font-mono">10143 (0x279f)</td></tr>
                   <tr><td className="p-2 font-sans font-medium">Currency</td><td className="p-2 font-bold">MON</td></tr>
                   <tr><td className="p-2 font-sans font-medium">Public RPC</td><td className="p-2">https://testnet-rpc.monad.xyz</td></tr>
                   <tr><td className="p-2 font-sans font-medium">Explorer</td><td className="p-2">https://testnet.monadvision.com</td></tr>
@@ -606,7 +606,7 @@ export default function LessonDetailPage() {
               <span>/</span>
               <span className="font-semibold text-gray-800">{course.title}</span>
               <span>/</span>
-              <span className="text-purple-700 font-bold">{currentLesson.title}</span>
+              <span className="text-gray-950 font-bold">{currentLesson.title}</span>
             </div>
 
             {/* Mobile Tab Switcher */}
@@ -646,7 +646,7 @@ export default function LessonDetailPage() {
                         }}
                         className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 ${
                           active
-                            ? "bg-purple-700 text-white shadow-sm"
+                            ? "bg-gray-950 text-white shadow-sm font-bold"
                             : done
                             ? "bg-emerald-50 border border-emerald-200 text-emerald-800 hover:bg-emerald-100"
                             : "bg-gray-50 border border-gray-200 text-gray-600 hover:bg-gray-100"
@@ -664,7 +664,7 @@ export default function LessonDetailPage() {
                   <div className="flex items-center space-x-3 text-xs text-gray-400 mb-1 font-mono">
                     <span>{currentLesson.readTime}</span>
                     <span>•</span>
-                    <span className="text-purple-700 font-bold">+50 XP</span>
+                    <span className="text-gray-950 font-mono font-bold">+50 XP</span>
                   </div>
                   <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-950 tracking-tight">
                     {currentLesson.title}
@@ -672,8 +672,8 @@ export default function LessonDetailPage() {
                 </div>
 
                 {/* Learning Objectives Box */}
-                <div className="bg-[#fcfcff] border border-purple-100 rounded-2xl p-4 sm:p-5 mb-8">
-                  <span className="text-xs font-bold uppercase tracking-wider text-purple-900 block mb-2">
+                <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4 sm:p-5 mb-8">
+                  <span className="text-xs font-bold uppercase tracking-wider text-gray-900 block mb-2">
                     Learning Objectives:
                   </span>
                   <ul className="list-disc list-inside space-y-1 text-xs text-gray-700">
@@ -720,7 +720,7 @@ export default function LessonDetailPage() {
                   <button
                     disabled={activeLessonIndex === course.lessons.length - 1}
                     onClick={handleNextLesson}
-                    className="px-4 py-2 rounded-xl bg-purple-700 text-white text-xs font-bold hover:bg-purple-800 disabled:opacity-30 shadow-sm"
+                    className="px-4 py-2 rounded-xl bg-gray-950 text-white text-xs font-bold hover:bg-black disabled:opacity-30 shadow-sm"
                   >
                     Next Lesson →
                   </button>
@@ -732,7 +732,7 @@ export default function LessonDetailPage() {
             <div className={`lg:col-span-5 ${mobileTab === "learn" ? "hidden lg:block" : ""}`}>
               <div className="sticky top-20 bg-white rounded-3xl border border-gray-200 shadow-[0_4px_24px_rgba(0,0,0,0.03)] p-6 sm:p-8">
                 <div className="flex items-center justify-between mb-4">
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-purple-50 text-purple-800 border border-purple-200/80">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[#ccff00]/30 text-black border border-[#ccff00]/60">
                     KNOWLEDGE CHECK
                   </span>
                   <span className="text-xs font-mono font-bold text-amber-500">
@@ -757,7 +757,7 @@ export default function LessonDetailPage() {
                         btnStyle = "bg-rose-50 border-rose-300 text-rose-800";
                       }
                     } else if (isSelected) {
-                      btnStyle = "bg-purple-50 border-purple-500 text-purple-900 font-bold";
+                      btnStyle = "bg-gray-100 border-black text-black font-bold";
                     }
 
                     return (
@@ -801,7 +801,7 @@ export default function LessonDetailPage() {
 
                     <button
                       onClick={handleNextLesson}
-                      className="w-full py-2.5 rounded-xl bg-purple-700 hover:bg-purple-800 text-white text-xs font-bold transition-all shadow-sm"
+                      className="w-full btn-monad-lime py-2.5 text-xs font-bold transition-all shadow-sm"
                     >
                       Continue to Next Lesson →
                     </button>

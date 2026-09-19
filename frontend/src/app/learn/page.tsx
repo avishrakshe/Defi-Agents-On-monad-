@@ -6,15 +6,14 @@ import { Navbar } from "../../components/Navbar";
 import { useAcademyStore } from "../../lib/progress-store";
 
 export default function LearnCatalogPage() {
-  const { paths, totalXp, currentStreak } = useAcademyStore();
+  const { paths } = useAcademyStore();
 
   const courses = [
     {
       id: "monad-fundamentals" as const,
       title: "Monad Fundamentals",
       category: "Layer-1 EVM Architecture",
-      badge: "Core Path",
-      color: "purple",
+      badge: "Core Track",
       description: "Master Monad's high-performance parallel execution, 10,000 TPS, 300ms block times, 600ms finality, and deploy your first Solidity contract.",
       modules: 5,
       xp: 250,
@@ -26,7 +25,6 @@ export default function LearnCatalogPage() {
       title: "Tokenized Assets on Monad",
       category: "RWAs & Capital Markets",
       badge: "Institutional DeFi",
-      color: "blue",
       description: "Learn how real-world financial assets (equities, treasuries, private credit) are tokenized, permissioned, compliant, and settled with instant finality.",
       modules: 5,
       xp: 250,
@@ -38,7 +36,6 @@ export default function LearnCatalogPage() {
       title: "x402 Payments on Monad",
       category: "Autonomous Agent Protocols",
       badge: "AI Agent Rails",
-      color: "emerald",
       description: "Build pay-per-request APIs and autonomous AI agent marketplaces using the HTTP 402 Payment Required standard and Monad USDC micropayments.",
       modules: 5,
       xp: 250,
@@ -57,7 +54,7 @@ export default function LearnCatalogPage() {
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-10">
             <div>
               <div className="flex items-center space-x-2.5 mb-2">
-                <span className="text-xs font-bold tracking-wider text-purple-700 uppercase bg-purple-50 px-2.5 py-0.5 rounded-full border border-purple-200/80">
+                <span className="text-xs font-bold tracking-wider text-black uppercase bg-[#ccff00]/30 px-3 py-1 rounded-full border border-[#ccff00]/60">
                   MONAD ACADEMY CURRICULUM
                 </span>
                 <span className="text-xs text-gray-500 font-medium">
@@ -91,19 +88,19 @@ export default function LearnCatalogPage() {
               return (
                 <div
                   key={course.id}
-                  className="bg-white rounded-3xl border border-gray-200 shadow-[0_4px_24px_rgba(0,0,0,0.03)] p-6 sm:p-8 flex flex-col justify-between hover:border-purple-300 hover:shadow-md transition-all group"
+                  className="bg-white rounded-3xl border border-gray-200 shadow-[0_4px_24px_rgba(0,0,0,0.03)] p-6 sm:p-8 flex flex-col justify-between hover:border-gray-400 hover:shadow-md transition-all group"
                 >
                   <div>
                     <div className="flex items-start justify-between mb-3">
-                      <span className="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-700">
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-800 border border-gray-200">
                         {course.badge}
                       </span>
-                      <span className="text-xs font-mono font-bold text-purple-700">
+                      <span className="text-xs font-mono font-bold text-gray-950">
                         +{course.xp} XP
                       </span>
                     </div>
 
-                    <h2 className="text-xl font-extrabold text-gray-950 group-hover:text-purple-700 transition-colors tracking-tight mb-1 leading-snug">
+                    <h2 className="text-xl font-extrabold text-gray-950 group-hover:text-black transition-colors tracking-tight mb-1 leading-snug">
                       {course.title}
                     </h2>
                     <span className="text-xs font-mono text-gray-400 block mb-4">
@@ -121,7 +118,7 @@ export default function LearnCatalogPage() {
                       <ul className="space-y-1 text-xs text-gray-700 font-medium">
                         {course.topics.map((t, idx) => (
                           <li key={idx} className="flex items-center space-x-2">
-                            <span className="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#ccff00] border border-black/30"></span>
                             <span>{t}</span>
                           </li>
                         ))}
@@ -134,11 +131,11 @@ export default function LearnCatalogPage() {
                     <div className="mb-4">
                       <div className="flex items-center justify-between text-[11px] text-gray-500 font-medium mb-1">
                         <span>{pathProgress.completedLessons.length}/{pathProgress.totalLessons} Lessons</span>
-                        <span>{percent}% Complete</span>
+                        <span className="font-mono">{percent}% Complete</span>
                       </div>
                       <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-purple-600 rounded-full transition-all duration-300"
+                          className="h-full bg-[#ccff00] rounded-full transition-all duration-300"
                           style={{ width: `${percent}%` }}
                         ></div>
                       </div>
@@ -146,7 +143,11 @@ export default function LearnCatalogPage() {
 
                     <Link
                       href={course.href}
-                      className="w-full py-2.5 rounded-xl bg-gray-900 text-white hover:bg-black font-bold text-xs flex items-center justify-center space-x-2 transition-all shadow-sm"
+                      className={`w-full py-2.5 rounded-full font-bold text-xs flex items-center justify-center space-x-2 transition-all shadow-sm ${
+                        pathProgress.completed
+                          ? "bg-gray-950 text-white hover:bg-black"
+                          : "btn-monad-lime"
+                      }`}
                     >
                       <span>{pathProgress.completed ? "Review Course" : percent > 0 ? "Continue Learning" : "Start Course"}</span>
                       <span>→</span>
