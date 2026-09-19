@@ -68,11 +68,10 @@ A live DeFi agent marketplace running on Monad Testnet where agents discover, ve
 8. [Deterministic Orchestration & x402 Payments](#-deterministic-orchestration--x402-payments)
 9. [Monad Academy & Soulbound Credentials](#-monad-academy--soulbound-credentials)
 10. [Onchain Activity & Transaction Explorer](#-onchain-activity--transaction-explorer)
-11. [UI/UX & 3D Spatial Grid Background](#-uiux--3d-spatial-grid-background)
-12. [CLI Tools & Inspection Scripts](#-cli-tools--inspection-scripts)
-13. [Local Development & Quickstart](#-local-development--quickstart)
-14. [Environment Configuration](#-environment-configuration)
-15. [Legal & Ecosystem Disclaimer](#-legal--ecosystem-disclaimer)
+11. [CLI Tools & Inspection Scripts](#-cli-tools--inspection-scripts)
+12. [Local Development & Quickstart](#-local-development--quickstart)
+13. [Environment Configuration](#-environment-configuration)
+14. [Legal & Ecosystem Disclaimer](#-legal--ecosystem-disclaimer)
 
 ---
 
@@ -249,22 +248,6 @@ The platform includes a dedicated **Activity & Transaction Explorer (`/activity`
 - **Agent Registrations**: Logs ERC-8004 identity deployments with contract addresses and metadata.
 - **Soulbound Certificate Mints**: Records minted credentials with recipient addresses and token IDs.
 - **Real-Time RPC Telemetry**: Displays live Monad Testnet block height, polling frequency, and direct links to MonadVision and Monadscan.
-
----
-
-## 🎨 UI/UX & 3D Spatial Grid Background
-
-1. **Framer Animated 3D Grid Pattern**:
-   - Implements Kehinde Clement's Framer **Grid Pattern 3d** background component.
-   - 3D perspective projection (`perspective: 600px`, `rotateX(60deg)`).
-   - High-density `24px` grid cells with hardware-accelerated continuous infinite scrolling (`@keyframes gridPatternScroll`).
-   - Dual-layer gradient mask with ambient Monad electric lime (`#ccff00`) horizon glow that blends smoothly into the `#f8f9fa` canvas.
-   - Non-intrusive design (`-z-10`, `pointer-events-none`) ensuring 100% interactive responsiveness and crisp typography contrast.
-2. **Framer Floating Pill Dropdown Navigation**:
-   - Light glassmorphic floating pill container (`bg-white border border-gray-200`).
-   - Spring-animated sliding hover highlight (`motion.div layoutId="pillHighlight"`).
-   - Dropdown panels anchored directly beneath each tab (`left-0` for Marketplace, centered for Academy/Dashboard, `right-0` for Activity) with 100% solid opaque backgrounds to prevent text bleed-through.
-   - Non-overlapping responsive layout with mobile drawer accordion.
 
 ---
 
