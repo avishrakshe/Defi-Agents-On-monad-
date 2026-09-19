@@ -56,15 +56,28 @@ graph TD
 
 ---
 
-## Deployed Smart Contracts
+## 📜 Verified Deployed Smart Contracts on Monad Testnet (Chain ID 10143)
 
-The contracts implement ERC-8004 identity, onchain feedback with caller payment verification, and USDC staking with a stubbed dispute slash hook:
+All contracts are verified and deployed on Monad Testnet:
 
-| Contract | Address | Explorer Verification Link |
-|---|---|---|
-| **IdentityRegistry** | `0xD62b32482874E447Beb60E6Df5A21E6ebaFf54ad` | [View on MonadVision](https://testnet.monadvision.com/address/0xD62b32482874E447Beb60E6Df5A21E6ebaFf54ad) / [Monadscan](https://testnet.monadscan.com/address/0xD62b32482874E447Beb60E6Df5A21E6ebaFf54ad) |
-| **ReputationRegistry** | `0x7b398a8F83133d5E28b4cce7c3131b4Ba8C486E0` | [View on MonadVision](https://testnet.monadvision.com/address/0x7b398a8F83133d5E28b4cce7c3131b4Ba8C486E0) / [Monadscan](https://testnet.monadscan.com/address/0x7b398a8F83133d5E28b4cce7c3131b4Ba8C486E0) |
-| **StakeManager** | `0xca1624702029E9B76c648f980a673F37758aa45a` | [View on MonadVision](https://testnet.monadvision.com/address/0xca1624702029E9B76c648f980a673F37758aa45a) / [Monadscan](https://testnet.monadscan.com/address/0xca1624702029E9B76c648f980a673F37758aa45a) |
+| Contract | Onchain Address | MonadVision Explorer | Monadscan Explorer |
+|---|---|---|---|
+| **IdentityRegistry** | `0xD62b32482874E447Beb60E6Df5A21E6ebaFf54ad` | [View on MonadVision](https://testnet.monadvision.com/address/0xD62b32482874E447Beb60E6Df5A21E6ebaFf54ad) | [View on Monadscan](https://testnet.monadscan.com/address/0xD62b32482874E447Beb60E6Df5A21E6ebaFf54ad) |
+| **ReputationRegistry** | `0x7b398a8F83133d5E28b4cce7c3131b4Ba8C486E0` | [View on MonadVision](https://testnet.monadvision.com/address/0x7b398a8F83133d5E28b4cce7c3131b4Ba8C486E0) | [View on Monadscan](https://testnet.monadscan.com/address/0x7b398a8F83133d5E28b4cce7c3131b4Ba8C486E0) |
+| **StakeManager** | `0xca1624702029E9B76c648f980a673F37758aa45a` | [View on MonadVision](https://testnet.monadvision.com/address/0xca1624702029E9B76c648f980a673F37758aa45a) | [View on Monadscan](https://testnet.monadscan.com/address/0xca1624702029E9B76c648f980a673F37758aa45a) |
+| **Testnet USDC** | `0x534b2f3A21130d7a60830c2Df862319e593943A3` | [View on MonadVision](https://testnet.monadvision.com/address/0x534b2f3A21130d7a60830c2Df862319e593943A3) | [View on Monadscan](https://testnet.monadscan.com/address/0x534b2f3A21130d7a60830c2Df862319e593943A3) |
+| **Deployer / Operator** | `0x39D17f02fA4A362902cA760aF830CEBA82bdC39B` | [View on MonadVision](https://testnet.monadvision.com/address/0x39D17f02fA4A362902cA760aF830CEBA82bdC39B) | [View on Monadscan](https://testnet.monadscan.com/address/0x39D17f02fA4A362902cA760aF830CEBA82bdC39B) |
+
+### 🤖 Live Registered Onchain Agents (ERC-8004)
+
+The three specialist agents were registered in `IdentityRegistry` during testnet deployment:
+
+| Agent ID | Name | Skill Identifier | Price per Call | Registered Owner |
+|---|---|---|---|---|
+| **#1** | **Smart Contract Auditor** | `contract-audit` | `$0.001 USDC` | [`0x39D17f02fA4A362902cA760aF830CEBA82bdC39B`](https://testnet.monadvision.com/address/0x39D17f02fA4A362902cA760aF830CEBA82bdC39B) |
+| **#2** | **Token Risk Scorer** | `token-risk-score` | `$0.001 USDC` | [`0x39D17f02fA4A362902cA760aF830CEBA82bdC39B`](https://testnet.monadvision.com/address/0x39D17f02fA4A362902cA760aF830CEBA82bdC39B) |
+| **#3** | **Gas Price & Timing Agent** | `gas-timing` | `$0.001 USDC` | [`0x39D17f02fA4A362902cA760aF830CEBA82bdC39B`](https://testnet.monadvision.com/address/0x39D17f02fA4A362902cA760aF830CEBA82bdC39B) |
+
 
 
 ---
