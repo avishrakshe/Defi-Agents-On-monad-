@@ -5,29 +5,72 @@
 [![ERC-8004](https://img.shields.io/badge/ERC--8004-Agent_Identity_Registry-0b0f19?style=for-the-badge&logoColor=white)](https://testnet.monadvision.com/address/0xD62b32482874E447Beb60E6Df5A21E6ebaFf54ad)
 [![Next.js 14](https://img.shields.io/badge/Next.js_14-App_Router-black?style=for-the-badge&logo=next.js)](https://nextjs.org)
 [![Vercel Deployment](https://img.shields.io/badge/Deployed_on-Vercel-black?style=for-the-badge&logo=vercel)](https://frontend-eight-peach-71.vercel.app)
+[![Instagram Reel](https://img.shields.io/badge/Demo_Reel-Instagram-E4405F?style=for-the-badge&logo=instagram&logoColor=white)](https://www.instagram.com/reel/DddzuxNMjkS/?utm_source=ig_web_copy_link&stkn=MzRlODBiNWFlZA==)
 [![Hardhat](https://img.shields.io/badge/Hardhat-Tested_%26_Deployed-yellow?style=for-the-badge&logo=solidity)](https://hardhat.org)
 
 An autonomous, decentralized DeFi Agent Marketplace built natively for **Monad Testnet (Chain ID 10143)**. Features an ERC-8004 Identity + Reputation + Stake registry, sub-cent x402 HTTP 402 pay-per-call testnet USDC micropayments, deterministic multi-agent orchestration (zero LLM in the critical execution path), an interactive developer academy with soulbound credentials, a full onchain transaction activity explorer, and a high-performance 3D spatial UI.
 
-- **Live Production App**: [https://frontend-eight-peach-71.vercel.app](https://frontend-eight-peach-71.vercel.app)
-- **GitHub Repository**: [https://github.com/avishrakshe/Defi-Agents-On-monad-.git](https://github.com/avishrakshe/Defi-Agents-On-monad-.git)
+- 🌐 **Live Production App**: [https://frontend-eight-peach-71.vercel.app](https://frontend-eight-peach-71.vercel.app)
+- 📱 **Social Media Demo / Reel**: [Watch on Instagram](https://www.instagram.com/reel/DddzuxNMjkS/?utm_source=ig_web_copy_link&stkn=MzRlODBiNWFlZA==)
+- 🐙 **GitHub Repository**: [https://github.com/avishrakshe/Defi-Agents-On-monad-.git](https://github.com/avishrakshe/Defi-Agents-On-monad-.git)
+
+> **"Monad's thesis is payments, tokenization, and agents at speed — this marketplace needs all three at once, and Monad is the only chain it could have been built on."**
+
+---
+
+## 💡 The Problem & The Solution
+
+### ❌ The Problem
+- **AI agents are economically isolated**: Until now, autonomous agents have had no native way to pay each other for specialized data or execution services.
+- **Legacy rails are built for humans**: Traditional payment models (accounts, credit cards, API keys, monthly subscriptions) are designed for humans, not machine-frequency, machine-speed transactions.
+- **No trust layer exists for agent commerce**: Agents have lacked a decentralized trust layer to verify counterparty identity, evaluate past delivery track records, or inspect staked collateral before initiating payments.
+- **LLM hallucinations in financial execution paths**: LLMs can hallucinate security ratings or financial verdicts — an unacceptable risk for high-stakes DeFi transactions.
+
+### ✅ The Solution
+A live DeFi agent marketplace running on Monad Testnet where agents discover, verify, pay, and rate each other — **all onchain, within a single request cycle**:
+- **Discovery + Trust**: Verifiable onchain identity, reputation calculated from real post-execution feedback, and staked collateral via **ERC-8004-style registries**.
+- **Per-Call Micropayments (x402 Protocol)**: HTTP 402-based pay-per-call testnet USDC settlement (`402 Payment Required → Sign EIP-712 / EIP-3009 → Retry → Deliver Resource`), executing inline at wire speed without slow asynchronous escrow steps.
+- **Deterministic, Real-World Answers**: Specialist agents (Contract Auditor, Token Risk Scorer, Gas-Timing Agent) pull live, verified telemetry directly from Monad RPC and onchain bytecode. Zero LLM API keys required for core execution.
+
+---
+
+## ⚡ Why Monad Specifically?
+
+| Advantage | Monad Specification | Impact on Machine-to-Machine Commerce |
+| :--- | :--- | :--- |
+| **Throughput** | **10,000 TPS Target** | Handles dense, high-frequency agent-to-agent transactions without network congestion. |
+| **Instant Finality** | **300ms Blocks / ~600ms Finality** | Settlement occurs fast enough for inline, synchronous agent use rather than deferred background batching. |
+| **Near-Zero Fees** | **Sub-cent Monad Gas** | Makes sub-cent ($0.001-level) micropayments economically viable. |
+| **Full EVM Compatibility** | **Standard EVM Bytecode** | Compatible with standard Solidity, Hardhat, viem, and ethers.js tooling with no custom VM friction. |
+| **Two-Token Value Model** | **MON (Gas) + USDC (Value)** | Unlocks real-world stable pricing powered by lightning-fast, predictable settlement. |
+
+---
+
+## 🎯 Why It Makes Sense
+
+- **Directly Matches Monad's Stated Thesis**: Monad’s foundational vision is payments, tokenization, and high-performance agent infrastructure at web scale. This marketplace sits at the exact intersection of all three.
+- **Ecosystem Trajectory & Precedent**: Real financial infrastructure is already thriving on Monad — for example, Anchored / Monday Trade launched tokenized Nasdaq stocks on Monad (April 2026) with real USDC settlement. This project extends that exact trajectory into autonomous agent-to-agent commerce.
+- **First Live Integration at Native Monad Speed**: We don't claim to have invented x402 or ERC-8004 (both are open, chain-agnostic standards) — the achievement is being the **first live, end-to-end integration of both, running at Monad's native speed and block cadence**.
 
 ---
 
 ## 📑 Table of Contents
 
-1. [System Architecture](#-system-architecture)
-2. [Monad Testnet Network Parameters](#-monad-testnet-network-parameters)
-3. [Verified Smart Contracts](#-verified-smart-contracts-on-monad-testnet)
-4. [Specialist Agents Suite](#-specialist-agents-suite)
-5. [Deterministic Orchestration & x402 Payments](#-deterministic-orchestration--x402-payments)
-6. [Monad Academy & Soulbound Credentials](#-monad-academy--soulbound-credentials)
-7. [Onchain Activity & Transaction Explorer](#-onchain-activity--transaction-explorer)
-8. [UI/UX & 3D Spatial Grid Background](#-uiux--3d-spatial-grid-background)
-9. [CLI Tools & Inspection Scripts](#-cli-tools--inspection-scripts)
-10. [Local Development & Quickstart](#-local-development--quickstart)
-11. [Environment Configuration](#-environment-configuration)
-12. [Legal & Ecosystem Disclaimer](#-legal--ecosystem-disclaimer)
+1. [The Problem & The Solution](#-the-problem--the-solution)
+2. [Why Monad Specifically?](#-why-monad-specifically)
+3. [Why It Makes Sense](#-why-it-makes-sense)
+4. [System Architecture](#-system-architecture)
+5. [Monad Testnet Network Parameters](#-monad-testnet-network-parameters)
+6. [Verified Smart Contracts](#-verified-smart-contracts-on-monad-testnet)
+7. [Specialist Agents Suite](#-specialist-agents-suite)
+8. [Deterministic Orchestration & x402 Payments](#-deterministic-orchestration--x402-payments)
+9. [Monad Academy & Soulbound Credentials](#-monad-academy--soulbound-credentials)
+10. [Onchain Activity & Transaction Explorer](#-onchain-activity--transaction-explorer)
+11. [UI/UX & 3D Spatial Grid Background](#-uiux--3d-spatial-grid-background)
+12. [CLI Tools & Inspection Scripts](#-cli-tools--inspection-scripts)
+13. [Local Development & Quickstart](#-local-development--quickstart)
+14. [Environment Configuration](#-environment-configuration)
+15. [Legal & Ecosystem Disclaimer](#-legal--ecosystem-disclaimer)
 
 ---
 
