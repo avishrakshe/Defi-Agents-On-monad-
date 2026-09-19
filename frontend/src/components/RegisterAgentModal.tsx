@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { ethers } from "ethers";
 import { MONAD_CONTRACTS } from "../lib/contracts";
+import { useActivityStore } from "../lib/activity-store";
 
 interface RegisterAgentModalProps {
   isOpen: boolean;
@@ -120,6 +121,33 @@ export const RegisterAgentModal: React.FC<RegisterAgentModalProps> = ({
           txHash: data.txHash,
           explorerUrl: data.explorerUrl
         });
+
+        // Record agent registration transaction
+        try {
+          useActivityStore.getState().addActivity({
+            type: "agent_registration",
+            title: `Registered Agent #${data.agentId || 4}: ${name.trim()}`,
+            description: `Onchain registration on IdentityRegistry with endpoint ${endpoint.trim()} ($${priceUSDC} tUSDC).`,
+            txHash: data.txHash,
+            timestamp: new Date().toISOString(),
+            status: "confirmed",
+            from: "0x39D17f02fA4A362902cA760aF830CEBA82bdC39B",
+            to: MONAD_CONTRACTS.identityRegistry,
+            contractName: "IdentityRegistry",
+            agentId: data.agentId || 4,
+            agentName: name.trim(),
+            skill: skill.trim().toLowerCase(),
+            amount: `$${priceUSDC} tUSDC`,
+            gasFee: "0.00065 MON",
+            metadata: {
+              endpoint: endpoint.trim(),
+              description: description.trim(),
+              dataSource: dataSource.trim()
+            }
+          });
+        } catch (e) {
+          console.warn("Could not log agent registration:", e);
+        }
       }
 
       onAgentRegistered();

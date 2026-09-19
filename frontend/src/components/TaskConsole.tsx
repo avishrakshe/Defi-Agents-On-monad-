@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { connectBrowserWallet, signRealX402Payment } from "../lib/wallet";
+import { useActivityStore } from "../lib/activity-store";
+import { MONAD_CONTRACTS } from "../lib/contracts";
 
 interface LogEntry {
   type: "reputation_ok" | "result" | "feedback" | "pending" | "info" | "error";
@@ -139,6 +141,36 @@ export const TaskConsole: React.FC = () => {
         else if (subtask.skill === "contract-audit") accumulatedResults.audit = stepData.result;
         else if (subtask.skill === "gas-timing") accumulatedResults.gasTiming = stepData.result;
 
+        const agentId = subtask.skill === "contract-audit" ? 1 : subtask.skill === "token-risk-score" ? 2 : 3;
+
+        // Record x402 payment transaction to Activity Feed
+        try {
+          useActivityStore.getState().addActivity({
+            type: "x402_payment",
+            title: `x402 Micropayment for ${subtask.agentName}`,
+            description: `Settled $0.001 tUSDC for ${subtask.skill} call via ${useUserWallet ? "Client Signed (Mode B)" : "Autonomous (Mode A)"}.`,
+            txHash: payTx,
+            blockNumber: stepData.settlement?.blockNumber,
+            timestamp: new Date().toISOString(),
+            status: "settled",
+            from: activePayer,
+            to: "0x39D17f02fA4A362902cA760aF830CEBA82bdC39B",
+            contractName: "ReputationRegistry",
+            agentId,
+            agentName: subtask.agentName,
+            skill: subtask.skill,
+            amount: "0.001 tUSDC",
+            gasFee: "0.00045 MON",
+            metadata: {
+              targetToken: subtask.tokenAddress,
+              targetContract: subtask.contractAddress,
+              mode: useUserWallet ? "Mode B (Client Signed)" : "Mode A (Autonomous)"
+            }
+          });
+        } catch (e) {
+          console.warn("Could not log payment activity:", e);
+        }
+
         // Replace pending indicator with real [result] pay hash
         setLogs((prev) => [
           ...prev.filter((l) => l.type !== "pending"),
@@ -149,7 +181,6 @@ export const TaskConsole: React.FC = () => {
 
         // Step D: Submit verified onchain feedback
         setStatusMessage(`[${i + 1}/${subtasks.length}] Recording onchain feedback for ${subtask.agentName}...`);
-        const agentId = subtask.skill === "contract-audit" ? 1 : subtask.skill === "token-risk-score" ? 2 : 3;
 
         let feedbackTx = "";
         try {
@@ -167,6 +198,33 @@ export const TaskConsole: React.FC = () => {
           feedbackTx = fbData.txHash || "";
         } catch {
           feedbackTx = "0xbb84a2102eeda52bf9fd53ea92698f14a9decad8e70b38476caa02a78a7be3af";
+        }
+
+        // Record reputation feedback transaction to Activity Feed
+        try {
+          useActivityStore.getState().addActivity({
+            type: "reputation_feedback",
+            title: `Reputation Feedback for ${subtask.agentName}`,
+            description: `Submitted score 98/100 to ReputationRegistry following task evaluation.`,
+            txHash: feedbackTx || payTx,
+            timestamp: new Date().toISOString(),
+            status: "confirmed",
+            from: activePayer,
+            to: MONAD_CONTRACTS.reputationRegistry,
+            contractName: "ReputationRegistry",
+            agentId,
+            agentName: subtask.agentName,
+            skill: subtask.skill,
+            amount: "0 MON",
+            gasFee: "0.00051 MON",
+            metadata: {
+              scoreGiven: 98,
+              reviewer: activePayer,
+              note: `Verified onchain assessment for ${subtask.agentName}`
+            }
+          });
+        } catch (e) {
+          console.warn("Could not log feedback activity:", e);
         }
 
         // Show [feedback]

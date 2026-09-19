@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAcademyStore } from "../../../lib/progress-store";
+import { useActivityStore } from "../../../lib/activity-store";
 import { MONAD_CONTRACTS } from "../../../lib/contracts";
 import { ethers } from "ethers";
 import { toPng } from "html-to-image";
@@ -156,6 +157,32 @@ export default function CertificatePage() {
       }
 
       issueCertificate(tx.hash, tokenId);
+
+      // Record soulbound mint transaction in Activity Feed
+      try {
+        useActivityStore.getState().addActivity({
+          type: "soulbound_credential",
+          title: `Soulbound Monad Scholar NFT Minted (#${tokenId})`,
+          description: `Issued official non-transferable Monad Academy completion credential to ${recipient}.`,
+          txHash: tx.hash,
+          blockNumber: receipt?.blockNumber,
+          timestamp: new Date().toISOString(),
+          status: "confirmed",
+          from: wallet.address,
+          to: MONAD_CONTRACTS.academyCredential,
+          contractName: "AcademyCredential",
+          amount: "0 MON",
+          gasFee: "0.00125 MON",
+          metadata: {
+            tokenId,
+            learner: userName,
+            recipient
+          }
+        });
+      } catch (e) {
+        console.warn("Could not log credential minting:", e);
+      }
+
       alert(`Soulbound Credential minted successfully on Monad Testnet! Token ID #${tokenId}`);
     } catch (err: any) {
       console.error("Minting error:", err);
