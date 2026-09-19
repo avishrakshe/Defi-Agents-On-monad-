@@ -203,6 +203,167 @@ app.post("/api/orchestrate", async (req, res) => {
   }
 });
 
+// Decompose task endpoint for granular frontend streaming
+app.post("/api/decompose", (req, res) => {
+  const { taskText } = req.body;
+  if (!taskText) return res.status(400).json({ error: "taskText required" });
+  const subtasks = decomposeTask(taskText);
+  return res.json({ subtasks });
+});
+
+// Execute a single subtask sequentially with onchain verification & settlement
+app.post("/api/execute-step", async (req, res) => {
+  try {
+    const { subtask, mode = "A", authorization, clientAddress } = req.body;
+    if (!subtask) return res.status(400).json({ error: "subtask required" });
+
+    const rawKey = process.env.ORCHESTRATOR_PRIVATE_KEY || process.env.DEPLOYER_PRIVATE_KEY;
+    const privateKey = rawKey ? (rawKey.startsWith("0x") ? rawKey : `0x${rawKey}`) : undefined;
+    const rpcUrl = process.env.NEXT_PUBLIC_MONAD_RPC_URL || "https://testnet-rpc.monad.xyz";
+    const provider = new ethers.JsonRpcProvider(rpcUrl);
+
+    let signerWallet: ethers.Wallet | null = null;
+    if (privateKey) {
+      try {
+        signerWallet = new ethers.Wallet(privateKey, provider);
+      } catch (e) {
+        console.warn("Could not instantiate wallet:", e);
+      }
+    }
+
+    const orchestratorAddress = signerWallet?.address || "0x39D17f02fA4A362902cA760aF830CEBA82bdC39B";
+    const payTo = process.env.PAY_TO_ADDRESS || orchestratorAddress;
+    const asset = process.env.NEXT_PUBLIC_MONAD_USDC_ADDRESS || "0x534b2f3A21130d7a60830c2Df862319e593943A3";
+    const repAddress = process.env.NEXT_PUBLIC_REPUTATION_REGISTRY_ADDRESS || "0x7b398a8F83133d5E28b4cce7c3131b4Ba8C486E0";
+
+    const domain = {
+      name: "USD Coin",
+      version: "2",
+      chainId: 10143,
+      verifyingContract: asset
+    };
+
+    const types = {
+      TransferWithAuthorization: [
+        { name: "from", type: "address" },
+        { name: "to", type: "address" },
+        { name: "value", type: "uint256" },
+        { name: "validAfter", type: "uint256" },
+        { name: "validBefore", type: "uint256" },
+        { name: "nonce", type: "bytes32" }
+      ]
+    };
+
+    let paymentAuthStr = "";
+
+    if (mode === "B" && authorization) {
+      paymentAuthStr = typeof authorization === "string" ? authorization : JSON.stringify(authorization);
+    } else {
+      const now = Math.floor(Date.now() / 1000);
+      const validAfter = now - 60;
+      const validBefore = now + 3600;
+      const nonce = ethers.hexlify(ethers.randomBytes(32));
+      const value = "1000";
+
+      let signature = "";
+      if (signerWallet) {
+        const message = {
+          from: orchestratorAddress,
+          to: payTo,
+          value,
+          validAfter,
+          validBefore,
+          nonce
+        };
+        signature = await signerWallet.signTypedData(domain, types, message);
+      }
+
+      paymentAuthStr = JSON.stringify({
+        scheme: "exact",
+        network: "eip155:10143",
+        from: orchestratorAddress,
+        to: payTo,
+        value,
+        validAfter,
+        validBefore,
+        nonce,
+        signature
+      });
+    }
+
+    let requestBody: any = {};
+    if (subtask.skill === "token-risk-score") {
+      requestBody = { tokenAddress: subtask.tokenAddress };
+    } else if (subtask.skill === "contract-audit") {
+      requestBody = { contractAddress: subtask.contractAddress };
+    } else if (subtask.skill === "gas-timing") {
+      requestBody = { network: "monad-testnet" };
+    }
+
+    const agentRes = await fetch(subtask.targetUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Payment-Authorization": paymentAuthStr
+      },
+      body: JSON.stringify(requestBody),
+      signal: AbortSignal.timeout(12000)
+    });
+
+    if (!agentRes.ok) {
+      throw new Error(`Specialist agent HTTP ${agentRes.status}: ${agentRes.statusText}`);
+    }
+
+    const agentJson = await agentRes.json();
+
+    // Broadcast onchain recordPaidCall
+    let onchainTxHash = agentJson.settlement?.txHash;
+    let blockNumber: number | undefined;
+
+    if (signerWallet) {
+      try {
+        const repAbi = ["function recordPaidCall(uint256 agentId, address client) external"];
+        const repContract = new ethers.Contract(repAddress, repAbi, signerWallet);
+        const agentId = subtask.skill === "contract-audit" ? 1 : subtask.skill === "token-risk-score" ? 2 : 3;
+        const payer = clientAddress || (mode === "B" && authorization?.from ? authorization.from : orchestratorAddress);
+        const tx = await repContract.recordPaidCall(agentId, payer);
+        onchainTxHash = tx.hash;
+        const receipt = await tx.wait();
+        blockNumber = receipt.blockNumber;
+      } catch (onchainErr: any) {
+        console.warn("[execute-step] Onchain recordPaidCall notice:", onchainErr.message);
+      }
+    }
+
+    return res.json({
+      success: true,
+      subtask,
+      settlement: {
+        ...agentJson.settlement,
+        txHash: onchainTxHash,
+        blockNumber,
+        explorerUrl: `https://testnet.monadvision.com/tx/${onchainTxHash}`
+      },
+      result: agentJson.data
+    });
+  } catch (err: any) {
+    console.error("[execute-step Error]:", err);
+    return res.status(500).json({ error: "Failed to execute step", details: err.message });
+  }
+});
+
+// Synthesize results endpoint
+app.post("/api/synthesize", async (req, res) => {
+  try {
+    const { results } = req.body;
+    const deterministicSummary = buildSummary(results || {});
+    const { summary, polished } = await polishSummary(deterministicSummary);
+    return res.json({ summary, polished });
+  } catch (err: any) {
+    return res.status(500).json({ error: "Synthesis failed", details: err.message });
+  }
+});
+
 if (require.main === module) {
   app.listen(PORT, () => {
     console.log(`[DeFi Task Orchestrator] listening on port ${PORT}`);

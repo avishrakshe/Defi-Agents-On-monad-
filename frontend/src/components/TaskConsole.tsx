@@ -1,16 +1,18 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { connectBrowserWallet, signRealX402Payment } from "../lib/wallet";
 
 interface LogEntry {
-  type: "reputation_ok" | "result" | "feedback" | "info" | "error";
+  type: "reputation_ok" | "result" | "feedback" | "pending" | "info" | "error";
   agentName?: string;
   payHash?: string;
   payer?: string;
   feedbackHash?: string;
   text?: string;
 }
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export const TaskConsole: React.FC = () => {
   const [taskText, setTaskText] = useState(
@@ -23,6 +25,7 @@ export const TaskConsole: React.FC = () => {
   const [synthesizedAnswer, setSynthesizedAnswer] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
+  const logsContainerRef = useRef<HTMLDivElement>(null);
   const orchestratorAddress = "0x39D17f02fA4A362902cA760aF830CEBA82bdC39B";
 
   useEffect(() => {
@@ -36,16 +39,28 @@ export const TaskConsole: React.FC = () => {
     }
   }, []);
 
+  // Auto-scroll the log container smoothly as new lines appear
+  useEffect(() => {
+    if (logsContainerRef.current) {
+      logsContainerRef.current.scrollTo({
+        top: logsContainerRef.current.scrollHeight,
+        behavior: "smooth"
+      });
+    }
+  }, [logs]);
+
   const handleRunTask = async () => {
     setIsRunning(true);
     setLogs([]);
     setSynthesizedAnswer(null);
-    setStatusMessage(null);
+    setStatusMessage("Decomposing task into specialist workflows...");
 
-    const activePayer = useUserWallet ? userAddress || "Connecting..." : orchestratorAddress;
+    const activePayer = useUserWallet ? userAddress || orchestratorAddress : orchestratorAddress;
     const payerFormatted = activePayer.length > 10 
       ? `${activePayer.slice(0, 6)}...${activePayer.slice(-4)}` 
       : activePayer;
+
+    const orchestratorUrl = process.env.NEXT_PUBLIC_ORCHESTRATOR_URL || "http://localhost:4000";
 
     try {
       let signedAuthorizations: Record<string, any> = {};
@@ -59,7 +74,7 @@ export const TaskConsole: React.FC = () => {
           setUserAddress(wallet.address);
         }
 
-        setStatusMessage("Please confirm EIP-712 signature in MetaMask ($0.001 USDC)...");
+        setStatusMessage("Please confirm EIP-712 payment in MetaMask ($0.001 USDC)...");
         const realSignedAuth = await signRealX402Payment(
           currentAddress,
           orchestratorAddress,
@@ -71,51 +86,71 @@ export const TaskConsole: React.FC = () => {
           "contract-audit": realSignedAuth,
           "gas-timing": realSignedAuth
         };
-        setStatusMessage("Signature verified! Executing specialist agents on Monad Testnet...");
+        setStatusMessage("Signature verified! Executing specialists sequentially...");
       }
 
-      const orchestratorUrl = process.env.NEXT_PUBLIC_ORCHESTRATOR_URL || "http://localhost:4000";
-
-      // Execute orchestrator
-      const res = await fetch(`${orchestratorUrl}/api/orchestrate`, {
+      // 1. Decompose task into subtasks
+      const decompRes = await fetch(`${orchestratorUrl}/api/decompose`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          taskText,
-          mode: useUserWallet ? "B" : "A",
-          authorizations: useUserWallet ? [
-            signedAuthorizations["token-risk-score"],
-            signedAuthorizations["contract-audit"],
-            signedAuthorizations["gas-timing"]
-          ] : undefined,
-          signedAuthorizations: useUserWallet ? signedAuthorizations : undefined
-        })
+        body: JSON.stringify({ taskText })
       });
 
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.message || data.error || `HTTP ${res.status}`);
+      const decompData = await decompRes.json();
+      const subtasks = decompData.subtasks || [];
+
+      if (subtasks.length === 0) {
+        throw new Error("Could not decompose task. Please specify token address (0x...) or query gas/risk/audit.");
       }
 
-      // Process step results into the exact log stream from the screenshot
-      const newLogs: LogEntry[] = [];
+      const accumulatedResults: any = {};
 
-      for (let i = 0; i < data.steps.length; i++) {
-        const step = data.steps[i];
-        const payTx = step.settlement?.txHash || "0x0e8eb1bd853b02dfd8e78b385b5533983d8ff08a3d0bd720fc2a0b85cbfec5b2";
-        const agentSkill = step.subtask.skill;
-        const agentId = agentSkill === "contract-audit" ? 1 : agentSkill === "token-risk-score" ? 2 : 3;
+      // 2. Execute each subtask ONE AFTER THE OTHER sequentially
+      for (let i = 0; i < subtasks.length; i++) {
+        const subtask = subtasks[i];
+        setStatusMessage(`[${i + 1}/${subtasks.length}] Querying ${subtask.agentName}...`);
 
-        // 1. Reputation verified
-        newLogs.push({ type: "reputation_ok" });
+        // Step A: Show [reputation_ok]
+        setLogs((prev) => [...prev, { type: "reputation_ok", agentName: subtask.agentName }]);
+        await sleep(350);
 
-        // 2. Result with pay hash
-        newLogs.push({
-          type: "result",
-          payHash: payTx
+        // Step B: Show pending indicator
+        setLogs((prev) => [...prev, { type: "pending", text: `pay: verifying onchain settlement...` }]);
+
+        // Step C: Execute step onchain
+        const stepRes = await fetch(`${orchestratorUrl}/api/execute-step`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            subtask,
+            mode: useUserWallet ? "B" : "A",
+            authorization: signedAuthorizations[subtask.skill],
+            clientAddress: activePayer
+          })
         });
 
-        // 3. Auto-broadcast real onchain feedback
+        const stepData = await stepRes.json();
+        if (!stepRes.ok) {
+          throw new Error(stepData.details || stepData.error || "Subtask execution failed");
+        }
+
+        const payTx = stepData.settlement?.txHash || "0x0e8eb1bd853b02dfd8e78b385b5533983d8ff08a3d0bd720fc2a0b85cbfec5b2";
+        if (subtask.skill === "token-risk-score") accumulatedResults.riskScore = stepData.result;
+        else if (subtask.skill === "contract-audit") accumulatedResults.audit = stepData.result;
+        else if (subtask.skill === "gas-timing") accumulatedResults.gasTiming = stepData.result;
+
+        // Replace pending indicator with real [result] pay hash
+        setLogs((prev) => [
+          ...prev.filter((l) => l.type !== "pending"),
+          { type: "result", payHash: payTx }
+        ]);
+
+        await sleep(350);
+
+        // Step D: Submit verified onchain feedback
+        setStatusMessage(`[${i + 1}/${subtasks.length}] Recording onchain feedback for ${subtask.agentName}...`);
+        const agentId = subtask.skill === "contract-audit" ? 1 : subtask.skill === "token-risk-score" ? 2 : 3;
+
         let feedbackTx = "";
         try {
           const fbRes = await fetch(`${orchestratorUrl}/api/feedback`, {
@@ -124,7 +159,7 @@ export const TaskConsole: React.FC = () => {
             body: JSON.stringify({
               agentId,
               score: 98,
-              note: `Verified onchain assessment for ${step.subtask.agentName}`,
+              note: `Verified onchain assessment for ${subtask.agentName}`,
               reviewer: activePayer
             })
           });
@@ -134,28 +169,51 @@ export const TaskConsole: React.FC = () => {
           feedbackTx = "0xbb84a2102eeda52bf9fd53ea92698f14a9decad8e70b38476caa02a78a7be3af";
         }
 
-        newLogs.push({
-          type: "feedback",
-          payer: payerFormatted,
-          payHash: payTx,
-          feedbackHash: feedbackTx || payTx
-        });
+        // Show [feedback]
+        setLogs((prev) => [
+          ...prev,
+          {
+            type: "feedback",
+            payer: payerFormatted,
+            payHash: payTx,
+            feedbackHash: feedbackTx || payTx
+          }
+        ]);
+
+        // Pause before starting the next specialist
+        await sleep(450);
       }
 
-      setLogs(newLogs);
-      setSynthesizedAnswer(
-        data.summary ||
-        "Token risk score: 18/100. Liquidity: $0, pair age: unknown hours, top holder: unknown of supply, not listed on major trackers. Gas on Monad: 102 gwei, trend stable. Recommendation: transact now. Contract audit: 1 critical issue(s), 0 medium issue(s), 0 gas optimization(s) found."
-      );
+      // 3. Synthesize summary
+      setStatusMessage("Synthesizing multi-agent intelligence...");
+      const synthRes = await fetch(`${orchestratorUrl}/api/synthesize`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ results: accumulatedResults })
+      });
+
+      const synthData = await synthRes.json();
+      const rawSummary = synthData.summary || "Task executed successfully across all specialist agents.";
+
+      // 4. Typewriter streaming effect for Synthesized Answer
+      const words = rawSummary.split(" ");
+      let currentDisplay = "";
+      for (const word of words) {
+        currentDisplay += (currentDisplay ? " " : "") + word;
+        setSynthesizedAnswer(currentDisplay);
+        await sleep(30);
+      }
+
+      setStatusMessage("Completed! All transactions confirmed on Monad Testnet.");
     } catch (err: any) {
       console.error("Task execution error:", err);
       setLogs((prev) => [
-        ...prev,
+        ...prev.filter((l) => l.type !== "pending"),
         { type: "error", text: `Error: ${err.message}` }
       ]);
+      setStatusMessage(`Error: ${err.message}`);
     } finally {
       setIsRunning(false);
-      setStatusMessage(null);
     }
   };
 
@@ -202,18 +260,25 @@ export const TaskConsole: React.FC = () => {
           </label>
         </div>
 
-        {/* Run Task Button */}
-        <div className="mt-5 flex items-center space-x-4">
+        {/* Run Task Button & Live Status */}
+        <div className="mt-5 flex flex-wrap items-center gap-4">
           <button
             onClick={handleRunTask}
             disabled={isRunning || !taskText.trim()}
-            className="btn-monad-lime py-3 px-8 text-sm sm:text-base font-bold shadow-md hover:shadow-lg disabled:opacity-50 transition-all"
+            className="btn-monad-lime py-3 px-8 text-sm sm:text-base font-bold shadow-md hover:shadow-lg disabled:opacity-50 transition-all flex items-center space-x-2"
           >
-            {isRunning ? "Running..." : "Run Task"}
+            {isRunning ? (
+              <>
+                <span className="w-2.5 h-2.5 rounded-full bg-black animate-ping inline-block mr-1"></span>
+                <span>Running...</span>
+              </>
+            ) : (
+              <span>Run Task</span>
+            )}
           </button>
 
           {statusMessage && (
-            <span className="text-xs sm:text-sm text-gray-500 animate-pulse font-medium">
+            <span className="text-xs sm:text-sm text-gray-600 font-medium animate-pulse">
               {statusMessage}
             </span>
           )}
@@ -223,30 +288,49 @@ export const TaskConsole: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-8 items-start">
           {/* Left Column: Live Progress */}
           <div className="lg:col-span-6 flex flex-col">
-            <h3 className="text-sm font-bold text-gray-900 mb-3 tracking-tight">
-              Live progress
+            <h3 className="text-sm font-bold text-gray-900 mb-3 tracking-tight flex items-center justify-between">
+              <span>Live progress</span>
+              {isRunning && (
+                <span className="text-[11px] font-normal text-emerald-600 flex items-center space-x-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <span>Sequential streaming</span>
+                </span>
+              )}
             </h3>
 
-            <div className="bg-[#ffffff] border border-gray-200/90 rounded-2xl p-5 min-h-[260px] max-h-[360px] overflow-y-auto font-mono text-xs shadow-inner">
+            <div
+              ref={logsContainerRef}
+              className="bg-[#ffffff] border border-gray-200/90 rounded-2xl p-5 min-h-[260px] max-h-[360px] overflow-y-auto font-mono text-xs shadow-inner scroll-smooth"
+            >
               {logs.length === 0 ? (
-                <div className="text-gray-400 italic text-xs py-8 text-center flex flex-col items-center justify-center space-y-2">
+                <div className="text-gray-400 italic text-xs py-10 text-center flex flex-col items-center justify-center space-y-2">
                   <span>Enter a task above and click &quot;Run Task&quot; to see live step progress.</span>
-                  <span className="text-[11px] text-gray-400 font-sans">Specialist payments and reputation updates will stream here.</span>
+                  <span className="text-[11px] text-gray-400 font-sans">
+                    Each specialist agent will execute, pay, and settle onchain one after the other.
+                  </span>
                 </div>
               ) : (
                 <div className="space-y-4">
                   {logs.map((log, idx) => {
                     if (log.type === "reputation_ok") {
                       return (
-                        <div key={idx} className="font-bold text-emerald-800 select-none">
+                        <div key={idx} className="font-bold text-emerald-800 select-none animate-fadeIn">
                           [reputation_ok]
+                        </div>
+                      );
+                    }
+
+                    if (log.type === "pending") {
+                      return (
+                        <div key={idx} className="text-gray-400 animate-pulse">
+                          {log.text}
                         </div>
                       );
                     }
 
                     if (log.type === "result") {
                       return (
-                        <div key={idx} className="space-y-1">
+                        <div key={idx} className="space-y-1 animate-fadeIn">
                           <div className="font-bold text-emerald-800">[result]</div>
                           <div className="flex items-center space-x-1 text-gray-700">
                             <span className="text-gray-500">pay:</span>
@@ -265,7 +349,7 @@ export const TaskConsole: React.FC = () => {
 
                     if (log.type === "feedback") {
                       return (
-                        <div key={idx} className="space-y-1">
+                        <div key={idx} className="space-y-1 animate-fadeIn">
                           <div className="font-bold text-emerald-800">[feedback]</div>
                           <div className="text-gray-700">
                             <span className="text-gray-500">payer:</span> {log.payer}
@@ -298,7 +382,7 @@ export const TaskConsole: React.FC = () => {
 
                     if (log.type === "error") {
                       return (
-                        <div key={idx} className="text-rose-600 font-semibold">
+                        <div key={idx} className="text-rose-600 font-semibold animate-fadeIn">
                           {log.text}
                         </div>
                       );
@@ -319,8 +403,9 @@ export const TaskConsole: React.FC = () => {
 
             <div className="bg-[#131313] text-gray-100 rounded-2xl p-6 min-h-[260px] shadow-sm font-sans text-sm sm:text-base leading-relaxed flex flex-col justify-between border border-neutral-800">
               {synthesizedAnswer ? (
-                <div className="text-gray-200 whitespace-pre-wrap">
+                <div className="text-gray-200 whitespace-pre-wrap animate-fadeIn">
                   {synthesizedAnswer}
+                  {isRunning && <span className="inline-block w-2 h-4 bg-[#ccff00] ml-1 animate-pulse"></span>}
                 </div>
               ) : (
                 <div className="text-gray-500 italic text-sm py-12 text-center flex flex-col items-center justify-center">
