@@ -227,6 +227,18 @@ Monad Academy is an interactive developer education suite and certification port
    - **Export Options**: Download as high-resolution PNG (`html-to-image`), download as formal PDF (`jspdf`), copy share link.
    - **Onchain Minting**: Directly mints a non-transferable Soulbound NFT credential via the `AcademyCredential.sol` smart contract on Monad Testnet.
 
+### 📜 Proof of Work: Certified Monad Scholar
+Upon mastering the complete Monad Academy curriculum and testing onchain primitives, learners earn and mint the verified **Monad Scholar Certificate**:
+
+<p align="center">
+  <img src="docs/monad-scholar-certificate.png" alt="Monad Scholar Certificate - Proof of Work" width="750" style="border-radius: 12px; box-shadow: 0 8px 32px rgba(131, 110, 249, 0.15);" />
+</p>
+
+- **Certification**: Certificate of Monad Scholar
+- **Issued By**: Monad
+- **Credential Type**: Onchain Soulbound ERC-721 NFT (`AcademyCredential.sol` deployed at [`0xAbAFE53736e087877561cd0E48C283D6e7e59Ce6`](https://testnet.monadvision.com/address/0xAbAFE53736e087877561cd0E48C283D6e7e59Ce6))
+- **Verification Hash**: Cryptographically verified onchain on Monad Testnet (Chain ID `10143`).
+
 ---
 
 ## 🔍 Onchain Activity & Transaction Explorer
