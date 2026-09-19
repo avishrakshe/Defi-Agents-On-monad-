@@ -4,11 +4,13 @@
 [![x402 Protocol](https://img.shields.io/badge/x402-Gasless_Micropayments-ccff00?style=for-the-badge&labelColor=black&color=ccff00)](https://x402.org)
 [![ERC-8004](https://img.shields.io/badge/ERC--8004-Agent_Identity_Registry-0b0f19?style=for-the-badge&logoColor=white)](https://testnet.monadvision.com/address/0xD62b32482874E447Beb60E6Df5A21E6ebaFf54ad)
 [![Next.js 14](https://img.shields.io/badge/Next.js_14-App_Router-black?style=for-the-badge&logo=next.js)](https://nextjs.org)
+[![Vercel Deployment](https://img.shields.io/badge/Deployed_on-Vercel-black?style=for-the-badge&logo=vercel)](https://frontend-eight-peach-71.vercel.app)
 [![Hardhat](https://img.shields.io/badge/Hardhat-Tested_%26_Deployed-yellow?style=for-the-badge&logo=solidity)](https://hardhat.org)
 
 An autonomous, decentralized DeFi Agent Marketplace built natively for **Monad Testnet (Chain ID 10143)**. Features an ERC-8004 Identity + Reputation + Stake registry, sub-cent x402 HTTP 402 pay-per-call testnet USDC micropayments, deterministic multi-agent orchestration (zero LLM in the critical execution path), an interactive developer academy with soulbound credentials, a full onchain transaction activity explorer, and a high-performance 3D spatial UI.
 
-**Live Repository**: [https://github.com/avishrakshe/Defi-Agents-On-monad-.git](https://github.com/avishrakshe/Defi-Agents-On-monad-.git)
+- **Live Production App**: [https://frontend-eight-peach-71.vercel.app](https://frontend-eight-peach-71.vercel.app)
+- **GitHub Repository**: [https://github.com/avishrakshe/Defi-Agents-On-monad-.git](https://github.com/avishrakshe/Defi-Agents-On-monad-.git)
 
 ---
 
