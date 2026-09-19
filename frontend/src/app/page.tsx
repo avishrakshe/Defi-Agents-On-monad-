@@ -7,6 +7,8 @@ import { AgentRegistry } from "../components/AgentRegistry";
 import { TaskModal } from "../components/TaskModal";
 import { AgentData, fetchLiveAgents } from "../lib/contracts";
 
+import { TaskConsole } from "../components/TaskConsole";
+
 export default function Home() {
   const [agents, setAgents] = useState<AgentData[]>([]);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
@@ -22,17 +24,24 @@ export default function Home() {
 
   const handleOpenTask = (prompt?: string) => {
     if (prompt) setInitialTaskPrompt(prompt);
-    setIsTaskModalOpen(true);
+    const el = document.getElementById("task-console");
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth" });
+    } else {
+      setIsTaskModalOpen(true);
+    }
   };
 
   const handleSelectAgent = (agent: AgentData) => {
+    let p = "";
     if (agent.skill === "contract-audit") {
-      setInitialTaskPrompt("Audit contract 0x534b2f3A21130d7a60830c2Df862319e593943A3 for vulnerabilities");
+      p = "Audit contract 0x534b2f3A21130d7a60830c2Df862319e593943A3 for vulnerabilities";
     } else if (agent.skill === "token-risk-score") {
-      setInitialTaskPrompt("Evaluate token risk for 0x534b2f3A21130d7a60830c2Df862319e593943A3");
+      p = "Evaluate token risk for 0x534b2f3A21130d7a60830c2Df862319e593943A3";
     } else if (agent.skill === "gas-timing") {
-      setInitialTaskPrompt("What is the current gas timing and congestion recommendation on Monad Testnet?");
+      p = "What is the current gas timing and congestion recommendation on Monad Testnet?";
     }
+    setInitialTaskPrompt(p);
     setIsTaskModalOpen(true);
   };
 
@@ -47,10 +56,16 @@ export default function Home() {
             onRunClick={() => handleOpenTask("Is token 0x534b2f3A21130d7a60830c2Df862319e593943A3 safe, and is gas good on Monad right now?")}
           />
 
-          <AgentRegistry
-            agents={agents}
-            onSelectAgent={handleSelectAgent}
-          />
+          <section id="task-console">
+            <TaskConsole />
+          </section>
+
+          <div id="registry">
+            <AgentRegistry
+              agents={agents}
+              onSelectAgent={handleSelectAgent}
+            />
+          </div>
         </main>
       </div>
 
