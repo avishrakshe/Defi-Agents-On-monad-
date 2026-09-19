@@ -248,10 +248,10 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenTaskModal, onOpenRegisterM
       <div
         onMouseLeave={handleMouseLeaveNav}
         style={{ backgroundColor: "#ffffff" }}
-        className="relative bg-white border border-gray-200/90 rounded-full shadow-[0_4px_24px_rgba(0,0,0,0.06)] px-5 py-3 flex items-center justify-between transition-all"
+        className="relative bg-white border border-gray-200/90 rounded-full shadow-[0_4px_24px_rgba(0,0,0,0.06)] px-4 sm:px-6 py-2.5 flex items-center justify-between gap-4 transition-all"
       >
         {/* Left: Brand & Nav Links */}
-        <div className="flex items-center space-x-6 lg:space-x-8">
+        <div className="flex items-center space-x-4 xl:space-x-7 shrink-0 min-w-0">
           <Link href="/" className="flex items-center space-x-2.5 group shrink-0">
             <div className="w-8 h-8 rounded-full bg-[#ccff00] flex items-center justify-center font-black text-black text-base shadow-sm group-hover:scale-105 transition-transform">
               D
@@ -260,7 +260,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenTaskModal, onOpenRegisterM
           </Link>
 
           {/* Center: Framer Pill Dropdown Track (Light Theme Matching Marketplace) */}
-          <nav className="hidden lg:flex items-center relative py-1 px-1.5 bg-[#f1f3f5] border border-gray-200/80 rounded-full">
+          <nav className="hidden lg:flex items-center relative py-1 px-1 bg-[#f1f3f5] border border-gray-200/80 rounded-full shrink-0">
             {NAV_TABS.map((tab) => {
               const isTabHovered = hoveredPill === tab.id;
               const isTabOpen = activeTab === tab.id;
@@ -286,7 +286,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenTaskModal, onOpenRegisterM
                 >
                   <Link
                     href={tab.href}
-                    className={`relative z-10 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors duration-150 flex items-center space-x-1 ${
+                    className={`relative z-10 px-2.5 xl:px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors duration-150 flex items-center space-x-1 ${
                       isTabOpen || isRouteActive
                         ? "text-gray-950 font-bold"
                         : "text-gray-600 hover:text-gray-950"
@@ -374,26 +374,26 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenTaskModal, onOpenRegisterM
           </nav>
         </div>
 
-        {/* Right: Network Status, Orchestrator Info, Connect Button (Previous Style) */}
-        <div className="flex items-center space-x-4">
+        {/* Right: Network Status, Orchestrator Info, Connect Button */}
+        <div className="flex items-center space-x-2.5 xl:space-x-4 shrink-0">
           {/* Network Pill */}
           {isWrongNetwork ? (
             <button
               onClick={handleSwitchNetwork}
-              className="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-300 text-amber-800 text-xs font-medium hover:bg-amber-100 transition-all"
+              className="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-300 text-amber-800 text-xs font-medium hover:bg-amber-100 transition-all shrink-0 whitespace-nowrap"
             >
               <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
               <span>Switch to Monad</span>
             </button>
           ) : (
-            <div className="hidden lg:flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200/60 text-emerald-700 text-xs font-medium">
+            <div className="hidden xl:flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200/60 text-emerald-700 text-xs font-medium shrink-0 whitespace-nowrap">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span>Monad Testnet 10143</span>
+              <span>Monad 10143</span>
             </div>
           )}
 
-          {/* Orchestrator Wallet Status */}
-          <div className="hidden xl:flex flex-col text-right border-l border-gray-200 pl-4 text-xs">
+          {/* Orchestrator Wallet Status (Spacious Screens) */}
+          <div className="hidden 2xl:flex flex-col text-right border-l border-gray-200 pl-3 text-xs shrink-0">
             <div className="text-gray-400 flex items-center justify-end space-x-1">
               <span>Orchestrator</span>
               <span className="font-mono text-gray-600 font-semibold">{orchestratorAddress}</span>
@@ -411,8 +411,8 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenTaskModal, onOpenRegisterM
             </div>
           </div>
 
-          {/* Connection Status Indicator */}
-          <div className="hidden sm:flex flex-col text-right text-xs">
+          {/* Connection Status Indicator (Spacious Screens) */}
+          <div className="hidden 2xl:flex flex-col text-right text-xs shrink-0">
             {address ? (
               <>
                 <span className="text-emerald-600 font-medium flex items-center justify-end space-x-1">
@@ -433,7 +433,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenTaskModal, onOpenRegisterM
           <button
             onClick={handleConnect}
             disabled={connecting}
-            className="btn-monad-lime text-xs sm:text-sm font-bold shadow-sm disabled:opacity-50"
+            className="btn-monad-lime text-xs sm:text-sm font-bold shadow-sm disabled:opacity-50 shrink-0 whitespace-nowrap py-2 px-3.5 sm:px-5"
           >
             {connecting
               ? "Connecting..."
