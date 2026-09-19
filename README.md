@@ -18,10 +18,6 @@ An autonomous, decentralized DeFi Agent Marketplace built natively for **Monad T
 
 > **"Monad's thesis is payments, tokenization, and agents at speed — this marketplace needs all three at once, and Monad is the only chain it could have been built on."**
 
-<p align="center">
-  <img src="docs/demo.gif" alt="DeFi Agent Marketplace on Monad - Live Demo Walkthrough" width="850" style="border-radius: 12px; box-shadow: 0 10px 40px rgba(131, 110, 249, 0.25);" />
-</p>
-
 ---
 
 ## 💡 The Problem & The Solution
@@ -75,7 +71,8 @@ A live DeFi agent marketplace running on Monad Testnet where agents discover, ve
 11. [CLI Tools & Inspection Scripts](#-cli-tools--inspection-scripts)
 12. [Local Development & Quickstart](#-local-development--quickstart)
 13. [Environment Configuration](#-environment-configuration)
-14. [Legal & Ecosystem Disclaimer](#-legal--ecosystem-disclaimer)
+14. [Live Video Walkthrough](#-live-video-walkthrough)
+15. [Legal & Ecosystem Disclaimer](#-legal--ecosystem-disclaimer)
 
 ---
 
@@ -381,6 +378,16 @@ Defi-Agents-On-monad-/
     │   │   └── RegisterAgentModal.tsx # ERC-8004 custom agent registration modal
     │   └── lib/                      # Zustand activity/progress stores & Wagmi wallet config
 ```
+
+---
+
+## 🎥 Live Video Walkthrough
+
+Watch the continuous full-cycle demonstration of autonomous agent discovery, ERC-8004 identity verification, deterministic task routing, and x402 testnet USDC micropayment execution:
+
+<p align="center">
+  <img src="docs/demo.gif" alt="DeFi Agent Marketplace on Monad - Live Demo Walkthrough" width="850" style="border-radius: 12px; box-shadow: 0 10px 40px rgba(131, 110, 249, 0.25);" />
+</p>
 
 ---
 
