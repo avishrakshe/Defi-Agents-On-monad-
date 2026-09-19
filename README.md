@@ -383,11 +383,14 @@ Defi-Agents-On-monad-/
 
 ## 🎥 Event Recap
 
-Watch the continuous full-cycle demonstration of autonomous agent discovery, ERC-8004 identity verification, deterministic task routing, and x402 testnet USDC micropayment execution:
+Highlights and live moments from the **Monad Community Event & Ecosystem Showcase**, celebrating the builder community, Monad Scholar achievements, and demonstrating autonomous agent-to-agent DeFi infrastructure on Monad:
 
 <p align="center">
-  <img src="docs/demo.gif" alt="DeFi Agent Marketplace on Monad - Event Recap" width="850" style="border-radius: 12px; box-shadow: 0 10px 40px rgba(131, 110, 249, 0.25);" />
+  <img src="docs/demo.gif" alt="Monad Community Event Recap" width="850" style="border-radius: 12px; box-shadow: 0 10px 40px rgba(131, 110, 249, 0.25);" />
 </p>
+
+- 📸 **Monad Instagram Post**: [View Event Reel](https://www.instagram.com/p/DddzuxNMjkS/)
+- 🐦 **X (Twitter) Recap**: [View Community Thread](https://x.com/ARakshe34041/status/2101283903952798016?s=20)
 
 ---
 
