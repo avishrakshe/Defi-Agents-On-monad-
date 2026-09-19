@@ -8,18 +8,24 @@ import { TaskModal } from "../components/TaskModal";
 import { AgentData, fetchLiveAgents } from "../lib/contracts";
 
 import { TaskConsole } from "../components/TaskConsole";
+import { RegisterAgentModal } from "../components/RegisterAgentModal";
 
 export default function Home() {
   const [agents, setAgents] = useState<AgentData[]>([]);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const [initialTaskPrompt, setInitialTaskPrompt] = useState("");
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const loadAgents = () => {
     fetchLiveAgents().then((data) => {
       setAgents(data);
       setLoading(false);
     });
+  };
+
+  useEffect(() => {
+    loadAgents();
   }, []);
 
   const handleOpenTask = (prompt?: string) => {
@@ -40,9 +46,18 @@ export default function Home() {
       p = "Evaluate token risk for 0x534b2f3A21130d7a60830c2Df862319e593943A3";
     } else if (agent.skill === "gas-timing") {
       p = "What is the current gas timing and congestion recommendation on Monad Testnet?";
+    } else {
+      p = `Monitor ${agent.name} for ${agent.skill} activity on Monad Testnet`;
     }
     setInitialTaskPrompt(p);
-    setIsTaskModalOpen(true);
+    
+    // Also scroll smoothly to the task console and focus it
+    const el = document.getElementById("task-console");
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth" });
+    } else {
+      setIsTaskModalOpen(true);
+    }
   };
 
   return (
@@ -64,6 +79,7 @@ export default function Home() {
             <AgentRegistry
               agents={agents}
               onSelectAgent={handleSelectAgent}
+              onOpenRegisterModal={() => setIsRegisterModalOpen(true)}
             />
           </div>
         </main>
@@ -98,6 +114,12 @@ export default function Home() {
         onClose={() => setIsTaskModalOpen(false)}
         initialPrompt={initialTaskPrompt}
         agents={agents}
+      />
+
+      <RegisterAgentModal
+        isOpen={isRegisterModalOpen}
+        onClose={() => setIsRegisterModalOpen(false)}
+        onAgentRegistered={loadAgents}
       />
     </div>
   );

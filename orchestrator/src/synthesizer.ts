@@ -39,6 +39,19 @@ export function buildSummary(results: OrchestratorResults): string {
     parts.push(`Contract audit: ${results.audit.criticalIssues.length} critical issue(s), ${results.audit.mediumIssues.length} medium issue(s), ${results.audit.gasOptimizations.length} gas optimization(s) found.`);
   }
 
+  // Support dynamic custom agent outputs
+  for (const [key, val] of Object.entries(results as any)) {
+    if (key !== "riskScore" && key !== "gasTiming" && key !== "audit" && val) {
+      if ((val as any).whaleActivityScore !== undefined) {
+        parts.push(`Whale & Liquidity: ${(val as any).whaleActivityScore}/100 — ${(val as any).sentiment}. Liquidity: ${(val as any).liquidityHealth}.`);
+      } else if (typeof val === "object" && (val as any).summary) {
+        parts.push((val as any).summary);
+      } else if (typeof val === "object" && (val as any).recommendation) {
+        parts.push((val as any).recommendation);
+      }
+    }
+  }
+
   return parts.length > 0 ? parts.join(" ") : "No data was returned from the selected agents.";
 }
 

@@ -6,25 +6,43 @@ import { AgentData } from "../lib/contracts";
 interface AgentRegistryProps {
   agents: AgentData[];
   onSelectAgent: (agent: AgentData) => void;
+  onOpenRegisterModal?: () => void;
 }
 
-export const AgentRegistry: React.FC<AgentRegistryProps> = ({ agents, onSelectAgent }) => {
+export const AgentRegistry: React.FC<AgentRegistryProps> = ({
+  agents,
+  onSelectAgent,
+  onOpenRegisterModal
+}) => {
   return (
     <section id="registry" className="pt-6 pb-20 px-4 sm:px-8 max-w-7xl mx-auto">
       <div className="bg-white rounded-3xl border border-gray-200 shadow-[0_4px_24px_rgba(0,0,0,0.03)] p-6 sm:p-10">
         {/* Header */}
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-bold tracking-wider text-gray-400 uppercase">
-            ONCHAIN REGISTRY
-          </span>
-          <span className="text-xs font-medium text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
-            {agents.length} DeFi agents
-          </span>
-        </div>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
+          <div>
+            <div className="flex items-center space-x-2 mb-1">
+              <span className="text-xs font-bold tracking-wider text-gray-400 uppercase">
+                ONCHAIN REGISTRY
+              </span>
+              <span className="text-xs font-medium text-gray-500 bg-gray-100 px-3 py-0.5 rounded-full">
+                {agents.length} DeFi agents
+              </span>
+            </div>
+            <h2 className="text-3xl font-extrabold text-gray-950 tracking-tight">
+              Agent Registry
+            </h2>
+          </div>
 
-        <h2 className="text-3xl font-extrabold text-gray-950 tracking-tight mb-8">
-          Agent Registry
-        </h2>
+          {onOpenRegisterModal && (
+            <button
+              onClick={onOpenRegisterModal}
+              className="btn-monad-lime text-xs sm:text-sm font-bold py-2.5 px-5 shadow-sm hover:shadow-md transition-all flex items-center space-x-2 self-start sm:self-auto"
+            >
+              <span>+</span>
+              <span>Register Custom Agent</span>
+            </button>
+          )}
+        </div>
 
         {/* Agents Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -32,6 +50,7 @@ export const AgentRegistry: React.FC<AgentRegistryProps> = ({ agents, onSelectAg
             const shortOwner = agent.owner
               ? `${agent.owner.slice(0, 6)}...${agent.owner.slice(-4)}`
               : "0x3C44...93BC";
+            const isCustom = agent.id > 3;
 
             return (
               <div
@@ -41,9 +60,16 @@ export const AgentRegistry: React.FC<AgentRegistryProps> = ({ agents, onSelectAg
                 <div>
                   {/* Top Bar: Title & Number Badge */}
                   <div className="flex items-start justify-between mb-1">
-                    <h3 className="text-lg font-bold text-gray-900 group-hover:text-black transition-colors leading-snug">
-                      {agent.name}
-                    </h3>
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-900 group-hover:text-black transition-colors leading-snug">
+                        {agent.name}
+                      </h3>
+                      {isCustom && (
+                        <span className="inline-block mt-1 px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 text-[10px] font-bold border border-purple-200/80">
+                          Community Agent
+                        </span>
+                      )}
+                    </div>
                     <span className="w-7 h-7 rounded-full bg-[#f1fcc7] text-gray-900 font-bold text-xs flex items-center justify-center border border-[#d6f864] flex-shrink-0 ml-2">
                       #{agent.id}
                     </span>

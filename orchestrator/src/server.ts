@@ -203,11 +203,138 @@ app.post("/api/orchestrate", async (req, res) => {
   }
 });
 
-// Decompose task endpoint for granular frontend streaming
-app.post("/api/decompose", (req, res) => {
+// Onchain Agent Registration endpoint
+app.post("/api/register-agent", async (req, res) => {
+  try {
+    const {
+      name,
+      skill,
+      endpoint,
+      priceUSDC = 1000,
+      description = "Custom autonomous DeFi agent on Monad Testnet",
+      dataSource = "Custom Monad RPC / API",
+      ownerAddress
+    } = req.body;
+
+    if (!name || !skill || !endpoint) {
+      return res.status(400).json({ error: "name, skill, and endpoint are required" });
+    }
+
+    const rawKey = process.env.ORCHESTRATOR_PRIVATE_KEY || process.env.DEPLOYER_PRIVATE_KEY;
+    const privateKey = rawKey ? (rawKey.startsWith("0x") ? rawKey : `0x${rawKey}`) : undefined;
+    const rpcUrl = process.env.NEXT_PUBLIC_MONAD_RPC_URL || "https://testnet-rpc.monad.xyz";
+    const identityAddress = process.env.NEXT_PUBLIC_IDENTITY_REGISTRY_ADDRESS || "0xD62b32482874E447Beb60E6Df5A21E6ebaFf54ad";
+
+    const provider = new ethers.JsonRpcProvider(rpcUrl);
+    const wallet = new ethers.Wallet(privateKey as string, provider);
+
+    const identityAbi = [
+      "function registerAgent(string name, string skill, string endpoint, uint256 priceUSDC, string metadataURI) external returns (uint256)",
+      "function getAllAgents() external view returns (tuple(uint256 id, address owner, string name, string skill, string endpoint, uint256 priceUSDC, string metadataURI, uint256 registeredAt, bool active)[])",
+      "event AgentRegistered(uint256 indexed agentId, address indexed owner, string skill, string name, uint256 priceUSDC, string endpoint, string metadataURI)"
+    ];
+
+    const identityContract = new ethers.Contract(identityAddress, identityAbi, wallet);
+
+    const metadataObj = {
+      description,
+      dataSource,
+      author: ownerAddress || wallet.address,
+      registeredVia: "DeFi Agent Marketplace Monad"
+    };
+
+    const tx = await identityContract.registerAgent(
+      name,
+      skill,
+      endpoint,
+      priceUSDC,
+      JSON.stringify(metadataObj)
+    );
+
+    const receipt = await tx.wait();
+
+    // Find AgentRegistered event
+    let registeredAgentId = null;
+    if (receipt && receipt.logs) {
+      for (const log of receipt.logs) {
+        try {
+          const parsed = identityContract.interface.parseLog(log);
+          if (parsed && parsed.name === "AgentRegistered") {
+            registeredAgentId = Number(parsed.args.agentId);
+            break;
+          }
+        } catch {}
+      }
+    }
+
+    return res.json({
+      success: true,
+      agentId: registeredAgentId,
+      txHash: tx.hash,
+      blockNumber: receipt.blockNumber,
+      explorerUrl: `https://testnet.monadvision.com/tx/${tx.hash}`,
+      agent: {
+        id: registeredAgentId,
+        name,
+        skill,
+        endpoint,
+        priceUSDC: `$${(Number(priceUSDC) / 1_000_000).toFixed(3)}`,
+        owner: ownerAddress || wallet.address
+      }
+    });
+  } catch (err: any) {
+    console.error("[Agent Registration Error]:", err);
+    return res.status(500).json({ error: "Failed to register agent onchain", details: err.message });
+  }
+});
+
+// Decompose task endpoint with dynamic onchain agent discovery
+app.post("/api/decompose", async (req, res) => {
   const { taskText } = req.body;
   if (!taskText) return res.status(400).json({ error: "taskText required" });
+  
+  // 1. Base router decomposition
   const subtasks = decomposeTask(taskText);
+
+  // 2. Query dynamic custom agents registered onchain
+  try {
+    const rpcUrl = process.env.NEXT_PUBLIC_MONAD_RPC_URL || "https://testnet-rpc.monad.xyz";
+    const identityAddress = process.env.NEXT_PUBLIC_IDENTITY_REGISTRY_ADDRESS || "0xD62b32482874E447Beb60E6Df5A21E6ebaFf54ad";
+    const provider = new ethers.JsonRpcProvider(rpcUrl);
+    const identityAbi = [
+      "function getAllAgents() external view returns (tuple(uint256 id, address owner, string name, string skill, string endpoint, uint256 priceUSDC, string metadataURI, uint256 registeredAt, bool active)[])"
+    ];
+    const identityContract = new ethers.Contract(identityAddress, identityAbi, provider);
+    const onchainAgents = await identityContract.getAllAgents();
+
+    const lower = taskText.toLowerCase();
+    for (const a of onchainAgents) {
+      const id = Number(a.id);
+      if (id <= 3 || !a.active) continue;
+
+      const skill = a.skill.toLowerCase();
+      const name = a.name.toLowerCase();
+
+      // Check if task mentions skill or name keywords
+      if (
+        lower.includes(skill) ||
+        lower.includes(name) ||
+        (skill.includes("whale") && lower.includes("whale")) ||
+        (skill.includes("liquidity") && lower.includes("liquidity")) ||
+        (skill.includes("arbitrage") && lower.includes("arbitrage"))
+      ) {
+        subtasks.push({
+          skill: a.skill,
+          targetUrl: a.endpoint,
+          priceUSDC: `$${(Number(a.priceUSDC) / 1_000_000).toFixed(3)}`,
+          agentName: a.name
+        });
+      }
+    }
+  } catch (err) {
+    console.warn("Could not query dynamic onchain agents:", err);
+  }
+
   return res.json({ subtasks });
 });
 
@@ -298,6 +425,12 @@ app.post("/api/execute-step", async (req, res) => {
       requestBody = { contractAddress: subtask.contractAddress };
     } else if (subtask.skill === "gas-timing") {
       requestBody = { network: "monad-testnet" };
+    } else {
+      requestBody = {
+        tokenAddress: subtask.tokenAddress || "0x534b2f3A21130d7a60830c2Df862319e593943A3",
+        contractAddress: subtask.contractAddress || "0x534b2f3A21130d7a60830c2Df862319e593943A3",
+        network: "monad-testnet"
+      };
     }
 
     const agentRes = await fetch(subtask.targetUrl, {
