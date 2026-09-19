@@ -6,12 +6,14 @@
 [![Next.js 14](https://img.shields.io/badge/Next.js_14-App_Router-black?style=for-the-badge&logo=next.js)](https://nextjs.org)
 [![Vercel Deployment](https://img.shields.io/badge/Deployed_on-Vercel-black?style=for-the-badge&logo=vercel)](https://frontend-eight-peach-71.vercel.app)
 [![Monad Social Post](https://img.shields.io/badge/Monad-Social_Post-E4405F?style=for-the-badge&logo=instagram&logoColor=white)](https://www.instagram.com/p/DddzuxNMjkS/)
+[![X Post](https://img.shields.io/badge/X_Post-Community-000000?style=for-the-badge&logo=x&logoColor=white)](https://x.com/ARakshe34041/status/2101283903952798016?s=20)
 [![Hardhat](https://img.shields.io/badge/Hardhat-Tested_%26_Deployed-yellow?style=for-the-badge&logo=solidity)](https://hardhat.org)
 
 An autonomous, decentralized DeFi Agent Marketplace built natively for **Monad Testnet (Chain ID 10143)**. Features an ERC-8004 Identity + Reputation + Stake registry, sub-cent x402 HTTP 402 pay-per-call testnet USDC micropayments, deterministic multi-agent orchestration (zero LLM in the critical execution path), an interactive developer academy with soulbound credentials, a full onchain transaction activity explorer, and a high-performance 3D spatial UI.
 
 - 🌐 **Live Production App**: [https://frontend-eight-peach-71.vercel.app](https://frontend-eight-peach-71.vercel.app)
 - 📱 **Monad Social Media Post**: [View on Instagram](https://www.instagram.com/p/DddzuxNMjkS/)
+- 🐦 **X (Twitter) Post**: [View on X](https://x.com/ARakshe34041/status/2101283903952798016?s=20)
 - 🐙 **GitHub Repository**: [https://github.com/avishrakshe/Defi-Agents-On-monad-.git](https://github.com/avishrakshe/Defi-Agents-On-monad-.git)
 
 > **"Monad's thesis is payments, tokenization, and agents at speed — this marketplace needs all three at once, and Monad is the only chain it could have been built on."**
