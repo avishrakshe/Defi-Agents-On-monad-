@@ -1,29 +1,50 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
-import { useAccount, useConnect, useDisconnect } from "wagmi";
+import { useAccount, useConnect, useDisconnect, useSwitchChain } from "wagmi";
+import { monadTestnet } from "../lib/monadChain";
 
 interface NavbarProps {
   onOpenTaskModal?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({ onOpenTaskModal }) => {
-  const { address, isConnected } = useAccount();
+  const { address, isConnected, chainId } = useAccount();
   const { connect, connectors } = useConnect();
   const { disconnect } = useDisconnect();
+  const { switchChain } = useSwitchChain();
+  const [connecting, setConnecting] = useState(false);
 
   const orchestratorAddress = "0x7099...79C8";
   const formattedAddress = address ? `${address.slice(0, 6)}...${address.slice(-4)}` : null;
+  const isWrongNetwork = isConnected && chainId !== monadTestnet.id;
 
-  const handleConnect = () => {
+  const handleConnect = async () => {
     if (isConnected) {
       disconnect();
-    } else {
-      const conn = connectors[0];
-      if (conn) {
-        connect({ connector: conn });
+      return;
+    }
+
+    try {
+      setConnecting(true);
+      const targetConnector = connectors.find((c) => c.name.toLowerCase().includes("injected") || c.name.toLowerCase().includes("metamask")) || connectors[0];
+      if (targetConnector) {
+        connect({ connector: targetConnector });
+      } else if (typeof window !== "undefined" && (window as any).ethereum) {
+        // Direct browser fallback
+        await (window as any).ethereum.request({ method: "eth_requestAccounts" });
       }
+    } catch (err) {
+      console.error("Connection error:", err);
+    } finally {
+      setConnecting(false);
+    }
+  };
+
+  const handleSwitchNetwork = () => {
+    if (switchChain) {
+      switchChain({ chainId: monadTestnet.id });
     }
   };
 
@@ -58,10 +79,20 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenTaskModal }) => {
         {/* Right: Network Status, Orchestrator Info, Connect Button */}
         <div className="flex items-center space-x-4">
           {/* Network Pill */}
-          <div className="hidden lg:flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200/60 text-emerald-700 text-xs font-medium">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span>Monad Testnet 10143</span>
-          </div>
+          {isWrongNetwork ? (
+            <button
+              onClick={handleSwitchNetwork}
+              className="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-300 text-amber-800 text-xs font-medium hover:bg-amber-100 transition-all"
+            >
+              <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
+              <span>Switch to Monad</span>
+            </button>
+          ) : (
+            <div className="hidden lg:flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200/60 text-emerald-700 text-xs font-medium">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span>Monad Testnet 10143</span>
+            </div>
+          )}
 
           {/* Orchestrator Wallet Status */}
           <div className="hidden xl:flex flex-col text-right border-l border-gray-200 pl-4 text-xs">
@@ -103,9 +134,14 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenTaskModal }) => {
           {/* Connect Wallet Button */}
           <button
             onClick={handleConnect}
-            className="btn-monad-lime text-xs sm:text-sm font-bold shadow-sm"
+            disabled={connecting}
+            className="btn-monad-lime text-xs sm:text-sm font-bold shadow-sm disabled:opacity-50"
           >
-            {isConnected ? formattedAddress : "Connect Wallet"}
+            {connecting
+              ? "Connecting..."
+              : isConnected
+              ? formattedAddress
+              : "Connect Wallet"}
           </button>
         </div>
       </div>
