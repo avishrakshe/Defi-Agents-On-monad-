@@ -19,12 +19,12 @@ interface GridPattern3DProps {
  * custom atmospheric horizon glow, and non-intrusive dual-layer fade mask.
  */
 export const GridPattern3D: React.FC<GridPattern3DProps> = ({
-  cellSize = 48,
-  perspective = 340,
-  angle = 65,
-  speed = 3.5,
-  lineColor = "rgba(15, 23, 42, 0.08)",
-  glowColor = "rgba(204, 255, 0, 0.16)",
+  cellSize = 24,
+  perspective = 600,
+  angle = 60,
+  speed = 3.0,
+  lineColor = "rgba(15, 23, 42, 0.11)",
+  glowColor = "rgba(204, 255, 0, 0.14)",
   className = ""
 }) => {
   const dynamicStyles = {
@@ -43,21 +43,21 @@ export const GridPattern3D: React.FC<GridPattern3DProps> = ({
         className="absolute inset-0 w-full h-full flex justify-center"
         style={{
           perspective: `${perspective}px`,
-          perspectiveOrigin: "50% 20%"
+          perspectiveOrigin: "50% 10%"
         }}
       >
         {/* Atmospheric Horizon Ambient Glow (Monad Electric Lime Accents) */}
         <div
-          className="absolute top-0 left-1/2 -translate-x-1/2 w-[120vw] h-[360px] pointer-events-none"
+          className="absolute top-0 left-1/2 -translate-x-1/2 w-[120vw] h-[340px] pointer-events-none"
           style={{
-            background: `radial-gradient(ellipse 60% 50% at 50% 15%, ${glowColor} 0%, rgba(204, 255, 0, 0.03) 45%, transparent 75%)`,
-            filter: "blur(24px)"
+            background: `radial-gradient(ellipse 60% 45% at 50% 10%, ${glowColor} 0%, rgba(204, 255, 0, 0.02) 50%, transparent 80%)`,
+            filter: "blur(20px)"
           }}
         />
 
         {/* Tilted 3D Grid Plane */}
         <div
-          className="relative w-[180vw] h-[150vh] origin-top"
+          className="relative w-[180vw] h-[160vh] origin-top"
           style={{
             transform: `rotateX(${angle}deg)`,
             transformOrigin: "50% 0%"
@@ -75,17 +75,17 @@ export const GridPattern3D: React.FC<GridPattern3DProps> = ({
               maskImage: `
                 linear-gradient(to bottom, 
                   rgba(0, 0, 0, 0) 0%, 
-                  rgba(0, 0, 0, 0.9) 15%, 
-                  rgba(0, 0, 0, 0.95) 45%, 
-                  rgba(0, 0, 0, 0) 80%
+                  rgba(0, 0, 0, 1) 12%, 
+                  rgba(0, 0, 0, 1) 60%, 
+                  rgba(0, 0, 0, 0) 90%
                 )
               `,
               WebkitMaskImage: `
                 linear-gradient(to bottom, 
                   rgba(0, 0, 0, 0) 0%, 
-                  rgba(0, 0, 0, 0.9) 15%, 
-                  rgba(0, 0, 0, 0.95) 45%, 
-                  rgba(0, 0, 0, 0) 80%
+                  rgba(0, 0, 0, 1) 12%, 
+                  rgba(0, 0, 0, 1) 60%, 
+                  rgba(0, 0, 0, 0) 90%
                 )
               `
             }}
@@ -94,7 +94,7 @@ export const GridPattern3D: React.FC<GridPattern3DProps> = ({
       </div>
 
       {/* Atmospheric Horizon Blending */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#f8f9fa]/80 via-transparent to-[#f8f9fa] pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-b from-[#f8f9fa]/70 via-transparent to-[#f8f9fa] pointer-events-none" />
     </div>
   );
 };
