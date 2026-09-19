@@ -24,9 +24,10 @@ export const TaskModal: React.FC<TaskModalProps> = ({
   const [signingStatus, setSigningStatus] = useState<string | null>(null);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
-  const [feedbackSent, setFeedbackSent] = useState(false);
-  const [feedbackScore, setFeedbackScore] = useState(95);
-  const [feedbackNote, setFeedbackNote] = useState("Accurate onchain assessment and real-time Monad RPC response.");
+  const [submittingFeedback, setSubmittingFeedback] = useState(false);
+  const [feedbackResult, setFeedbackResult] = useState<any>(null);
+  const [feedbackScore, setFeedbackScore] = useState(98);
+  const [feedbackNote, setFeedbackNote] = useState("Accurate onchain assessment verified on Monad Testnet.");
 
   useEffect(() => {
     if (typeof window !== "undefined" && (window as any).ethereum) {
@@ -48,7 +49,7 @@ export const TaskModal: React.FC<TaskModalProps> = ({
     setIsRunning(true);
     setError(null);
     setResult(null);
-    setFeedbackSent(false);
+    setFeedbackResult(null);
     setSigningStatus(null);
 
     try {
@@ -56,7 +57,6 @@ export const TaskModal: React.FC<TaskModalProps> = ({
 
       let signedAuthorizations: Record<string, any> = {};
 
-      // If Mode B is selected: Request REAL EIP-712 signature from MetaMask!
       if (mode === "B") {
         let currentAddress = userAddress;
         if (!currentAddress) {
@@ -66,10 +66,9 @@ export const TaskModal: React.FC<TaskModalProps> = ({
           setUserAddress(wallet.address);
         }
 
-        setSigningStatus("Please confirm the EIP-712 x402 payment signature in MetaMask ($0.001 USDC)...");
+        setSigningStatus("Please confirm the real EIP-712 x402 payment signature in MetaMask ($0.001 USDC)...");
         const payTo = "0x39D17f02fA4A362902cA760aF830CEBA82bdC39B";
 
-        // Generate REAL EIP-712 signature with user's MetaMask
         const realSignedAuth = await signRealX402Payment(currentAddress, payTo, "1000");
 
         signedAuthorizations = {
@@ -77,9 +76,9 @@ export const TaskModal: React.FC<TaskModalProps> = ({
           "contract-audit": realSignedAuth,
           "gas-timing": realSignedAuth
         };
-        setSigningStatus("Signature verified! Executing specialist agents...");
+        setSigningStatus("Signature verified! Executing specialist agents and broadcasting onchain...");
       } else {
-        setSigningStatus("Mode A: Orchestrator is cryptographically signing and paying on your behalf...");
+        setSigningStatus("Mode A: Orchestrator is cryptographically signing and settling on Monad Testnet...");
       }
 
       const payload: any = {
@@ -106,6 +105,32 @@ export const TaskModal: React.FC<TaskModalProps> = ({
     } finally {
       setIsRunning(false);
       setSigningStatus(null);
+    }
+  };
+
+  const handleSubmitFeedback = async () => {
+    try {
+      setSubmittingFeedback(true);
+      const orchestratorUrl = process.env.NEXT_PUBLIC_ORCHESTRATOR_URL || "http://localhost:4000";
+      const res = await fetch(`${orchestratorUrl}/api/feedback`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          agentId: 1,
+          score: feedbackScore,
+          note: feedbackNote,
+          reviewer: userAddress || "0x39D17f02fA4A362902cA760aF830CEBA82bdC39B"
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.details || data.error);
+      setFeedbackResult(data);
+    } catch (err: any) {
+      console.error("Feedback error:", err);
+      alert(`Could not broadcast feedback onchain: ${err.message}`);
+    } finally {
+      setSubmittingFeedback(false);
     }
   };
 
@@ -164,7 +189,7 @@ export const TaskModal: React.FC<TaskModalProps> = ({
         <div className="mb-4 text-xs text-gray-500 bg-gray-50 p-3 rounded-xl border border-gray-200/60">
           {mode === "A" ? (
             <span>
-              ⚡ <strong>Mode A</strong>: The orchestrator uses its internal Monad Testnet wallet to generate a real cryptographic EIP-712 signature for each subtask. No MetaMask confirmation required.
+              ⚡ <strong>Mode A</strong>: The orchestrator uses its Monad Testnet wallet to generate a real cryptographic EIP-712 signature and broadcasts settlement onchain to Monad Testnet.
             </span>
           ) : (
             <span>
@@ -218,7 +243,7 @@ export const TaskModal: React.FC<TaskModalProps> = ({
             {isRunning ? (
               <span className="flex items-center space-x-2">
                 <span className="w-3.5 h-3.5 border-2 border-black border-t-transparent rounded-full animate-spin"></span>
-                <span>Processing Real Agents...</span>
+                <span>Broadcasting to Monad Testnet...</span>
               </span>
             ) : (
               <span>Execute Real Task</span>
@@ -245,7 +270,7 @@ export const TaskModal: React.FC<TaskModalProps> = ({
                     Real Synthesized Output from Monad Agents
                   </span>
                   <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-medium">
-                    100% Real Data
+                    100% Real Monad Data
                   </span>
                 </div>
                 <span className="text-xs font-mono text-gray-500">{result.totalCostUSDC} settled</span>
@@ -258,7 +283,7 @@ export const TaskModal: React.FC<TaskModalProps> = ({
             {/* Subtask Timeline & Settlements */}
             <div>
               <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">
-                Decomposed Subtasks & Cryptographic Settlements
+                Decomposed Subtasks & Live Block Explorer Transactions
               </h3>
 
               <div className="space-y-3">
@@ -282,12 +307,21 @@ export const TaskModal: React.FC<TaskModalProps> = ({
                       </div>
                     </div>
 
-                    {/* Settlement badge */}
+                    {/* Settlement & Explorer Badge */}
                     {step.settlement && (
-                      <div className="mt-2 pt-2 border-t border-gray-200 flex flex-wrap items-center justify-between text-[11px] text-gray-500">
-                        <span>Mode: <strong className="text-emerald-700">Live Monad Settlement</strong></span>
-                        <span className="font-mono text-[10px]">Hash: {step.settlement.txHash?.slice(0, 18)}...</span>
-                        <span className="text-emerald-700 font-semibold">{step.settlement.amount}</span>
+                      <div className="mt-2 pt-2 border-t border-gray-200 flex flex-wrap items-center justify-between gap-2 text-[11px] text-gray-600">
+                        <span>Status: <strong className="text-emerald-700">Mined Onchain</strong></span>
+                        <a
+                          href={`https://testnet.monadvision.com/tx/${step.settlement.txHash}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="font-mono text-[11px] text-emerald-700 hover:underline font-bold flex items-center space-x-1"
+                        >
+                          <span>Tx: {step.settlement.txHash?.slice(0, 14)}... ↗</span>
+                        </a>
+                        <span className="text-emerald-800 font-semibold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/50">
+                          {step.settlement.amount}
+                        </span>
                       </div>
                     )}
 
@@ -313,12 +347,20 @@ export const TaskModal: React.FC<TaskModalProps> = ({
                 Submit Verified Onchain Feedback (ReputationRegistry)
               </h4>
               <p className="text-[11px] text-gray-500 mb-3">
-                As a verified caller of these agents, you are entitled to record an onchain score (0-100) to contract 0x7b39...Ba8C.
+                Broadcasting feedback sends an onchain transaction directly to contract 0x7b39...Ba8C on Monad Testnet.
               </p>
 
-              {feedbackSent ? (
-                <div className="text-xs text-emerald-700 font-medium bg-emerald-50 p-2.5 rounded-xl border border-emerald-200">
-                  Feedback recorded onchain! Reputation updated.
+              {feedbackResult ? (
+                <div className="text-xs text-emerald-800 font-medium bg-emerald-50 p-3 rounded-xl border border-emerald-200 space-y-1">
+                  <div className="font-bold">Transaction Mined on Monad Testnet (Block #{feedbackResult.blockNumber})!</div>
+                  <a
+                    href={feedbackResult.explorerUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-mono text-[11px] text-emerald-700 hover:underline block font-semibold"
+                  >
+                    View Feedback Tx on MonadVision: {feedbackResult.txHash?.slice(0, 20)}... ↗
+                  </a>
                 </div>
               ) : (
                 <div className="flex flex-col sm:flex-row gap-3 items-center">
@@ -339,10 +381,11 @@ export const TaskModal: React.FC<TaskModalProps> = ({
                     placeholder="Short feedback note"
                   />
                   <button
-                    onClick={() => setFeedbackSent(true)}
-                    className="bg-gray-900 hover:bg-black text-white text-xs font-bold px-4 py-2 rounded-xl transition-all"
+                    onClick={handleSubmitFeedback}
+                    disabled={submittingFeedback}
+                    className="bg-gray-900 hover:bg-black text-white text-xs font-bold px-4 py-2 rounded-xl transition-all disabled:opacity-50"
                   >
-                    Submit Feedback
+                    {submittingFeedback ? "Broadcasting Tx..." : "Submit Feedback Onchain"}
                   </button>
                 </div>
               )}
