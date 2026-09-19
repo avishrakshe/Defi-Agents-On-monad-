@@ -1,0 +1,22 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-[#f8f9fa] text-[#0f172a] antialiased selection:bg-[#ccff00] selection:text-black;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+}
+
+.pill-badge {
+  @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-[#f1f3f5] text-[#475569] border border-[#e2e8f0];
+}
+
+.btn-monad-lime {
+  @apply bg-[#ccff00] hover:bg-[#b8e600] active:scale-[0.98] text-black font-semibold rounded-full px-6 py-2.5 transition-all duration-150 shadow-sm inline-flex items-center justify-center;
+}
+
+.card-elevated {
+  @apply bg-white rounded-3xl border border-[#e2e8f0] shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)];
+}
