@@ -1,52 +1,85 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { useAccount, useConnect, useDisconnect, useSwitchChain } from "wagmi";
-import { monadTestnet } from "../lib/monadChain";
+import { connectBrowserWallet, switchToMonadNetwork, MONAD_CHAIN_CONFIG } from "../lib/wallet";
 
 interface NavbarProps {
   onOpenTaskModal?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({ onOpenTaskModal }) => {
-  const { address, isConnected, chainId } = useAccount();
-  const { connect, connectors } = useConnect();
-  const { disconnect } = useDisconnect();
-  const { switchChain } = useSwitchChain();
+  const [address, setAddress] = useState<string | null>(null);
+  const [chainId, setChainId] = useState<number | null>(null);
   const [connecting, setConnecting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const orchestratorAddress = "0x7099...79C8";
-  const formattedAddress = address ? `${address.slice(0, 6)}...${address.slice(-4)}` : null;
-  const isWrongNetwork = isConnected && chainId !== monadTestnet.id;
+  const orchestratorAddress = "0x39D1...C39B";
+
+  useEffect(() => {
+    // Check if wallet is already connected
+    if (typeof window !== "undefined" && (window as any).ethereum) {
+      const ethereum = (window as any).ethereum;
+      ethereum.request({ method: "eth_accounts" }).then((accounts: string[]) => {
+        if (accounts && accounts.length > 0) {
+          setAddress(accounts[0]);
+        }
+      }).catch(() => {});
+
+      ethereum.request({ method: "eth_chainId" }).then((hex: string) => {
+        if (hex) setChainId(parseInt(hex, 16));
+      }).catch(() => {});
+
+      // Listen for account / chain changes
+      const handleAccountsChanged = (accs: string[]) => {
+        setAddress(accs.length > 0 ? accs[0] : null);
+      };
+      const handleChainChanged = (hex: string) => {
+        setChainId(parseInt(hex, 16));
+      };
+
+      ethereum.on("accountsChanged", handleAccountsChanged);
+      ethereum.on("chainChanged", handleChainChanged);
+
+      return () => {
+        ethereum.removeListener("accountsChanged", handleAccountsChanged);
+        ethereum.removeListener("chainChanged", handleChainChanged);
+      };
+    }
+  }, []);
 
   const handleConnect = async () => {
-    if (isConnected) {
-      disconnect();
+    if (address) {
+      // Disconnect local state
+      setAddress(null);
       return;
     }
 
     try {
       setConnecting(true);
-      const targetConnector = connectors.find((c) => c.name.toLowerCase().includes("injected") || c.name.toLowerCase().includes("metamask")) || connectors[0];
-      if (targetConnector) {
-        connect({ connector: targetConnector });
-      } else if (typeof window !== "undefined" && (window as any).ethereum) {
-        // Direct browser fallback
-        await (window as any).ethereum.request({ method: "eth_requestAccounts" });
-      }
-    } catch (err) {
-      console.error("Connection error:", err);
+      setErrorMsg(null);
+      const res = await connectBrowserWallet();
+      setAddress(res.address);
+      setChainId(res.chainId);
+    } catch (err: any) {
+      console.error("Wallet connection failed:", err);
+      setErrorMsg(err.message || "Failed to connect wallet");
     } finally {
       setConnecting(false);
     }
   };
 
-  const handleSwitchNetwork = () => {
-    if (switchChain) {
-      switchChain({ chainId: monadTestnet.id });
+  const handleSwitchNetwork = async () => {
+    try {
+      await switchToMonadNetwork();
+      setChainId(MONAD_CHAIN_CONFIG.chainIdDecimal);
+    } catch (err: any) {
+      console.error("Network switch failed:", err);
     }
   };
+
+  const formattedAddress = address ? `${address.slice(0, 6)}...${address.slice(-4)}` : null;
+  const isWrongNetwork = address && chainId !== MONAD_CHAIN_CONFIG.chainIdDecimal;
 
   return (
     <header className="sticky top-4 z-50 w-full px-4 sm:px-8 max-w-7xl mx-auto">
@@ -115,7 +148,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenTaskModal }) => {
 
           {/* Connection Status Indicator */}
           <div className="hidden sm:flex flex-col text-right text-xs">
-            {isConnected ? (
+            {address ? (
               <>
                 <span className="text-emerald-600 font-medium flex items-center justify-end space-x-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
@@ -139,7 +172,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenTaskModal }) => {
           >
             {connecting
               ? "Connecting..."
-              : isConnected
+              : address
               ? formattedAddress
               : "Connect Wallet"}
           </button>
