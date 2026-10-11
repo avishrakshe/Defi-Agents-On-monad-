@@ -5,10 +5,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { connectBrowserWallet, switchToMonadNetwork, MONAD_CHAIN_CONFIG } from "../lib/wallet";
+import { scrollToId } from "../lib/smooth-scroll";
+import { useBalances, ORCHESTRATOR_ADDRESS } from "../lib/useBalances";
 
 interface NavbarProps {
   onOpenTaskModal?: () => void;
   onOpenRegisterModal?: () => void;
+  /** Float the bar over the page content (used by the full-bleed homepage hero) */
+  overlay?: boolean;
 }
 
 interface NavSubItem {
@@ -28,7 +32,7 @@ interface NavTab {
   subItems?: NavSubItem[];
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ onOpenTaskModal, onOpenRegisterModal }) => {
+export const Navbar: React.FC<NavbarProps> = ({ onOpenTaskModal, onOpenRegisterModal, overlay = false }) => {
   const pathname = usePathname();
   const [address, setAddress] = useState<string | null>(null);
   const [chainId, setChainId] = useState<number | null>(null);
@@ -41,9 +45,11 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenTaskModal, onOpenRegisterM
   // Mobile drawer state
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileActiveAccordion, setMobileActiveAccordion] = useState<string | null>(null);
+  const [scrolled, setScrolled] = useState(false);
+  const orchestratorBalances = useBalances(ORCHESTRATOR_ADDRESS);
 
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const orchestratorAddress = "0x39D1...C39B";
+  const orchestratorAddress = `${ORCHESTRATOR_ADDRESS.slice(0, 6)}...${ORCHESTRATOR_ADDRESS.slice(-4)}`;
 
   useEffect(() => {
     // Check if wallet is already connected
@@ -240,27 +246,49 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenTaskModal, onOpenRegisterM
     }, 180);
   };
 
-  const currentTab = NAV_TABS.find((t) => t.id === activeTab);
+  // On the homepage, in-page anchors glide via Lenis instead of jumping
+  const handleAnchorClick = (e: React.MouseEvent, href: string) => {
+    if (pathname === "/" && href.startsWith("/#") && scrollToId(href.slice(2))) {
+      e.preventDefault();
+    }
+  };
+
+  // Condense the bar once the page has been scrolled
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 24);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   return (
-    <header className="sticky top-4 z-50 w-full px-4 sm:px-8 max-w-7xl mx-auto">
-      {/* Light Pill Bar Container (Previous Marketplace Style - 100% Solid Opaque) */}
+    <header
+      className={`${
+        overlay ? "fixed left-0 right-0 top-4" : "sticky top-4"
+      } z-50 w-full px-4 sm:px-8 max-w-7xl mx-auto`}
+    >
+      {/* Dark glass pill bar */}
       <div
         onMouseLeave={handleMouseLeaveNav}
-        style={{ backgroundColor: "#ffffff" }}
-        className="relative bg-white border border-gray-200/90 rounded-full shadow-[0_4px_24px_rgba(0,0,0,0.06)] px-4 sm:px-6 py-2.5 flex items-center justify-between gap-4 transition-all"
+        className={`relative rounded-full border px-3 sm:px-5 py-2 flex items-center justify-between gap-4 transition-all duration-300 backdrop-blur-xl ${
+          scrolled || !overlay
+            ? "bg-[#0e0e0f]/90 border-white/10 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.6)]"
+            : "bg-white/[0.04] border-white/10"
+        }`}
       >
         {/* Left: Brand & Nav Links */}
-        <div className="flex items-center space-x-4 xl:space-x-7 shrink-0 min-w-0">
-          <Link href="/" className="flex items-center space-x-2.5 group shrink-0">
-            <div className="w-8 h-8 rounded-full bg-[#ccff00] flex items-center justify-center font-black text-black text-base shadow-sm group-hover:scale-105 transition-transform">
+        <div className="flex items-center space-x-4 xl:space-x-6 shrink-0 min-w-0">
+          <Link href="/" className="flex items-center gap-2.5 group shrink-0">
+            <div className="w-8 h-8 clip-chamfer bg-[#ccff00] flex items-center justify-center font-display text-black text-sm group-hover:rotate-[-8deg] transition-transform">
               D
             </div>
-            <span className="font-bold text-lg text-gray-900 tracking-tight">DeFi Agents</span>
+            <span className="font-display text-base text-white tracking-wide">
+              DeFi<span className="text-[#ccff00]">/</span>Agents
+            </span>
           </Link>
 
-          {/* Center: Framer Pill Dropdown Track (Light Theme Matching Marketplace) */}
-          <nav className="hidden lg:flex items-center relative py-1 px-1 bg-[#f1f3f5] border border-gray-200/80 rounded-full shrink-0">
+          {/* Center: Pill Dropdown Track */}
+          <nav className="hidden lg:flex items-center relative p-1 bg-white/[0.04] border border-white/10 rounded-full shrink-0">
             {NAV_TABS.map((tab) => {
               const isTabHovered = hoveredPill === tab.id;
               const isTabOpen = activeTab === tab.id;
@@ -286,17 +314,15 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenTaskModal, onOpenRegisterM
                 >
                   <Link
                     href={tab.href}
-                    className={`relative z-10 px-2.5 xl:px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors duration-150 flex items-center space-x-1 ${
-                      isTabOpen || isRouteActive
-                        ? "text-gray-950 font-bold"
-                        : "text-gray-600 hover:text-gray-950"
+                    className={`relative z-10 px-2.5 xl:px-3.5 py-1.5 rounded-full font-mono text-[11px] uppercase tracking-wider whitespace-nowrap transition-colors duration-150 flex items-center gap-1 ${
+                      isTabOpen || isRouteActive ? "text-[#ccff00]" : "text-white/65 hover:text-white"
                     }`}
                   >
                     <span>{tab.label}</span>
                     {tab.hasDropdown && (
                       <span
-                        className={`text-[8px] transition-transform duration-200 inline-block text-gray-400 ${
-                          isTabOpen ? "rotate-180 text-gray-950" : ""
+                        className={`text-[7px] transition-transform duration-200 inline-block ${
+                          isTabOpen ? "rotate-180 text-[#ccff00]" : "text-white/35"
                         }`}
                       >
                         ▼
@@ -304,28 +330,27 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenTaskModal, onOpenRegisterM
                     )}
                   </Link>
 
-                  {/* Sliding Hover Pill Highlight (Framer pill highlight on light track) */}
+                  {/* Sliding hover pill highlight */}
                   {isTabHovered && (
                     <motion.div
                       layoutId="pillHighlight"
-                      className="absolute inset-0 bg-white rounded-full shadow-sm z-0 border border-gray-200/60"
+                      className="absolute inset-0 bg-white/[0.08] rounded-full z-0 border border-white/10"
                       transition={{ type: "spring", bounce: 0.15, duration: 0.3 }}
                     />
                   )}
 
-                  {/* Floating Dropdown Panel anchored directly beneath this tab */}
+                  {/* Floating dropdown panel anchored beneath this tab */}
                   <AnimatePresence>
                     {isTabOpen && tab.hasDropdown && tab.subItems && (
                       <motion.div
-                        initial={{ opacity: 0, y: 8, scale: 0.98 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 6, scale: 0.98 }}
-                        transition={{ type: "spring", bounce: 0.1, duration: 0.2 }}
+                        initial={{ opacity: 0, y: 10, scale: 0.97, filter: "blur(6px)" }}
+                        animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+                        exit={{ opacity: 0, y: 6, scale: 0.98, filter: "blur(4px)" }}
+                        transition={{ type: "spring", bounce: 0.1, duration: 0.25 }}
                         onMouseEnter={() => {
                           if (timeoutRef.current) clearTimeout(timeoutRef.current);
                         }}
-                        style={{ backgroundColor: "#ffffff" }}
-                        className={`absolute top-full mt-3 w-80 sm:w-96 bg-white border border-gray-200 shadow-[0_20px_50px_rgba(0,0,0,0.18)] rounded-2xl p-3 z-[100] ${dropdownAlignClass}`}
+                        className={`absolute top-full mt-3 w-80 sm:w-96 bg-[#0e0e0f]/95 backdrop-blur-xl border border-white/10 shadow-[0_30px_60px_-12px_rgba(0,0,0,0.8)] rounded-2xl p-2.5 z-[100] ${dropdownAlignClass}`}
                       >
                         {/* Invisible hover bridge to prevent cursor gap drop */}
                         <div className="absolute -top-3 left-0 right-0 h-3" />
@@ -337,28 +362,28 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenTaskModal, onOpenRegisterM
                               href={item.href}
                               target={item.href.startsWith("http") ? "_blank" : undefined}
                               rel={item.href.startsWith("http") ? "noreferrer" : undefined}
-                              onClick={() => {
+                              onClick={(e) => {
+                                handleAnchorClick(e, item.href);
                                 setActiveTab(null);
                                 if (item.onClick) item.onClick();
                               }}
-                              className="group flex items-start space-x-3 p-2.5 rounded-xl hover:bg-gray-50 transition-colors"
+                              className="group flex items-start gap-3 p-2.5 rounded-xl hover:bg-white/[0.05] transition-colors"
                             >
-                              <span className="w-8 h-8 rounded-lg bg-gray-100 border border-gray-200/80 flex items-center justify-center text-sm shrink-0 group-hover:bg-[#ccff00] group-hover:border-[#b8e600] transition-colors shadow-2xs">
+                              <span className="w-8 h-8 clip-chamfer bg-white/[0.06] flex items-center justify-center text-sm shrink-0 group-hover:bg-[#ccff00] transition-colors">
                                 {item.icon}
                               </span>
                               <div className="flex-1 min-w-0">
-                                <div className="flex items-center space-x-2">
-                                  {/* Crisp Dark Text - 100% High Contrast */}
-                                  <span className="text-xs font-bold text-gray-950 group-hover:text-black transition-colors leading-none">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs font-semibold text-white leading-none">
                                     {item.title}
                                   </span>
                                   {item.badge && (
-                                    <span className="text-[9px] font-mono px-1.5 py-0.5 rounded-full bg-[#ccff00] text-black border border-[#b8e600] font-bold">
+                                    <span className="text-[9px] font-mono px-1.5 py-0.5 rounded-full bg-[#ccff00] text-black font-bold">
                                       {item.badge}
                                     </span>
                                   )}
                                 </div>
-                                <p className="text-[11px] text-gray-500 mt-1 line-clamp-1 group-hover:text-gray-700">
+                                <p className="text-[11px] text-white/45 mt-1 line-clamp-1 group-hover:text-white/70">
                                   {item.desc}
                                 </p>
                               </div>
@@ -375,36 +400,38 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenTaskModal, onOpenRegisterM
         </div>
 
         {/* Right: Network Status, Orchestrator Info, Connect Button */}
-        <div className="flex items-center space-x-2.5 xl:space-x-4 shrink-0">
+        <div className="flex items-center gap-2.5 xl:gap-4 shrink-0">
           {/* Network Pill */}
           {isWrongNetwork ? (
             <button
               onClick={handleSwitchNetwork}
-              className="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-300 text-amber-800 text-xs font-medium hover:bg-amber-100 transition-all shrink-0 whitespace-nowrap"
+              className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-400/10 border border-amber-400/40 text-amber-300 font-mono text-[11px] uppercase hover:bg-amber-400/20 transition-all shrink-0 whitespace-nowrap"
             >
-              <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
+              <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
               <span>Switch to Monad</span>
             </button>
           ) : (
-            <div className="hidden xl:flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200/60 text-emerald-700 text-xs font-medium shrink-0 whitespace-nowrap">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <div className="hidden xl:flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#ccff00]/[0.08] border border-[#ccff00]/25 text-[#ccff00] font-mono text-[11px] uppercase shrink-0 whitespace-nowrap">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#ccff00] animate-pulse"></span>
               <span>Monad 10143</span>
             </div>
           )}
 
           {/* Orchestrator Wallet Status (Spacious Screens) */}
-          <div className="hidden 2xl:flex flex-col text-right border-l border-gray-200 pl-3 text-xs shrink-0">
-            <div className="text-gray-400 flex items-center justify-end space-x-1">
+          <div className="hidden min-[1720px]:flex flex-col text-right border-l border-white/10 pl-3 font-mono text-[11px] shrink-0">
+            <div className="text-white/40 flex items-center justify-end gap-1">
               <span>Orchestrator</span>
-              <span className="font-mono text-gray-600 font-semibold">{orchestratorAddress}</span>
+              <span className="text-white/70">{orchestratorAddress}</span>
             </div>
-            <div className="flex items-center justify-end space-x-1.5">
-              <span className="text-gray-700 font-semibold">100.00 tUSDC</span>
+            <div className="flex items-center justify-end gap-1.5">
+              <span className="text-white/80" title={orchestratorBalances ? `${orchestratorBalances.mon} MON for gas` : undefined}>
+                {orchestratorBalances ? `${orchestratorBalances.usdc} USDC` : "— USDC"}
+              </span>
               <a
-                href="https://faucet.monad.xyz"
+                href="https://faucet.circle.com"
                 target="_blank"
                 rel="noreferrer"
-                className="text-[#65a30d] hover:underline font-medium"
+                className="text-[#ccff00] hover:underline"
               >
                 Top up faucet
               </a>
@@ -412,19 +439,19 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenTaskModal, onOpenRegisterM
           </div>
 
           {/* Connection Status Indicator (Spacious Screens) */}
-          <div className="hidden 2xl:flex flex-col text-right text-xs shrink-0">
+          <div className="hidden min-[1720px]:flex flex-col text-right font-mono text-[11px] shrink-0">
             {address ? (
               <>
-                <span className="text-emerald-600 font-medium flex items-center justify-end space-x-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                <span className="text-[#ccff00] flex items-center justify-end gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#ccff00]"></span>
                   <span>Connected</span>
                 </span>
-                <span className="font-mono text-gray-500">{formattedAddress}</span>
+                <span className="text-white/50">{formattedAddress}</span>
               </>
             ) : (
               <>
-                <span className="text-gray-500 font-medium">Not connected</span>
-                <span className="text-gray-400">Connect for Mode B</span>
+                <span className="text-white/60">Not connected</span>
+                <span className="text-white/35">Connect for Mode B</span>
               </>
             )}
           </div>
@@ -433,42 +460,38 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenTaskModal, onOpenRegisterM
           <button
             onClick={handleConnect}
             disabled={connecting}
-            className="btn-monad-lime text-xs sm:text-sm font-bold shadow-sm disabled:opacity-50 shrink-0 whitespace-nowrap py-2 px-3.5 sm:px-5"
+            className="btn-neon btn-sm !text-[11px] !px-4 sm:!px-5 disabled:opacity-50 shrink-0 whitespace-nowrap"
           >
-            {connecting
-              ? "Connecting..."
-              : address
-              ? formattedAddress
-              : "Connect Wallet"}
+            <span>{connecting ? "Connecting..." : address ? formattedAddress : "Connect Wallet"}</span>
           </button>
 
           {/* Mobile Hamburger Button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="lg:hidden w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 border border-gray-200 flex flex-col items-center justify-center space-y-1.5 transition-colors p-2"
+            className="lg:hidden w-9 h-9 rounded-full bg-white/[0.06] hover:bg-white/10 border border-white/10 flex flex-col items-center justify-center space-y-1.5 transition-colors p-2"
             aria-label="Toggle navigation menu"
           >
             <motion.span
               animate={mobileMenuOpen ? { rotate: 45, y: 4 } : { rotate: 0, y: 0 }}
-              className="w-4 h-0.5 bg-gray-800 rounded-full block transition-transform"
+              className="w-4 h-0.5 bg-white rounded-full block transition-transform"
             />
             <motion.span
               animate={mobileMenuOpen ? { rotate: -45, y: -4 } : { rotate: 0, y: 0 }}
-              className="w-4 h-0.5 bg-gray-800 rounded-full block transition-transform"
+              className="w-4 h-0.5 bg-white rounded-full block transition-transform"
             />
           </button>
         </div>
       </div>
 
-      {/* Mobile Drawer (Light Theme Accordion - 100% Solid Opaque) */}
+      {/* Mobile Drawer */}
       <AnimatePresence>
         {mobileMenuOpen && (
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            style={{ backgroundColor: "#ffffff" }}
-            className="lg:hidden mt-2 bg-white border border-gray-200 rounded-3xl p-4 shadow-2xl overflow-hidden z-[100]"
+            initial={{ opacity: 0, y: -10, filter: "blur(6px)" }}
+            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            exit={{ opacity: 0, y: -10, filter: "blur(6px)" }}
+            data-lenis-prevent
+            className="lg:hidden mt-2 bg-[#0e0e0f]/95 backdrop-blur-xl border border-white/10 rounded-3xl p-3 shadow-2xl overflow-y-auto max-h-[75vh] z-[100]"
           >
             <div className="space-y-2">
               {NAV_TABS.map((tab) => {
@@ -480,7 +503,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenTaskModal, onOpenRegisterM
                       key={tab.id}
                       href={tab.href}
                       onClick={() => setMobileMenuOpen(false)}
-                      className="block p-3 rounded-2xl bg-gray-50 border border-gray-200/70 text-gray-900 font-bold text-sm hover:bg-gray-100"
+                      className="block p-3 rounded-2xl bg-white/[0.04] border border-white/10 text-white font-mono uppercase tracking-wider text-sm hover:bg-white/[0.08]"
                     >
                       {tab.label}
                     </Link>
@@ -488,28 +511,31 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenTaskModal, onOpenRegisterM
                 }
 
                 return (
-                  <div key={tab.id} className="rounded-2xl bg-gray-50 border border-gray-200/70 overflow-hidden">
+                  <div key={tab.id} className="rounded-2xl bg-white/[0.04] border border-white/10 overflow-hidden">
                     <button
                       onClick={() => setMobileActiveAccordion(isAccordionOpen ? null : tab.id)}
-                      className="w-full p-3 text-left font-bold text-sm text-gray-900 flex items-center justify-between"
+                      className="w-full p-3 text-left font-mono uppercase tracking-wider text-sm text-white flex items-center justify-between"
                     >
                       <span>{tab.label}</span>
-                      <span className={`text-xs text-gray-400 transition-transform ${isAccordionOpen ? "rotate-180 text-black" : ""}`}>
+                      <span className={`text-xs transition-transform ${isAccordionOpen ? "rotate-180 text-[#ccff00]" : "text-white/40"}`}>
                         ▼
                       </span>
                     </button>
 
                     {isAccordionOpen && tab.subItems && (
-                      <div className="px-3 pb-3 space-y-1.5 border-t border-gray-200/60 pt-2 bg-white">
+                      <div className="px-2 pb-2 space-y-1 border-t border-white/10 pt-2">
                         {tab.subItems.map((item, idx) => (
                           <Link
                             key={idx}
                             href={item.href}
-                            onClick={() => setMobileMenuOpen(false)}
-                            className="flex items-center space-x-2.5 p-2 rounded-xl hover:bg-gray-50 text-xs text-gray-700 hover:text-black font-medium"
+                            onClick={(e) => {
+                              handleAnchorClick(e, item.href);
+                              setMobileMenuOpen(false);
+                            }}
+                            className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-white/[0.06] text-xs text-white/80"
                           >
                             <span>{item.icon}</span>
-                            <span className="font-bold text-gray-900">{item.title}</span>
+                            <span className="font-semibold text-white">{item.title}</span>
                           </Link>
                         ))}
                       </div>

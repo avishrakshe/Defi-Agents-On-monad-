@@ -1,0 +1,7 @@
+# Backend deployment only needs server.ts, orchestrator/ and agents/
+frontend
+contracts
+docs
+**/node_modules
+.env
+.env.*

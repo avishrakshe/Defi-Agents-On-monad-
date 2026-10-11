@@ -7,7 +7,8 @@ const nextConfig = {
     NEXT_PUBLIC_MONAD_CHAIN_NAME: process.env.NEXT_PUBLIC_MONAD_CHAIN_NAME || "Monad Testnet",
     NEXT_PUBLIC_MONAD_RPC_URL: process.env.NEXT_PUBLIC_MONAD_RPC_URL || "https://testnet-rpc.monad.xyz",
     NEXT_PUBLIC_MONAD_USDC_ADDRESS: process.env.NEXT_PUBLIC_MONAD_USDC_ADDRESS || "0x534b2f3A21130d7a60830c2Df862319e593943A3",
-    NEXT_PUBLIC_ORCHESTRATOR_URL: process.env.ORCHESTRATOR_URL || "http://localhost:4000"
+    // Empty when unset: src/lib/orchestrator.ts then picks the deployed backend on real hosts and :4000 on localhost
+    NEXT_PUBLIC_ORCHESTRATOR_URL: process.env.NEXT_PUBLIC_ORCHESTRATOR_URL || process.env.ORCHESTRATOR_URL || ""
   },
   webpack: (config) => {
     config.resolve.fallback = {

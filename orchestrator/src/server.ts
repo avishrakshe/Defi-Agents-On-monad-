@@ -2,18 +2,37 @@ import express from "express";
 import cors from "cors";
 import * as dotenv from "dotenv";
 import * as path from "path";
-import { decomposeTask } from "./router";
-import { executeModeA } from "./modeA";
-import { buildSummary, polishSummary, OrchestratorResults } from "./synthesizer";
-import { ethers } from "ethers";
 
 dotenv.config({ path: path.resolve(__dirname, "../../.env") });
+
+import { ethers } from "ethers";
+import { decomposeTask, Subtask } from "./router";
+import { executeAll } from "./modeA";
+import { executeSubtask } from "./executor";
+import { buildSummary, polishSummary } from "./synthesizer";
+import { getBalances, getOrchestratorWallet, getProvider } from "./x402Client";
 
 const app = express();
 const PORT = process.env.ORCHESTRATOR_PORT || 4000;
 
+const IDENTITY = () => process.env.NEXT_PUBLIC_IDENTITY_REGISTRY_ADDRESS || "0xD62b32482874E447Beb60E6Df5A21E6ebaFf54ad";
+const REPUTATION = () => process.env.NEXT_PUBLIC_REPUTATION_REGISTRY_ADDRESS || "0x7b398a8F83133d5E28b4cce7c3131b4Ba8C486E0";
+const EXPLORER = () => process.env.NEXT_PUBLIC_MONAD_EXPLORER_URL || "https://testnet.monadvision.com";
+
+const IDENTITY_ABI = [
+  "function registerAgent(string name, string skill, string endpoint, uint256 priceUSDC, string metadataURI) external returns (uint256)",
+  "function getAllAgents() external view returns (tuple(uint256 id, address owner, string name, string skill, string endpoint, uint256 priceUSDC, string metadataURI, uint256 registeredAt, bool active)[])",
+  "event AgentRegistered(uint256 indexed agentId, address indexed owner, string skill, string name, uint256 priceUSDC, string endpoint, string metadataURI)"
+];
+
 app.use(cors());
 app.use(express.json());
+
+const requireWallet = () => {
+  const w = getOrchestratorWallet();
+  if (!w) throw new Error("ORCHESTRATOR_PRIVATE_KEY is not configured");
+  return w;
+};
 
 app.get("/health", (req, res) => {
   res.json({
@@ -25,19 +44,39 @@ app.get("/health", (req, res) => {
   });
 });
 
-app.get("/api/status", (req, res) => {
-  const orchestratorAddress = process.env.ORCHESTRATOR_WALLET_ADDRESS || "0x39D17f02fA4A362902cA760aF830CEBA82bdC39B";
+// Live orchestrator status: real balances + reachability of each specialist
+app.get("/api/status", async (req, res) => {
+  const wallet = getOrchestratorWallet();
+  const address = wallet?.address || process.env.ORCHESTRATOR_WALLET_ADDRESS || null;
+  const agents = [
+    { id: 1, name: "Smart Contract Auditor", skill: "contract-audit", url: process.env.CONTRACT_AUDITOR_URL || "http://localhost:4001" },
+    { id: 2, name: "Token Risk Scorer", skill: "token-risk-score", url: process.env.TOKEN_RISK_URL || "http://localhost:4002" },
+    { id: 3, name: "Gas Price & Timing Agent", skill: "gas-timing", url: process.env.GAS_TIMING_URL || "http://localhost:4003" },
+    { id: 4, name: "Whale & Liquidity Sentinel", skill: "whale-tracker", url: process.env.WHALE_AGENT_URL || "http://localhost:4004" }
+  ];
+  const [balances, health] = await Promise.all([
+    address ? getBalances(address).catch(() => null) : Promise.resolve(null),
+    Promise.all(
+      agents.map(async (a) => {
+        try {
+          const r = await fetch(`${a.url}/health`, { signal: AbortSignal.timeout(2500) });
+          return { ...a, online: r.ok };
+        } catch {
+          return { ...a, online: false };
+        }
+      })
+    )
+  ]);
+
   res.json({
-    orchestratorAddress,
-    balanceUSDC: "100.00 tUSDC",
+    orchestratorAddress: address,
+    balanceMON: balances?.mon ?? null,
+    balanceUSDC: balances?.usdc ?? null,
+    canSettlePayments: balances ? Number(balances.usdc) >= 0.001 : false,
     network: "Monad Testnet",
     chainId: 10143,
-    llmPolishAvailable: !!(process.env.OPENAI_API_KEY || process.env.ANTHROPIC_API_KEY),
-    registeredAgents: [
-      { id: 1, name: "Smart Contract Auditor", skill: "contract-audit", port: 4001 },
-      { id: 2, name: "Token Risk Scorer", skill: "token-risk-score", port: 4002 },
-      { id: 3, name: "Gas Price & Timing Agent", skill: "gas-timing", port: 4003 }
-    ]
+    llmPolishAvailable: !!process.env.OPENAI_API_KEY,
+    agents: health
   });
 });
 
@@ -45,54 +84,42 @@ app.get("/api/status", (req, res) => {
 app.post("/api/feedback", async (req, res) => {
   try {
     const { agentId = 1, score = 95, note = "Verified onchain agent feedback", reviewer } = req.body;
-    const rawKey = process.env.ORCHESTRATOR_PRIVATE_KEY || process.env.DEPLOYER_PRIVATE_KEY;
-    const privateKey = rawKey ? (rawKey.startsWith("0x") ? rawKey : `0x${rawKey}`) : undefined;
-    const rpcUrl = process.env.NEXT_PUBLIC_MONAD_RPC_URL || "https://testnet-rpc.monad.xyz";
-    const repAddress = process.env.NEXT_PUBLIC_REPUTATION_REGISTRY_ADDRESS || "0x7b398a8F83133d5E28b4cce7c3131b4Ba8C486E0";
+    const wallet = requireWallet();
+    const rep = new ethers.Contract(
+      REPUTATION(),
+      [
+        "function submitFeedbackFor(uint256 agentId, address reviewer, uint8 score, string note) external",
+        "function getReputation(uint256 agentId) external view returns (uint256 avgScore, uint256 feedbackCount)"
+      ],
+      wallet
+    );
 
-    const provider = new ethers.JsonRpcProvider(rpcUrl);
-    const wallet = new ethers.Wallet(privateKey as string, provider);
-    const repAbi = [
-      "function submitFeedbackFor(uint256 agentId, address reviewer, uint8 score, string note) external",
-      "function getReputation(uint256 agentId) external view returns (uint256 avgScore, uint256 feedbackCount)"
-    ];
-
-    const repContract = new ethers.Contract(repAddress, repAbi, wallet);
-    const targetReviewer = reviewer || wallet.address;
-
-    const tx = await repContract.submitFeedbackFor(agentId, targetReviewer, Math.min(100, Math.max(0, score)), note);
+    const tx = await rep.submitFeedbackFor(agentId, reviewer || wallet.address, Math.min(100, Math.max(0, Math.round(score))), String(note).slice(0, 280));
     const receipt = await tx.wait();
-    const [avg, count] = await repContract.getReputation(agentId);
+    const [avg, count] = await rep.getReputation(agentId);
 
     return res.json({
       success: true,
       txHash: tx.hash,
       blockNumber: receipt.blockNumber,
-      explorerUrl: `https://testnet.monadvision.com/tx/${tx.hash}`,
-      reputation: {
-        agentId,
-        avgScore: Number(avg),
-        feedbackCount: Number(count)
-      }
+      explorerUrl: `${EXPLORER()}/tx/${tx.hash}`,
+      reputation: { agentId, avgScore: Number(avg), feedbackCount: Number(count) }
     });
   } catch (err: any) {
-    console.error("[Feedback Broadcast Error]:", err);
-    return res.status(500).json({ error: "Failed to broadcast feedback onchain", details: err.message });
+    console.error("[Feedback Broadcast Error]:", err.shortMessage || err.message);
+    return res.status(500).json({ error: "Failed to broadcast feedback onchain", details: err.shortMessage || err.message });
   }
 });
 
-// Main orchestration endpoint
+// One-shot orchestration (decompose → execute all → synthesize)
 app.post("/api/orchestrate", async (req, res) => {
   try {
     const { taskText, mode = "A", authorizations } = req.body;
-
     if (!taskText || typeof taskText !== "string") {
       return res.status(400).json({ error: "taskText string is required" });
     }
 
-    // 1. Decompose task into subtasks
     const subtasks = decomposeTask(taskText);
-
     if (subtasks.length === 0) {
       return res.status(400).json({
         error: "Task Unroutable",
@@ -100,110 +127,15 @@ app.post("/api/orchestrate", async (req, res) => {
       });
     }
 
-    // 2. Mode B: client provided payment authorizations
-    if (mode === "B" && authorizations && Array.isArray(authorizations)) {
-      const steps = [];
-      const results: OrchestratorResults = {};
-
-      const rawKey = process.env.ORCHESTRATOR_PRIVATE_KEY || process.env.DEPLOYER_PRIVATE_KEY;
-      const privateKey = rawKey ? (rawKey.startsWith("0x") ? rawKey : `0x${rawKey}`) : undefined;
-      const rpcUrl = process.env.NEXT_PUBLIC_MONAD_RPC_URL || "https://testnet-rpc.monad.xyz";
-      const repAddress = process.env.NEXT_PUBLIC_REPUTATION_REGISTRY_ADDRESS || "0x7b398a8F83133d5E28b4cce7c3131b4Ba8C486E0";
-
-      let repContract: ethers.Contract | null = null;
-      if (privateKey) {
-        try {
-          const provider = new ethers.JsonRpcProvider(rpcUrl);
-          const wallet = new ethers.Wallet(privateKey, provider);
-          repContract = new ethers.Contract(repAddress, ["function recordPaidCall(uint256 agentId, address client) external"], wallet);
-        } catch (e) {
-          console.warn("Could not init repContract in Mode B:", e);
-        }
-      }
-
-      for (let i = 0; i < subtasks.length; i++) {
-        const subtask = subtasks[i];
-        const auth = authorizations[i];
-
-        let requestBody: any = {};
-        if (subtask.skill === "token-risk-score") {
-          requestBody = { tokenAddress: subtask.tokenAddress };
-        } else if (subtask.skill === "contract-audit") {
-          requestBody = { contractAddress: subtask.contractAddress };
-        } else if (subtask.skill === "gas-timing") {
-          requestBody = { network: "monad-testnet" };
-        }
-
-        const agentRes = await fetch(subtask.targetUrl, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Payment-Authorization": typeof auth === "string" ? auth : JSON.stringify(auth)
-          },
-          body: JSON.stringify(requestBody)
-        });
-
-        const agentJson = await agentRes.json();
-        let onchainTxHash = agentJson.settlement?.txHash;
-        let blockNumber: number | undefined;
-
-        if (repContract) {
-          try {
-            const agentId = subtask.skill === "contract-audit" ? 1 : subtask.skill === "token-risk-score" ? 2 : 3;
-            const clientAddress = (auth && typeof auth === "object" && auth.from) || "0x39D17f02fA4A362902cA760aF830CEBA82bdC39B";
-            const tx = await repContract.recordPaidCall(agentId, clientAddress);
-            onchainTxHash = tx.hash;
-            const receipt = await tx.wait();
-            blockNumber = receipt.blockNumber;
-          } catch (onchainErr: any) {
-            console.warn("[Orchestrator Mode B] recordPaidCall notice:", onchainErr.message);
-          }
-        }
-
-        steps.push({
-          subtask,
-          status: agentRes.ok ? "completed" : "failed",
-          settlement: {
-            ...agentJson.settlement,
-            txHash: onchainTxHash,
-            blockNumber,
-            explorerUrl: `https://testnet.monadvision.com/tx/${onchainTxHash}`
-          },
-          result: agentJson.data
-        });
-
-        if (subtask.skill === "token-risk-score") results.riskScore = agentJson.data;
-        else if (subtask.skill === "gas-timing") results.gasTiming = agentJson.data;
-        else if (subtask.skill === "contract-audit") results.audit = agentJson.data;
-      }
-
-      const deterministicSummary = buildSummary(results);
-      const { summary, polished } = await polishSummary(deterministicSummary);
-
-      return res.json({
-        mode: "Mode B: Your Wallet",
-        taskText,
-        subtasks,
-        steps,
-        results,
-        summary,
-        polished,
-        totalCostUSDC: `$${(subtasks.length * 0.001).toFixed(3)}`,
-        timestamp: new Date().toISOString()
-      });
-    }
-
-    // Default Mode A: Autonomous
-    const executionResult = await executeModeA(taskText, subtasks);
-    return res.json(executionResult);
-
+    const useB = mode === "B" && Array.isArray(authorizations);
+    return res.json(await executeAll(taskText, subtasks, useB ? "B" : "A", useB ? authorizations : undefined));
   } catch (err: any) {
     console.error("[Orchestrator Error]:", err);
     return res.status(500).json({ error: "Internal Orchestrator Error", details: err.message });
   }
 });
 
-// Onchain Agent Registration endpoint
+// Onchain agent registration
 app.post("/api/register-agent", async (req, res) => {
   try {
     const {
@@ -220,51 +152,22 @@ app.post("/api/register-agent", async (req, res) => {
       return res.status(400).json({ error: "name, skill, and endpoint are required" });
     }
 
-    const rawKey = process.env.ORCHESTRATOR_PRIVATE_KEY || process.env.DEPLOYER_PRIVATE_KEY;
-    const privateKey = rawKey ? (rawKey.startsWith("0x") ? rawKey : `0x${rawKey}`) : undefined;
-    const rpcUrl = process.env.NEXT_PUBLIC_MONAD_RPC_URL || "https://testnet-rpc.monad.xyz";
-    const identityAddress = process.env.NEXT_PUBLIC_IDENTITY_REGISTRY_ADDRESS || "0xD62b32482874E447Beb60E6Df5A21E6ebaFf54ad";
+    const wallet = requireWallet();
+    const identity = new ethers.Contract(IDENTITY(), IDENTITY_ABI, wallet);
+    const metadata = { description, dataSource, author: ownerAddress || wallet.address, registeredVia: "DeFi Agent Marketplace Monad" };
 
-    const provider = new ethers.JsonRpcProvider(rpcUrl);
-    const wallet = new ethers.Wallet(privateKey as string, provider);
-
-    const identityAbi = [
-      "function registerAgent(string name, string skill, string endpoint, uint256 priceUSDC, string metadataURI) external returns (uint256)",
-      "function getAllAgents() external view returns (tuple(uint256 id, address owner, string name, string skill, string endpoint, uint256 priceUSDC, string metadataURI, uint256 registeredAt, bool active)[])",
-      "event AgentRegistered(uint256 indexed agentId, address indexed owner, string skill, string name, uint256 priceUSDC, string endpoint, string metadataURI)"
-    ];
-
-    const identityContract = new ethers.Contract(identityAddress, identityAbi, wallet);
-
-    const metadataObj = {
-      description,
-      dataSource,
-      author: ownerAddress || wallet.address,
-      registeredVia: "DeFi Agent Marketplace Monad"
-    };
-
-    const tx = await identityContract.registerAgent(
-      name,
-      skill,
-      endpoint,
-      priceUSDC,
-      JSON.stringify(metadataObj)
-    );
-
+    const tx = await identity.registerAgent(name, skill, endpoint, priceUSDC, JSON.stringify(metadata));
     const receipt = await tx.wait();
 
-    // Find AgentRegistered event
-    let registeredAgentId = null;
-    if (receipt && receipt.logs) {
-      for (const log of receipt.logs) {
-        try {
-          const parsed = identityContract.interface.parseLog(log);
-          if (parsed && parsed.name === "AgentRegistered") {
-            registeredAgentId = Number(parsed.args.agentId);
-            break;
-          }
-        } catch {}
-      }
+    let registeredAgentId: number | null = null;
+    for (const log of receipt?.logs || []) {
+      try {
+        const parsed = identity.interface.parseLog(log);
+        if (parsed?.name === "AgentRegistered") {
+          registeredAgentId = Number(parsed.args.agentId);
+          break;
+        }
+      } catch {}
     }
 
     return res.json({
@@ -272,7 +175,7 @@ app.post("/api/register-agent", async (req, res) => {
       agentId: registeredAgentId,
       txHash: tx.hash,
       blockNumber: receipt.blockNumber,
-      explorerUrl: `https://testnet.monadvision.com/tx/${tx.hash}`,
+      explorerUrl: `${EXPLORER()}/tx/${tx.hash}`,
       agent: {
         id: registeredAgentId,
         name,
@@ -283,214 +186,138 @@ app.post("/api/register-agent", async (req, res) => {
       }
     });
   } catch (err: any) {
-    console.error("[Agent Registration Error]:", err);
-    return res.status(500).json({ error: "Failed to register agent onchain", details: err.message });
+    console.error("[Agent Registration Error]:", err.shortMessage || err.message);
+    return res.status(500).json({ error: "Failed to register agent onchain", details: err.shortMessage || err.message });
   }
 });
 
-// Decompose task endpoint with dynamic onchain agent discovery
+// Decompose with dynamic onchain discovery of community agents
 app.post("/api/decompose", async (req, res) => {
   const { taskText } = req.body;
   if (!taskText) return res.status(400).json({ error: "taskText required" });
-  
-  // 1. Base router decomposition
-  const subtasks = decomposeTask(taskText);
 
-  // 2. Query dynamic custom agents registered onchain
+  const subtasks: Subtask[] = decomposeTask(taskText);
+  const addresses: string[] = taskText.match(/0x[a-fA-F0-9]{40}/g) || [];
+
   try {
-    const rpcUrl = process.env.NEXT_PUBLIC_MONAD_RPC_URL || "https://testnet-rpc.monad.xyz";
-    const identityAddress = process.env.NEXT_PUBLIC_IDENTITY_REGISTRY_ADDRESS || "0xD62b32482874E447Beb60E6Df5A21E6ebaFf54ad";
-    const provider = new ethers.JsonRpcProvider(rpcUrl);
-    const identityAbi = [
-      "function getAllAgents() external view returns (tuple(uint256 id, address owner, string name, string skill, string endpoint, uint256 priceUSDC, string metadataURI, uint256 registeredAt, bool active)[])"
-    ];
-    const identityContract = new ethers.Contract(identityAddress, identityAbi, provider);
-    const onchainAgents = await identityContract.getAllAgents();
-
+    const identity = new ethers.Contract(IDENTITY(), IDENTITY_ABI, getProvider());
+    const onchainAgents = await identity.getAllAgents();
     const lower = taskText.toLowerCase();
+
     for (const a of onchainAgents) {
       const id = Number(a.id);
       if (id <= 3 || !a.active) continue;
+      const skill = String(a.skill).toLowerCase();
+      const name = String(a.name).toLowerCase();
+      const keywords = skill.split(/[-_\s]/).concat(name.split(/[\s&]+/)).filter((k: string) => k.length > 3);
 
-      const skill = a.skill.toLowerCase();
-      const name = a.name.toLowerCase();
-
-      // Check if task mentions skill or name keywords
-      if (
-        lower.includes(skill) ||
-        lower.includes(name) ||
-        (skill.includes("whale") && lower.includes("whale")) ||
-        (skill.includes("liquidity") && lower.includes("liquidity")) ||
-        (skill.includes("arbitrage") && lower.includes("arbitrage"))
-      ) {
+      if (lower.includes(skill) || lower.includes(name) || keywords.some((k: string) => lower.includes(k))) {
+        // Deployment-provided URLs win over the onchain endpoint (agent #4 is registered at localhost:4004, and its
+        // registry record is still controlled by the retired operator key, so it must not be trusted blindly)
+        const override = id === 4 && process.env.WHALE_AGENT_URL ? `${process.env.WHALE_AGENT_URL}/api/whale` : undefined;
         subtasks.push({
+          agentId: id,
           skill: a.skill,
-          targetUrl: a.endpoint,
+          targetUrl: override || a.endpoint,
           priceUSDC: `$${(Number(a.priceUSDC) / 1_000_000).toFixed(3)}`,
-          agentName: a.name
+          agentName: a.name,
+          tokenAddress: addresses[0]
         });
       }
     }
-  } catch (err) {
-    console.warn("Could not query dynamic onchain agents:", err);
+    // Trust check: annotate every subtask with its live registry status and onchain reputation
+    const rep = new ethers.Contract(
+      REPUTATION(),
+      ["function getReputation(uint256 agentId) external view returns (uint256 avgScore, uint256 feedbackCount)"],
+      getProvider()
+    );
+    await Promise.all(
+      subtasks.map(async (s: any) => {
+        const reg = onchainAgents.find((a: any) => Number(a.id) === s.agentId);
+        const [avg, count] = await rep.getReputation(s.agentId).catch(() => [0n, 0n]);
+        s.trust = { registered: !!reg, active: !!reg?.active, owner: reg?.owner, avgScore: Number(avg), feedbackCount: Number(count) };
+      })
+    );
+  } catch (err: any) {
+    console.warn("Could not query dynamic onchain agents:", err.shortMessage || err.message);
   }
 
   return res.json({ subtasks });
 });
 
-// Execute a single subtask sequentially with onchain verification & settlement
+// Execute a single subtask (used by the frontend for step-by-step streaming)
 app.post("/api/execute-step", async (req, res) => {
   try {
     const { subtask, mode = "A", authorization, clientAddress } = req.body;
-    if (!subtask) return res.status(400).json({ error: "subtask required" });
+    if (!subtask?.targetUrl) return res.status(400).json({ error: "subtask with targetUrl required" });
 
-    const rawKey = process.env.ORCHESTRATOR_PRIVATE_KEY || process.env.DEPLOYER_PRIVATE_KEY;
-    const privateKey = rawKey ? (rawKey.startsWith("0x") ? rawKey : `0x${rawKey}`) : undefined;
-    const rpcUrl = process.env.NEXT_PUBLIC_MONAD_RPC_URL || "https://testnet-rpc.monad.xyz";
-    const provider = new ethers.JsonRpcProvider(rpcUrl);
-
-    let signerWallet: ethers.Wallet | null = null;
-    if (privateKey) {
-      try {
-        signerWallet = new ethers.Wallet(privateKey, provider);
-      } catch (e) {
-        console.warn("Could not instantiate wallet:", e);
-      }
-    }
-
-    const orchestratorAddress = signerWallet?.address || "0x39D17f02fA4A362902cA760aF830CEBA82bdC39B";
-    const payTo = process.env.PAY_TO_ADDRESS || orchestratorAddress;
-    const asset = process.env.NEXT_PUBLIC_MONAD_USDC_ADDRESS || "0x534b2f3A21130d7a60830c2Df862319e593943A3";
-    const repAddress = process.env.NEXT_PUBLIC_REPUTATION_REGISTRY_ADDRESS || "0x7b398a8F83133d5E28b4cce7c3131b4Ba8C486E0";
-
-    const domain = {
-      name: "USD Coin",
-      version: "2",
-      chainId: 10143,
-      verifyingContract: asset
-    };
-
-    const types = {
-      TransferWithAuthorization: [
-        { name: "from", type: "address" },
-        { name: "to", type: "address" },
-        { name: "value", type: "uint256" },
-        { name: "validAfter", type: "uint256" },
-        { name: "validBefore", type: "uint256" },
-        { name: "nonce", type: "bytes32" }
-      ]
-    };
-
-    let paymentAuthStr = "";
-
-    if (mode === "B" && authorization) {
-      paymentAuthStr = typeof authorization === "string" ? authorization : JSON.stringify(authorization);
-    } else {
-      const now = Math.floor(Date.now() / 1000);
-      const validAfter = now - 60;
-      const validBefore = now + 3600;
-      const nonce = ethers.hexlify(ethers.randomBytes(32));
-      const value = "1000";
-
-      let signature = "";
-      if (signerWallet) {
-        const message = {
-          from: orchestratorAddress,
-          to: payTo,
-          value,
-          validAfter,
-          validBefore,
-          nonce
-        };
-        signature = await signerWallet.signTypedData(domain, types, message);
-      }
-
-      paymentAuthStr = JSON.stringify({
-        scheme: "exact",
-        network: "eip155:10143",
-        from: orchestratorAddress,
-        to: payTo,
-        value,
-        validAfter,
-        validBefore,
-        nonce,
-        signature
-      });
-    }
-
-    let requestBody: any = {};
-    if (subtask.skill === "token-risk-score") {
-      requestBody = { tokenAddress: subtask.tokenAddress };
-    } else if (subtask.skill === "contract-audit") {
-      requestBody = { contractAddress: subtask.contractAddress };
-    } else if (subtask.skill === "gas-timing") {
-      requestBody = { network: "monad-testnet" };
-    } else {
-      requestBody = {
-        tokenAddress: subtask.tokenAddress || "0x534b2f3A21130d7a60830c2Df862319e593943A3",
-        contractAddress: subtask.contractAddress || "0x534b2f3A21130d7a60830c2Df862319e593943A3",
-        network: "monad-testnet"
-      };
-    }
-
-    const agentRes = await fetch(subtask.targetUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Payment-Authorization": paymentAuthStr
-      },
-      body: JSON.stringify(requestBody),
-      signal: AbortSignal.timeout(12000)
-    });
-
-    if (!agentRes.ok) {
-      throw new Error(`Specialist agent HTTP ${agentRes.status}: ${agentRes.statusText}`);
-    }
-
-    const agentJson = await agentRes.json();
-
-    // Broadcast onchain recordPaidCall
-    let onchainTxHash = agentJson.settlement?.txHash;
-    let blockNumber: number | undefined;
-
-    if (signerWallet) {
-      try {
-        const repAbi = ["function recordPaidCall(uint256 agentId, address client) external"];
-        const repContract = new ethers.Contract(repAddress, repAbi, signerWallet);
-        const agentId = subtask.skill === "contract-audit" ? 1 : subtask.skill === "token-risk-score" ? 2 : 3;
-        const payer = clientAddress || (mode === "B" && authorization?.from ? authorization.from : orchestratorAddress);
-        const tx = await repContract.recordPaidCall(agentId, payer);
-        onchainTxHash = tx.hash;
-        const receipt = await tx.wait();
-        blockNumber = receipt.blockNumber;
-      } catch (onchainErr: any) {
-        console.warn("[execute-step] Onchain recordPaidCall notice:", onchainErr.message);
-      }
-    }
-
-    return res.json({
-      success: true,
-      subtask,
-      settlement: {
-        ...agentJson.settlement,
-        txHash: onchainTxHash,
-        blockNumber,
-        explorerUrl: `https://testnet.monadvision.com/tx/${onchainTxHash}`
-      },
-      result: agentJson.data
-    });
+    const step = await executeSubtask({ subtask, mode, authorization, clientAddress });
+    return res.json({ success: true, subtask, settlement: step.settlement, result: step.result, durationMs: step.durationMs });
   } catch (err: any) {
-    console.error("[execute-step Error]:", err);
-    return res.status(500).json({ error: "Failed to execute step", details: err.message });
+    console.error("[execute-step Error]:", err.message);
+    return res.status(502).json({ error: "Failed to execute step", details: err.message });
   }
 });
 
-// Synthesize results endpoint
+// Issue the soulbound Monad Scholar credential (owner-only on AcademyCredential, so it must be signed here —
+// the operator key never leaves the server)
+app.post("/api/issue-credential", async (req, res) => {
+  try {
+    const { recipient, learnerName } = req.body || {};
+    const name = String(learnerName || "").trim().slice(0, 64);
+    if (!name) return res.status(400).json({ error: "learnerName required" });
+
+    const wallet = requireWallet();
+    const to = recipient && ethers.isAddress(recipient) ? ethers.getAddress(recipient) : wallet.address;
+    const credential = new ethers.Contract(
+      process.env.NEXT_PUBLIC_ACADEMY_CREDENTIAL_ADDRESS || "0xAbAFE53736e087877561cd0E48C283D6e7e59Ce6",
+      [
+        "function issueCredential(address learner, string learnerName, string uri) external returns (uint256)",
+        "function balanceOf(address owner) view returns (uint256)",
+        "event CredentialIssued(uint256 indexed tokenId, address indexed learner, string learnerName, uint256 completedAt, string tokenURI)"
+      ],
+      wallet
+    );
+
+    // One credential per external wallet — stops anyone from draining gas with repeat mints
+    if (to !== wallet.address) {
+      const held = await credential.balanceOf(to).catch(() => 0n);
+      if (held > 0n) return res.status(409).json({ error: "Credential already issued to this wallet" });
+    }
+
+    const uri = JSON.stringify({
+      title: "Monad Academy Scholar Credential",
+      learner: name,
+      completedAt: new Date().toISOString(),
+      paths: ["Monad Fundamentals", "Tokenized Assets", "x402 Payments"],
+      issuer: "Monad Academy"
+    });
+    const tx = await credential.issueCredential(to, name, uri);
+    const receipt = await tx.wait();
+
+    let tokenId: string | null = null;
+    for (const log of receipt?.logs || []) {
+      try {
+        const parsed = credential.interface.parseLog(log);
+        if (parsed?.name === "CredentialIssued") {
+          tokenId = parsed.args.tokenId.toString();
+          break;
+        }
+      } catch {}
+    }
+
+    return res.json({ success: true, txHash: tx.hash, blockNumber: receipt.blockNumber, tokenId, recipient: to, issuer: wallet.address, explorerUrl: `${EXPLORER()}/tx/${tx.hash}` });
+  } catch (err: any) {
+    console.error("[Credential Error]:", err.shortMessage || err.message);
+    return res.status(500).json({ error: "Failed to issue credential", details: err.shortMessage || err.message });
+  }
+});
+
+// Synthesize results
 app.post("/api/synthesize", async (req, res) => {
   try {
     const { results } = req.body;
-    const deterministicSummary = buildSummary(results || {});
-    const { summary, polished } = await polishSummary(deterministicSummary);
+    const { summary, polished } = await polishSummary(buildSummary(results || {}));
     return res.json({ summary, polished });
   } catch (err: any) {
     return res.status(500).json({ error: "Synthesis failed", details: err.message });

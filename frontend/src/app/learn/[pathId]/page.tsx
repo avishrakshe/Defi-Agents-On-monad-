@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Navbar } from "../../../components/Navbar";
+import { PageBackdrop, SiteFooter } from "../../../components/PageChrome";
 import { useAcademyStore, AcademyProgress } from "../../../lib/progress-store";
 
 interface LessonData {
@@ -35,13 +36,13 @@ const COURSES_DATA: Record<string, { title: string; storeKey: keyof AcademyProgr
           "Distinguish Layer-1 execution performance from decentralization trade-offs"
         ],
         content: (
-          <div className="space-y-4 text-xs sm:text-sm text-gray-700 leading-relaxed">
+          <div className="space-y-4 text-xs sm:text-sm text-white/75 leading-relaxed">
             <p>
               <strong>Monad</strong> is a decentralized, high-performance Layer-1 blockchain that introduces pipelined parallel execution and asynchronous state commitments while retaining <strong>100% full EVM bytecode compatibility</strong>.
             </p>
-            <div className="p-4 bg-gray-50 rounded-2xl border border-gray-200 my-3">
-              <span className="font-bold text-gray-950 block mb-1">Core Performance Specs:</span>
-              <ul className="list-disc list-inside space-y-1 text-xs text-gray-700">
+            <div className="p-4 bg-white/[0.04] rounded-2xl border border-white/10 my-3">
+              <span className="font-bold text-white block mb-1">Core Performance Specs:</span>
+              <ul className="list-disc list-inside space-y-1 text-xs text-white/75">
                 <li><strong>Throughput:</strong> 10,000 real-world transactions per second (TPS)</li>
                 <li><strong>Block Frequency:</strong> 300 ms blocks (sub-second user experience)</li>
                 <li><strong>Single-Slot Finality:</strong> ~600 ms (two consecutive block confirmations)</li>
@@ -75,14 +76,14 @@ const COURSES_DATA: Record<string, { title: string; storeKey: keyof AcademyProgr
           "Understand asynchronous I/O and separate state commitment"
         ],
         content: (
-          <div className="space-y-4 text-xs sm:text-sm text-gray-700 leading-relaxed">
+          <div className="space-y-4 text-xs sm:text-sm text-white/75 leading-relaxed">
             <p>
               Standard Ethereum nodes execute transactions <em>serially</em>: one transaction finishes before the next begins. Monad implements <strong>pipelined parallel execution</strong> using optimistic concurrency.
             </p>
             <p>
               Transactions execute across multiple CPU cores simultaneously. If transaction B reads a storage slot updated by transaction A, the engine detects the dependency conflict and re-executes transaction B with the updated state.
             </p>
-            <div className="p-3 bg-gray-50 border border-gray-200 rounded-xl font-mono text-xs">
+            <div className="p-3 bg-white/[0.04] border border-white/10 rounded-xl font-mono text-xs">
               [Tx 1: Swap MON] ──▶ Core 1 ──┐<br />
               [Tx 2: Transfer USDC] ─▶ Core 2 ─┼──▶ Pipelined Merge ──▶ 600ms Finality<br />
               [Tx 3: NFT Mint] ──▶ Core 3 ──┘
@@ -111,20 +112,20 @@ const COURSES_DATA: Record<string, { title: string; storeKey: keyof AcademyProgr
           "Verify Solidity bytecode parity with Ethereum"
         ],
         content: (
-          <div className="space-y-4 text-xs sm:text-sm text-gray-700 leading-relaxed">
+          <div className="space-y-4 text-xs sm:text-sm text-white/75 leading-relaxed">
             <p>
               Because Monad implements the EVM specification directly at the bytecode level, your contracts compiled with `solc` 0.8.x run out of the box.
             </p>
             <div className="overflow-x-auto">
-              <table className="min-w-full text-xs border border-gray-200 rounded-xl overflow-hidden">
-                <thead className="bg-gray-100 font-bold">
+              <table className="min-w-full text-xs border border-white/10 rounded-xl overflow-hidden">
+                <thead className="bg-white/[0.06] font-bold">
                   <tr>
                     <th className="p-2 text-left">Property</th>
                     <th className="p-2 text-left">Monad Testnet Value</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100 font-mono">
-                  <tr><td className="p-2 font-sans font-medium">Chain ID</td><td className="p-2 text-gray-950 font-bold font-mono">10143 (0x279f)</td></tr>
+                <tbody className="divide-y divide-white/10 font-mono">
+                  <tr><td className="p-2 font-sans font-medium">Chain ID</td><td className="p-2 text-white font-bold font-mono">10143 (0x279f)</td></tr>
                   <tr><td className="p-2 font-sans font-medium">Currency</td><td className="p-2 font-bold">MON</td></tr>
                   <tr><td className="p-2 font-sans font-medium">Public RPC</td><td className="p-2">https://testnet-rpc.monad.xyz</td></tr>
                   <tr><td className="p-2 font-sans font-medium">Explorer</td><td className="p-2">https://testnet.monadvision.com</td></tr>
@@ -150,20 +151,20 @@ const COURSES_DATA: Record<string, { title: string; storeKey: keyof AcademyProgr
           "Verify sub-second block confirmation on MonadVision"
         ],
         content: (
-          <div className="space-y-4 text-xs sm:text-sm text-gray-700 leading-relaxed">
+          <div className="space-y-4 text-xs sm:text-sm text-white/75 leading-relaxed">
             <p>
               Every transaction on Monad follows standard Ethereum transaction formatting (`eth_sendRawTransaction`). Due to Monad's 300ms block production, your transaction receipt arrives in under one second.
             </p>
-            <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-200/80">
-              <span className="font-bold text-emerald-900 block mb-1">Live Monad Testnet Verification:</span>
-              <p className="text-xs text-emerald-800">
+            <div className="p-4 bg-emerald-400/10 rounded-2xl border border-emerald-400/30">
+              <span className="font-bold text-emerald-200 block mb-1">Live Monad Testnet Verification:</span>
+              <p className="text-xs text-emerald-300">
                 You can inspect our deployed contract transactions live on MonadVision:
               </p>
               <a
                 href="https://testnet.monadvision.com/address/0xD62b32482874E447Beb60E6Df5A21E6ebaFf54ad"
                 target="_blank"
                 rel="noreferrer"
-                className="text-xs font-mono font-bold text-emerald-700 hover:underline block mt-1"
+                className="text-xs font-mono font-bold text-emerald-300 hover:underline block mt-1"
               >
                 0xD62b32482874E447Beb60E6Df5A21E6ebaFf54ad ↗
               </a>
@@ -187,11 +188,11 @@ const COURSES_DATA: Record<string, { title: string; storeKey: keyof AcademyProgr
           "Interact with contract storage onchain"
         ],
         content: (
-          <div className="space-y-4 text-xs sm:text-sm text-gray-700 leading-relaxed">
+          <div className="space-y-4 text-xs sm:text-sm text-white/75 leading-relaxed">
             <p>
               Here is a production-compatible greeting contract deployable on Monad Testnet:
             </p>
-            <pre className="p-4 bg-gray-950 text-gray-100 rounded-2xl font-mono text-xs overflow-x-auto">
+            <pre className="p-4 bg-white/10 text-white/90 rounded-2xl font-mono text-xs overflow-x-auto">
 {`// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
@@ -244,11 +245,11 @@ contract MonadGreeting {
           "Explain why institutional capital requires sub-second EVM settlement"
         ],
         content: (
-          <div className="space-y-4 text-xs sm:text-sm text-gray-700 leading-relaxed">
+          <div className="space-y-4 text-xs sm:text-sm text-white/75 leading-relaxed">
             <p>
               <strong>Tokenization</strong> represents rights, claims, or economic exposure to real-world assets (such as Treasury bills, equities, credit vaults, or commodities) in an onchain cryptographic format.
             </p>
-            <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900">
+            <div className="p-3 bg-amber-400/10 border border-amber-400/30 rounded-xl text-xs text-amber-900">
               <strong>Educational Disclaimer:</strong> Tokenized assets may represent economic exposure or contractual claims; they do not automatically guarantee direct legal title to the underlying asset without specific custodian agreements.
             </div>
           </div>
@@ -275,11 +276,11 @@ contract MonadGreeting {
           "Inspect how NAV and pricing oracles update onchain"
         ],
         content: (
-          <div className="space-y-4 text-xs sm:text-sm text-gray-700 leading-relaxed">
+          <div className="space-y-4 text-xs sm:text-sm text-white/75 leading-relaxed">
             <p>
               Institutional RWA tokens require a deterministic multi-stage lifecycle:
             </p>
-            <div className="p-4 bg-gray-50 border border-gray-200 rounded-2xl font-mono text-xs space-y-1">
+            <div className="p-4 bg-white/[0.04] border border-white/10 rounded-2xl font-mono text-xs space-y-1">
               <div>1. Custody: Underlying assets deposited with regulated custodian / bank</div>
               <div>2. Eligibility: Investor wallet completes KYC / allowlist check</div>
               <div>3. Issuance: Smart contract mints 1:1 backed ERC-20 representation</div>
@@ -310,7 +311,7 @@ contract MonadGreeting {
           "Learn how dividends and corporate actions pass through"
         ],
         content: (
-          <div className="space-y-4 text-xs sm:text-sm text-gray-700 leading-relaxed">
+          <div className="space-y-4 text-xs sm:text-sm text-white/75 leading-relaxed">
             <p>
               Tokenized equities on Monad allow 24/7 fractional secondary market trading of public stocks with instant 600ms settlement, eliminating traditional T+1 / T+2 clearing delays.
             </p>
@@ -338,7 +339,7 @@ contract MonadGreeting {
           "Explore ecosystem examples like Etherfuse on Monad"
         ],
         content: (
-          <div className="space-y-4 text-xs sm:text-sm text-gray-700 leading-relaxed">
+          <div className="space-y-4 text-xs sm:text-sm text-white/75 leading-relaxed">
             <p>
               Tokenized short-term sovereign debt (e.g. U.S. T-Bills, Korean treasury bonds) serves as onchain yield-bearing collateral. Yield is typically delivered either by rebasing token balances or increasing the redemption price relative to USDC.
             </p>
@@ -366,11 +367,11 @@ contract MonadGreeting {
           "Deploy an educational compliant token on Monad Testnet"
         ],
         content: (
-          <div className="space-y-4 text-xs sm:text-sm text-gray-700 leading-relaxed">
+          <div className="space-y-4 text-xs sm:text-sm text-white/75 leading-relaxed">
             <p>
               In regulated assets, transfers are restricted to approved wallets:
             </p>
-            <pre className="p-4 bg-gray-950 text-gray-100 rounded-2xl font-mono text-xs overflow-x-auto">
+            <pre className="p-4 bg-white/10 text-white/90 rounded-2xl font-mono text-xs overflow-x-auto">
 {`function _update(address from, address to, uint256 amount) internal override {
     if (from != address(0)) require(approved[from], "Sender not approved");
     if (to != address(0)) require(approved[to], "Recipient not approved");
@@ -407,7 +408,7 @@ contract MonadGreeting {
           "Explore micropayments for autonomous AI agents"
         ],
         content: (
-          <div className="space-y-4 text-xs sm:text-sm text-gray-700 leading-relaxed">
+          <div className="space-y-4 text-xs sm:text-sm text-white/75 leading-relaxed">
             <p>
               <strong>x402</strong> is an open payment protocol that brings the reserved <strong>HTTP 402 Payment Required</strong> status to life. Instead of signing up for monthly subscriptions or managing API keys, an API client simply pays fractions of a cent per request in stablecoins (e.g. USDC).
             </p>
@@ -435,11 +436,11 @@ contract MonadGreeting {
           "Understand facilitator verification and batch onchain settlement"
         ],
         content: (
-          <div className="space-y-4 text-xs sm:text-sm text-gray-700 leading-relaxed">
+          <div className="space-y-4 text-xs sm:text-sm text-white/75 leading-relaxed">
             <p>
               The x402 lifecycle:
             </p>
-            <div className="p-4 bg-gray-50 border border-gray-200 rounded-2xl font-mono text-xs space-y-1">
+            <div className="p-4 bg-white/[0.04] border border-white/10 rounded-2xl font-mono text-xs space-y-1">
               <div>1. Client sends GET /api/data</div>
               <div>2. Server returns HTTP 402 with PAYMENT-REQUIRED header (price: $0.001 USDC)</div>
               <div>3. Client cryptographically signs EIP-712 payment authorization</div>
@@ -465,11 +466,11 @@ contract MonadGreeting {
           "Verify payment signatures before serving premium data"
         ],
         content: (
-          <div className="space-y-4 text-xs sm:text-sm text-gray-700 leading-relaxed">
+          <div className="space-y-4 text-xs sm:text-sm text-white/75 leading-relaxed">
             <p>
               Our marketplace specialist agents on ports 4001, 4002, 4003, and 4004 all implement this exact middleware:
             </p>
-            <pre className="p-4 bg-gray-950 text-gray-100 rounded-2xl font-mono text-xs overflow-x-auto">
+            <pre className="p-4 bg-white/10 text-white/90 rounded-2xl font-mono text-xs overflow-x-auto">
 {`function verifyX402Payment(req, res, next) {
     const auth = JSON.parse(req.headers['x-payment-authorization']);
     const recovered = ethers.verifyTypedData(domain, types, auth, auth.signature);
@@ -503,7 +504,7 @@ contract MonadGreeting {
           "Learn how facilitators cover gas fees on behalf of APIs"
         ],
         content: (
-          <div className="space-y-4 text-xs sm:text-sm text-gray-700 leading-relaxed">
+          <div className="space-y-4 text-xs sm:text-sm text-white/75 leading-relaxed">
             <p>
               The Monad testnet facilitator at `https://x402-facilitator.molandak.org` allows API providers to verify client signatures without executing individual gas-intensive blockchain transactions per HTTP call. Instead, micropayments are batched and settled directly on Monad.
             </p>
@@ -531,7 +532,7 @@ contract MonadGreeting {
           "Track onchain agent reputation and paid call history"
         ],
         content: (
-          <div className="space-y-4 text-xs sm:text-sm text-gray-700 leading-relaxed">
+          <div className="space-y-4 text-xs sm:text-sm text-white/75 leading-relaxed">
             <p>
               When AI agents make decisions autonomously, they need verifiable identity (ERC-8004) and payment rails (x402). In our DeFi Agent Marketplace, agents discover specialists in `IdentityRegistry`, pay them $0.001 USDC via x402, and rate them in `ReputationRegistry` directly on Monad Testnet!
             </p>
@@ -555,7 +556,10 @@ contract MonadGreeting {
 
 export default function LessonDetailPage() {
   const params = useParams();
-  const pathId = (params?.pathId as string) || "monad-fundamentals";
+  // Catalog, navbar and dashboard link to /learn/x402 while the course is keyed "x402-payments"
+  const PATH_ALIASES: Record<string, string> = { x402: "x402-payments" };
+  const rawPathId = (params?.pathId as string) || "monad-fundamentals";
+  const pathId = PATH_ALIASES[rawPathId] || rawPathId;
   const course = COURSES_DATA[pathId] || COURSES_DATA["monad-fundamentals"];
 
   const { paths, completeLesson } = useAcademyStore();
@@ -592,34 +596,35 @@ export default function LessonDetailPage() {
   const isCorrect = submitted && selectedOption === currentLesson.quiz.correctIndex;
 
   return (
-    <div className="min-h-screen flex flex-col justify-between bg-[#f8f9fa] font-sans">
+    <div className="relative isolate min-h-screen flex flex-col justify-between font-sans bg-[#0e0e0f] text-white overflow-x-clip">
+      <PageBackdrop />
       <div>
         <Navbar />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-8 py-6">
           {/* Breadcrumb & Header */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-3">
-            <div className="flex items-center space-x-2 text-xs text-gray-500">
-              <Link href="/learn" className="hover:text-gray-900 transition-colors">
+            <div className="flex items-center space-x-2 text-xs text-white/50">
+              <Link href="/learn" className="hover:text-[#ccff00] transition-colors">
                 Academy
               </Link>
               <span>/</span>
-              <span className="font-semibold text-gray-800">{course.title}</span>
+              <span className="font-semibold text-white/85">{course.title}</span>
               <span>/</span>
-              <span className="text-gray-950 font-bold">{currentLesson.title}</span>
+              <span className="text-white font-bold">{currentLesson.title}</span>
             </div>
 
             {/* Mobile Tab Switcher */}
-            <div className="flex sm:hidden w-full bg-gray-200/80 p-1 rounded-xl text-xs font-bold">
+            <div className="flex sm:hidden w-full bg-white/10 p-1 rounded-xl text-xs font-bold">
               <button
                 onClick={() => setMobileTab("learn")}
-                className={`flex-1 py-1.5 rounded-lg text-center ${mobileTab === "learn" ? "bg-white text-gray-950 shadow-sm" : "text-gray-600"}`}
+                className={`flex-1 py-1.5 rounded-lg text-center ${mobileTab === "learn" ? "bg-[#121214] text-white shadow-sm" : "text-white/60"}`}
               >
                 Learn
               </button>
               <button
                 onClick={() => setMobileTab("challenge")}
-                className={`flex-1 py-1.5 rounded-lg text-center ${mobileTab === "challenge" ? "bg-white text-gray-950 shadow-sm" : "text-gray-600"}`}
+                className={`flex-1 py-1.5 rounded-lg text-center ${mobileTab === "challenge" ? "bg-[#121214] text-white shadow-sm" : "text-white/60"}`}
               >
                 Challenge Quiz
               </button>
@@ -630,9 +635,9 @@ export default function LessonDetailPage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             {/* Left 60%: Interactive Documentation Reader (7 cols on lg) */}
             <div className={`lg:col-span-7 ${mobileTab === "challenge" ? "hidden lg:block" : ""}`}>
-              <div className="bg-white rounded-3xl border border-gray-200 shadow-[0_4px_24px_rgba(0,0,0,0.03)] p-6 sm:p-10">
+              <div className="bg-[#121214] rounded-3xl border border-white/10 shadow-[0_20px_60px_-30px_rgba(0,0,0,0.9)] p-6 sm:p-10">
                 {/* Module Navigator Pills */}
-                <div className="flex flex-wrap gap-2 mb-6 border-b border-gray-100 pb-4">
+                <div className="flex flex-wrap gap-2 mb-6 border-b border-white/10 pb-4">
                   {course.lessons.map((lesson, idx) => {
                     const done = pathProgress.completedLessons.includes(lesson.id);
                     const active = idx === activeLessonIndex;
@@ -646,10 +651,10 @@ export default function LessonDetailPage() {
                         }}
                         className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 ${
                           active
-                            ? "bg-gray-950 text-white shadow-sm font-bold"
+                            ? "bg-white/10 text-white shadow-sm font-bold"
                             : done
-                            ? "bg-emerald-50 border border-emerald-200 text-emerald-800 hover:bg-emerald-100"
-                            : "bg-gray-50 border border-gray-200 text-gray-600 hover:bg-gray-100"
+                            ? "bg-emerald-400/10 border border-emerald-400/30 text-emerald-300 hover:bg-emerald-100"
+                            : "bg-white/[0.04] border border-white/10 text-white/60 hover:bg-white/10"
                         }`}
                       >
                         <span>{done ? "✓" : idx + 1}</span>
@@ -661,22 +666,22 @@ export default function LessonDetailPage() {
 
                 {/* Lesson Title & Objectives */}
                 <div className="mb-6">
-                  <div className="flex items-center space-x-3 text-xs text-gray-400 mb-1 font-mono">
+                  <div className="flex items-center space-x-3 text-xs text-white/40 mb-1 font-mono">
                     <span>{currentLesson.readTime}</span>
                     <span>•</span>
-                    <span className="text-gray-950 font-mono font-bold">+50 XP</span>
+                    <span className="text-white font-mono font-bold">+50 XP</span>
                   </div>
-                  <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-950 tracking-tight">
+                  <h1 className="font-display uppercase text-white leading-[0.95] text-[clamp(1.9rem,4.6vw,3.4rem)]">
                     {currentLesson.title}
                   </h1>
                 </div>
 
                 {/* Learning Objectives Box */}
-                <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4 sm:p-5 mb-8">
-                  <span className="text-xs font-bold uppercase tracking-wider text-gray-900 block mb-2">
+                <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-4 sm:p-5 mb-8">
+                  <span className="text-xs font-bold uppercase tracking-wider text-white block mb-2">
                     Learning Objectives:
                   </span>
-                  <ul className="list-disc list-inside space-y-1 text-xs text-gray-700">
+                  <ul className="list-disc list-inside space-y-1 text-xs text-white/75">
                     {currentLesson.objectives.map((obj, i) => (
                       <li key={i}>{obj}</li>
                     ))}
@@ -684,12 +689,12 @@ export default function LessonDetailPage() {
                 </div>
 
                 {/* Main Content Body */}
-                <div className="border-t border-gray-100 pt-6">
+                <div className="border-t border-white/10 pt-6">
                   {currentLesson.content}
                 </div>
 
                 {/* Footer Controls */}
-                <div className="mt-10 pt-6 border-t border-gray-100 flex items-center justify-between">
+                <div className="mt-10 pt-6 border-t border-white/10 flex items-center justify-between">
                   <button
                     disabled={activeLessonIndex === 0}
                     onClick={() => {
@@ -699,7 +704,7 @@ export default function LessonDetailPage() {
                         setSubmitted(false);
                       }
                     }}
-                    className="px-4 py-2 rounded-xl border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-50 disabled:opacity-30"
+                    className="px-4 py-2 rounded-xl border border-white/10 text-xs font-bold text-white/60 hover:bg-white/[0.06] disabled:opacity-30"
                   >
                     ← Previous Lesson
                   </button>
@@ -710,8 +715,8 @@ export default function LessonDetailPage() {
                     }}
                     className={`text-xs font-bold px-4 py-2 rounded-xl transition-all ${
                       isLessonDone
-                        ? "bg-emerald-100 text-emerald-800"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                        ? "bg-emerald-400/15 text-emerald-300"
+                        : "bg-white/[0.06] text-white/75 hover:bg-white/15"
                     }`}
                   >
                     {isLessonDone ? "Lesson Completed ✓" : "Mark as Read"}
@@ -720,7 +725,7 @@ export default function LessonDetailPage() {
                   <button
                     disabled={activeLessonIndex === course.lessons.length - 1}
                     onClick={handleNextLesson}
-                    className="px-4 py-2 rounded-xl bg-gray-950 text-white text-xs font-bold hover:bg-black disabled:opacity-30 shadow-sm"
+                    className="px-4 py-2 rounded-xl bg-white/10 text-white text-xs font-bold hover:bg-white/20 disabled:opacity-30 shadow-sm"
                   >
                     Next Lesson →
                   </button>
@@ -730,9 +735,9 @@ export default function LessonDetailPage() {
 
             {/* Right 40%: Contextual Challenge Quiz Panel (5 cols on lg, sticky) */}
             <div className={`lg:col-span-5 ${mobileTab === "learn" ? "hidden lg:block" : ""}`}>
-              <div className="sticky top-20 bg-white rounded-3xl border border-gray-200 shadow-[0_4px_24px_rgba(0,0,0,0.03)] p-6 sm:p-8">
+              <div className="sticky top-20 bg-[#121214] rounded-3xl border border-white/10 shadow-[0_20px_60px_-30px_rgba(0,0,0,0.9)] p-6 sm:p-8">
                 <div className="flex items-center justify-between mb-4">
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[#ccff00]/30 text-black border border-[#ccff00]/60">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[#ccff00]/10 text-[#ccff00] border border-[#ccff00]/60">
                     KNOWLEDGE CHECK
                   </span>
                   <span className="text-xs font-mono font-bold text-amber-500">
@@ -740,7 +745,7 @@ export default function LessonDetailPage() {
                   </span>
                 </div>
 
-                <h3 className="text-base font-extrabold text-gray-950 mb-4 leading-snug">
+                <h3 className="text-base font-extrabold text-white mb-4 leading-snug">
                   {currentLesson.quiz.question}
                 </h3>
 
@@ -748,16 +753,16 @@ export default function LessonDetailPage() {
                 <div className="space-y-2.5 mb-6">
                   {currentLesson.quiz.options.map((opt, idx) => {
                     const isSelected = selectedOption === idx;
-                    let btnStyle = "bg-gray-50 border-gray-200 text-gray-800 hover:bg-gray-100";
+                    let btnStyle = "bg-white/[0.04] border-white/10 text-white/85 hover:bg-white/10";
 
                     if (submitted) {
                       if (idx === currentLesson.quiz.correctIndex) {
-                        btnStyle = "bg-emerald-50 border-emerald-500 text-emerald-900 font-bold";
+                        btnStyle = "bg-emerald-400/10 border-emerald-400 text-emerald-200 font-bold";
                       } else if (isSelected) {
-                        btnStyle = "bg-rose-50 border-rose-300 text-rose-800";
+                        btnStyle = "bg-rose-400/10 border-rose-300 text-rose-800";
                       }
                     } else if (isSelected) {
-                      btnStyle = "bg-gray-100 border-black text-black font-bold";
+                      btnStyle = "bg-[#ccff00]/10 border-[#ccff00] text-[#ccff00] font-bold";
                     }
 
                     return (
@@ -780,7 +785,7 @@ export default function LessonDetailPage() {
                   <button
                     onClick={handleSubmitQuiz}
                     disabled={selectedOption === null}
-                    className="w-full btn-monad-lime py-3 rounded-xl text-xs font-bold disabled:opacity-40 shadow-sm transition-all"
+                    className="w-full btn-neon btn-sm py-3 rounded-xl text-xs font-bold disabled:opacity-40 shadow-sm transition-all"
                   >
                     Submit Answer
                   </button>
@@ -789,8 +794,8 @@ export default function LessonDetailPage() {
                     <div
                       className={`p-4 rounded-2xl text-xs leading-relaxed ${
                         isCorrect
-                          ? "bg-emerald-50 border border-emerald-200 text-emerald-900"
-                          : "bg-rose-50 border border-rose-200 text-rose-900"
+                          ? "bg-emerald-400/10 border border-emerald-400/30 text-emerald-200"
+                          : "bg-rose-400/10 border border-rose-400/30 text-rose-900"
                       }`}
                     >
                       <div className="font-bold mb-1 flex items-center space-x-1.5">
@@ -801,7 +806,7 @@ export default function LessonDetailPage() {
 
                     <button
                       onClick={handleNextLesson}
-                      className="w-full btn-monad-lime py-2.5 text-xs font-bold transition-all shadow-sm"
+                      className="w-full btn-neon btn-sm py-2.5 text-xs font-bold transition-all shadow-sm"
                     >
                       Continue to Next Lesson →
                     </button>
@@ -813,12 +818,7 @@ export default function LessonDetailPage() {
         </div>
       </div>
 
-      {/* Mandatory Ecosystem Legal Line */}
-      <footer className="border-t border-gray-200/80 py-8 px-4 sm:px-8 text-center text-xs text-gray-500">
-        <p className="max-w-4xl mx-auto leading-relaxed">
-          Built for the Monad ecosystem. Not an official Monad Labs product unless otherwise stated. Issued by Monad Academy.
-        </p>
-      </footer>
+      <SiteFooter note="Built for the Monad ecosystem. Not an official Monad Labs product unless otherwise stated. Issued by Monad Academy." />
     </div>
   );
 }

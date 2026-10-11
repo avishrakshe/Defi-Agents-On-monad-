@@ -101,9 +101,10 @@ export async function signRealX402Payment(
   const validBefore = now + 3600; // 1 hour ahead
   const nonce = ethers.hexlify(ethers.randomBytes(32));
 
-  // EIP-712 Domain for Monad Testnet USDC
+  // EIP-712 domain of Circle's Monad Testnet USDC (FiatTokenV2_2): name() is "USDC", version "2".
+  // Signing with any other name produces "FiatTokenV2: invalid signature" at settlement.
   const domain = {
-    name: "USD Coin",
+    name: "USDC",
     version: "2",
     chainId: MONAD_CHAIN_CONFIG.chainIdDecimal,
     verifyingContract: MONAD_USDC_ADDRESS

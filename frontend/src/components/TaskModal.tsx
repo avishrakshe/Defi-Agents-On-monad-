@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from "react";
 import { AgentData } from "../lib/contracts";
 import { connectBrowserWallet, signRealX402Payment } from "../lib/wallet";
+import { ORCHESTRATOR_ADDRESS } from "../lib/useBalances";
+import { getOrchestratorUrl } from "../lib/orchestrator";
 
 interface TaskModalProps {
   isOpen: boolean;
@@ -53,9 +55,9 @@ export const TaskModal: React.FC<TaskModalProps> = ({
     setSigningStatus(null);
 
     try {
-      const orchestratorUrl = process.env.NEXT_PUBLIC_ORCHESTRATOR_URL || "http://localhost:4000";
+      const orchestratorUrl = getOrchestratorUrl();
 
-      let signedAuthorizations: Record<string, any> = {};
+      const authorizations: any[] = [];
 
       if (mode === "B") {
         let currentAddress = userAddress;
@@ -66,26 +68,26 @@ export const TaskModal: React.FC<TaskModalProps> = ({
           setUserAddress(wallet.address);
         }
 
-        setSigningStatus("Please confirm the real EIP-712 x402 payment signature in MetaMask ($0.001 USDC)...");
-        const payTo = "0x39D17f02fA4A362902cA760aF830CEBA82bdC39B";
+        const payTo = ORCHESTRATOR_ADDRESS;
 
-        const realSignedAuth = await signRealX402Payment(currentAddress, payTo, "1000");
+        // One authorization per subtask, in the same order /api/orchestrate executes them (unique nonces)
+        const decomp = await fetch(`${orchestratorUrl}/api/decompose`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ taskText })
+        }).then((r) => r.json());
+        const coreSubtasks = (decomp.subtasks || []).filter((s: any) => s.agentId <= 3);
 
-        signedAuthorizations = {
-          "token-risk-score": realSignedAuth,
-          "contract-audit": realSignedAuth,
-          "gas-timing": realSignedAuth
-        };
-        setSigningStatus("Signature verified! Executing specialist agents and broadcasting onchain...");
+        for (let i = 0; i < coreSubtasks.length; i++) {
+          setSigningStatus(`Confirm x402 payment ${i + 1}/${coreSubtasks.length} ($0.001 USDC) for ${coreSubtasks[i].agentName} in your wallet...`);
+          authorizations.push(await signRealX402Payment(currentAddress, payTo, "1000"));
+        }
+        setSigningStatus("Authorizations signed! Executing specialist agents and broadcasting onchain...");
       } else {
         setSigningStatus("Mode A: Orchestrator is cryptographically signing and settling on Monad Testnet...");
       }
 
-      const payload: any = {
-        taskText,
-        mode,
-        signedAuthorizations
-      };
+      const payload: any = { taskText, mode, authorizations: mode === "B" ? authorizations : undefined };
 
       const res = await fetch(`${orchestratorUrl}/api/orchestrate`, {
         method: "POST",
@@ -111,7 +113,7 @@ export const TaskModal: React.FC<TaskModalProps> = ({
   const handleSubmitFeedback = async () => {
     try {
       setSubmittingFeedback(true);
-      const orchestratorUrl = process.env.NEXT_PUBLIC_ORCHESTRATOR_URL || "http://localhost:4000";
+      const orchestratorUrl = getOrchestratorUrl();
       const res = await fetch(`${orchestratorUrl}/api/feedback`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -119,7 +121,7 @@ export const TaskModal: React.FC<TaskModalProps> = ({
           agentId: 1,
           score: feedbackScore,
           note: feedbackNote,
-          reviewer: userAddress || "0x39D17f02fA4A362902cA760aF830CEBA82bdC39B"
+          reviewer: userAddress || ORCHESTRATOR_ADDRESS
         })
       });
 
@@ -136,11 +138,11 @@ export const TaskModal: React.FC<TaskModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fadeIn">
-      <div className="bg-white rounded-3xl border border-gray-200 shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6 sm:p-8 relative">
+      <div className="bg-[#121214] rounded-3xl border border-white/10 shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6 sm:p-8 relative">
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-6 right-6 w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 font-bold transition-colors"
+          className="absolute top-6 right-6 w-9 h-9 rounded-full bg-white/[0.06] hover:bg-white/15 flex items-center justify-center text-white/50 font-bold transition-colors"
         >
           ✕
         </button>
@@ -149,26 +151,26 @@ export const TaskModal: React.FC<TaskModalProps> = ({
         <div className="mb-6">
           <div className="flex items-center space-x-2 mb-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-[#ccff00]"></span>
-            <span className="text-xs font-bold uppercase tracking-wider text-gray-400">
+            <span className="text-xs font-bold uppercase tracking-wider text-white/40">
               Task Orchestration Engine
             </span>
           </div>
-          <h2 className="text-2xl font-black text-gray-900 tracking-tight">
+          <h2 className="text-2xl font-black text-white tracking-tight">
             Run Natural Language DeFi Task
           </h2>
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-white/50 mt-1">
             Real onchain agent execution with real EIP-712 signed x402 testnet USDC micropayments.
           </p>
         </div>
 
         {/* Mode Selector */}
-        <div className="flex bg-gray-100 p-1 rounded-2xl mb-5 w-fit border border-gray-200/60">
+        <div className="flex bg-white/[0.06] p-1 rounded-2xl mb-5 w-fit border border-white/10">
           <button
             onClick={() => setMode("A")}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
               mode === "A"
-                ? "bg-white text-gray-950 shadow-sm"
-                : "text-gray-500 hover:text-gray-800"
+                ? "bg-[#121214] text-white shadow-sm"
+                : "text-white/50 hover:text-white"
             }`}
           >
             Mode A: Autonomous (Orchestrator Signs & Pays)
@@ -177,8 +179,8 @@ export const TaskModal: React.FC<TaskModalProps> = ({
             onClick={() => setMode("B")}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
               mode === "B"
-                ? "bg-white text-gray-950 shadow-sm"
-                : "text-gray-500 hover:text-gray-800"
+                ? "bg-[#121214] text-white shadow-sm"
+                : "text-white/50 hover:text-white"
             }`}
           >
             Mode B: Your Wallet (MetaMask Real EIP-712 Sign)
@@ -186,7 +188,7 @@ export const TaskModal: React.FC<TaskModalProps> = ({
         </div>
 
         {/* Mode Description Notice */}
-        <div className="mb-4 text-xs text-gray-500 bg-gray-50 p-3 rounded-xl border border-gray-200/60">
+        <div className="mb-4 text-xs text-white/50 bg-white/[0.04] p-3 rounded-xl border border-white/10">
           {mode === "A" ? (
             <span>
               ⚡ <strong>Mode A</strong>: The orchestrator uses its Monad Testnet wallet to generate a real cryptographic EIP-712 signature and broadcasts settlement onchain to Monad Testnet.
@@ -204,7 +206,7 @@ export const TaskModal: React.FC<TaskModalProps> = ({
             <button
               key={idx}
               onClick={() => setTaskText(p.text)}
-              className="text-[11px] bg-gray-50 hover:bg-gray-100 border border-gray-200/70 text-gray-600 px-3 py-1 rounded-full transition-colors"
+              className="text-[11px] bg-white/[0.04] hover:bg-white/10 border border-white/10 text-white/60 px-3 py-1 rounded-full transition-colors"
             >
               {p.label}
             </button>
@@ -217,28 +219,28 @@ export const TaskModal: React.FC<TaskModalProps> = ({
             value={taskText}
             onChange={(e) => setTaskText(e.target.value)}
             rows={3}
-            className="w-full bg-[#f8f9fa] border border-gray-200 rounded-2xl p-4 text-sm font-sans focus:outline-none focus:ring-2 focus:ring-[#ccff00] focus:border-transparent text-gray-900"
+            className="w-full bg-white/[0.03] border border-white/10 rounded-2xl p-4 text-sm font-sans focus:outline-none focus:ring-2 focus:ring-[#ccff00] focus:border-transparent text-white"
             placeholder="e.g. Is token 0x534b2f3A... safe, and is gas good on Monad right now?"
           />
         </div>
 
         {/* Action Button & Signing Indicator */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
-          <div className="text-xs text-gray-500">
+          <div className="text-xs text-white/50">
             {signingStatus ? (
-              <span className="text-emerald-600 font-medium flex items-center space-x-1.5 animate-pulse">
+              <span className="text-emerald-300 font-medium flex items-center space-x-1.5 animate-pulse">
                 <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
                 <span>{signingStatus}</span>
               </span>
             ) : (
-              <span>Estimated Cost: <strong className="text-gray-900">~$0.001 - $0.003 tUSDC</strong> (100% Real Monad Data)</span>
+              <span>Estimated Cost: <strong className="text-white">~$0.001 - $0.003 tUSDC</strong> (100% Real Monad Data)</span>
             )}
           </div>
 
           <button
             onClick={handleExecute}
             disabled={isRunning || !taskText.trim()}
-            className="btn-monad-lime text-sm font-bold py-2.5 px-6 disabled:opacity-50 w-full sm:w-auto"
+            className="btn-neon btn-sm text-sm font-bold py-2.5 px-6 disabled:opacity-50 w-full sm:w-auto"
           >
             {isRunning ? (
               <span className="flex items-center space-x-2">
@@ -261,28 +263,28 @@ export const TaskModal: React.FC<TaskModalProps> = ({
 
         {/* Results Container */}
         {result && (
-          <div className="space-y-6 pt-6 border-t border-gray-200 animate-fadeIn">
+          <div className="space-y-6 pt-6 border-t border-white/10 animate-fadeIn">
             {/* Synthesized Final Summary */}
             <div className="bg-[#faffeb] rounded-2xl border border-[#d6f864] p-5 shadow-sm">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center space-x-2">
-                  <span className="text-xs font-bold uppercase tracking-wider text-emerald-800">
+                  <span className="text-xs font-bold uppercase tracking-wider text-emerald-300">
                     Real Synthesized Output from Monad Agents
                   </span>
-                  <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-medium">
+                  <span className="text-[10px] bg-emerald-400/15 text-emerald-300 px-2 py-0.5 rounded-full font-medium">
                     100% Real Monad Data
                   </span>
                 </div>
-                <span className="text-xs font-mono text-gray-500">{result.totalCostUSDC} settled</span>
+                <span className="text-xs font-mono text-white/50">{result.totalCostUSDC} settled</span>
               </div>
-              <p className="text-sm font-medium text-gray-900 leading-relaxed">
+              <p className="text-sm font-medium text-white leading-relaxed">
                 {result.summary}
               </p>
             </div>
 
             {/* Subtask Timeline & Settlements */}
             <div>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-white/40 mb-3">
                 Decomposed Subtasks & Live Block Explorer Transactions
               </h3>
 
@@ -290,18 +292,18 @@ export const TaskModal: React.FC<TaskModalProps> = ({
                 {result.steps?.map((step: any, idx: number) => (
                   <div
                     key={idx}
-                    className="bg-[#f8f9fa] border border-gray-200 rounded-xl p-4 text-xs"
+                    className="bg-white/[0.03] border border-white/10 rounded-xl p-4 text-xs"
                   >
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center space-x-2">
-                        <span className="font-bold text-gray-900">{step.subtask.agentName}</span>
-                        <span className="font-mono text-[10px] bg-gray-200 text-gray-700 px-2 py-0.5 rounded-md">
+                        <span className="font-bold text-white">{step.subtask.agentName}</span>
+                        <span className="font-mono text-[10px] bg-white/10 text-white/75 px-2 py-0.5 rounded-md">
                           {step.subtask.skill}
                         </span>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <span className="text-gray-400">{step.durationMs}ms</span>
-                        <span className="font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full text-[10px]">
+                        <span className="text-white/40">{step.durationMs}ms</span>
+                        <span className="font-bold text-emerald-300 bg-emerald-400/15 px-2 py-0.5 rounded-full text-[10px]">
                           {step.status}
                         </span>
                       </div>
@@ -309,17 +311,17 @@ export const TaskModal: React.FC<TaskModalProps> = ({
 
                     {/* Settlement & Explorer Badge */}
                     {step.settlement && (
-                      <div className="mt-2 pt-2 border-t border-gray-200 flex flex-wrap items-center justify-between gap-2 text-[11px] text-gray-600">
-                        <span>Status: <strong className="text-emerald-700">Mined Onchain</strong></span>
+                      <div className="mt-2 pt-2 border-t border-white/10 flex flex-wrap items-center justify-between gap-2 text-[11px] text-white/60">
+                        <span>Status: <strong className="text-emerald-300">Mined Onchain</strong></span>
                         <a
                           href={`https://testnet.monadvision.com/tx/${step.settlement.txHash}`}
                           target="_blank"
                           rel="noreferrer"
-                          className="font-mono text-[11px] text-emerald-700 hover:underline font-bold flex items-center space-x-1"
+                          className="font-mono text-[11px] text-emerald-300 hover:underline font-bold flex items-center space-x-1"
                         >
                           <span>Tx: {step.settlement.txHash?.slice(0, 14)}... ↗</span>
                         </a>
-                        <span className="text-emerald-800 font-semibold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/50">
+                        <span className="text-emerald-300 font-semibold bg-emerald-400/10 px-2 py-0.5 rounded border border-emerald-400/30">
                           {step.settlement.amount}
                         </span>
                       </div>
@@ -327,11 +329,11 @@ export const TaskModal: React.FC<TaskModalProps> = ({
 
                     {/* Real Agent JSON Data Dropdown / Inspection */}
                     {step.result && (
-                      <details className="mt-2 pt-2 border-t border-gray-200/60">
-                        <summary className="cursor-pointer text-[10px] font-bold text-gray-500 hover:text-gray-800">
+                      <details className="mt-2 pt-2 border-t border-white/10">
+                        <summary className="cursor-pointer text-[10px] font-bold text-white/50 hover:text-white">
                           View Raw Live RPC Response Data ({step.subtask.skill})
                         </summary>
-                        <pre className="mt-2 p-3 bg-white rounded-lg border border-gray-200 text-[10px] font-mono text-gray-800 overflow-x-auto">
+                        <pre className="mt-2 p-3 bg-[#121214] rounded-lg border border-white/10 text-[10px] font-mono text-white/85 overflow-x-auto">
                           {JSON.stringify(step.result, null, 2)}
                         </pre>
                       </details>
@@ -342,22 +344,22 @@ export const TaskModal: React.FC<TaskModalProps> = ({
             </div>
 
             {/* Onchain Feedback Submission */}
-            <div className="bg-gray-50 border border-gray-200 rounded-2xl p-5">
-              <h4 className="text-xs font-bold text-gray-800 mb-1">
+            <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-5">
+              <h4 className="text-xs font-bold text-white/85 mb-1">
                 Submit Verified Onchain Feedback (ReputationRegistry)
               </h4>
-              <p className="text-[11px] text-gray-500 mb-3">
+              <p className="text-[11px] text-white/50 mb-3">
                 Broadcasting feedback sends an onchain transaction directly to contract 0x7b39...Ba8C on Monad Testnet.
               </p>
 
               {feedbackResult ? (
-                <div className="text-xs text-emerald-800 font-medium bg-emerald-50 p-3 rounded-xl border border-emerald-200 space-y-1">
+                <div className="text-xs text-emerald-300 font-medium bg-emerald-400/10 p-3 rounded-xl border border-emerald-400/30 space-y-1">
                   <div className="font-bold">Transaction Mined on Monad Testnet (Block #{feedbackResult.blockNumber})!</div>
                   <a
                     href={feedbackResult.explorerUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="font-mono text-[11px] text-emerald-700 hover:underline block font-semibold"
+                    className="font-mono text-[11px] text-emerald-300 hover:underline block font-semibold"
                   >
                     View Feedback Tx on MonadVision: {feedbackResult.txHash?.slice(0, 20)}... ↗
                   </a>
@@ -370,20 +372,20 @@ export const TaskModal: React.FC<TaskModalProps> = ({
                     max={100}
                     value={feedbackScore}
                     onChange={(e) => setFeedbackScore(Number(e.target.value))}
-                    className="w-20 bg-white border border-gray-200 rounded-xl px-3 py-1.5 text-xs font-bold text-center"
+                    className="w-20 bg-[#121214] border border-white/10 rounded-xl px-3 py-1.5 text-xs font-bold text-center"
                     placeholder="Score"
                   />
                   <input
                     type="text"
                     value={feedbackNote}
                     onChange={(e) => setFeedbackNote(e.target.value)}
-                    className="flex-1 w-full bg-white border border-gray-200 rounded-xl px-3 py-1.5 text-xs text-gray-700"
+                    className="flex-1 w-full bg-[#121214] border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white/75"
                     placeholder="Short feedback note"
                   />
                   <button
                     onClick={handleSubmitFeedback}
                     disabled={submittingFeedback}
-                    className="bg-gray-900 hover:bg-black text-white text-xs font-bold px-4 py-2 rounded-xl transition-all disabled:opacity-50"
+                    className="bg-white/10 hover:bg-white/20 text-white text-xs font-bold px-4 py-2 rounded-xl transition-all disabled:opacity-50"
                   >
                     {submittingFeedback ? "Broadcasting Tx..." : "Submit Feedback Onchain"}
                   </button>

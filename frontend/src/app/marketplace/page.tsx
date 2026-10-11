@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Navbar } from "../../components/Navbar";
+import { PageBackdrop, SiteFooter } from "../../components/PageChrome";
 import { AgentRegistry } from "../../components/AgentRegistry";
 import { TaskModal } from "../../components/TaskModal";
 import { AgentData, fetchLiveAgents } from "../../lib/contracts";
@@ -21,13 +22,15 @@ export default function MarketplacePage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-between">
+    <div className="relative isolate min-h-screen flex flex-col justify-between bg-[#0e0e0f] text-white overflow-x-clip">
+      <PageBackdrop />
       <div>
         <Navbar onOpenTaskModal={() => setIsTaskModalOpen(true)} />
-        <main className="py-8">
+        <main className="pt-20">
           <AgentRegistry agents={agents} onSelectAgent={handleSelectAgent} />
         </main>
       </div>
+      <SiteFooter />
 
       <TaskModal
         isOpen={isTaskModalOpen}

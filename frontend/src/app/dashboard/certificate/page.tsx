@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { PageBackdrop, SiteFooter } from "../../../components/PageChrome";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAcademyStore } from "../../../lib/progress-store";
@@ -10,6 +11,7 @@ import { ethers } from "ethers";
 import { toPng } from "html-to-image";
 import jsPDF from "jspdf";
 import confetti from "canvas-confetti";
+import { getOrchestratorUrl } from "../../../lib/orchestrator";
 
 export default function CertificatePage() {
   const router = useRouter();
@@ -43,19 +45,20 @@ export default function CertificatePage() {
 
   if (!certificateEligible) {
     return (
-      <div className="min-h-screen bg-[#f8f9fa] flex items-center justify-center p-4 font-sans">
-        <div className="bg-white rounded-3xl border border-gray-200 shadow-xl max-w-md w-full p-8 text-center space-y-4">
-          <div className="w-14 h-14 bg-amber-50 text-amber-700 border border-amber-200 rounded-full flex items-center justify-center mx-auto text-2xl font-bold">
+      <div className="relative isolate min-h-screen flex items-center justify-center p-4 font-sans bg-[#0e0e0f] text-white overflow-x-clip">
+      <PageBackdrop />
+        <div className="bg-[#121214] rounded-3xl border border-white/10 shadow-xl max-w-md w-full p-8 text-center space-y-4">
+          <div className="w-14 h-14 bg-amber-400/10 text-amber-700 border border-amber-400/30 rounded-full flex items-center justify-center mx-auto text-2xl font-bold">
             🔒
           </div>
-          <h2 className="text-xl font-bold text-gray-950">Certificate Locked</h2>
-          <p className="text-xs text-gray-600 leading-relaxed">
+          <h2 className="text-xl font-bold text-white">Certificate Locked</h2>
+          <p className="text-xs text-white/60 leading-relaxed">
             You must complete all three Monad Academy paths (Monad Fundamentals, Tokenized Assets, and x402 Payments) to earn and view your completion certificate.
           </p>
           <div className="pt-2">
             <Link
               href="/dashboard"
-              className="btn-monad-lime w-full py-2.5 px-4 text-xs font-bold inline-block text-center rounded-xl shadow-sm"
+              className="btn-neon btn-sm w-full py-2.5 px-4 text-xs font-bold inline-block text-center rounded-xl shadow-sm"
             >
               Go to Dashboard
             </Link>
@@ -117,46 +120,24 @@ export default function CertificatePage() {
   const handleMintOnchain = async () => {
     setMinting(true);
     try {
-      const provider = new ethers.JsonRpcProvider(MONAD_CONTRACTS.rpcUrl);
-      const privateKey = process.env.NEXT_PUBLIC_OPERATOR_KEY || "83fd2014a796daab74d307b46e7e87fac53fdd6abd7edfa20b7af8cb405231bc";
-      const wallet = new ethers.Wallet(`0x${privateKey.replace(/^0x/, "")}`, provider);
-
-      const credentialAbi = [
-        "function issueCredential(address learner, string learnerName, string uri) external returns (uint256)",
-        "event CredentialIssued(uint256 indexed tokenId, address indexed learner, string learnerName, uint256 completedAt, string tokenURI)"
-      ];
-
-      const credentialContract = new ethers.Contract(MONAD_CONTRACTS.academyCredential, credentialAbi, wallet);
-
-      const recipient = userId.startsWith("0x") && userId.length === 42
-        ? userId
-        : wallet.address;
-
-      const metadataUri = JSON.stringify({
-        title: "Monad Academy Scholar Credential",
-        learner: userName,
-        completedAt: new Date().toISOString(),
-        paths: ["Monad Fundamentals", "Tokenized Assets", "x402 Payments"],
-        issuer: "Monad Academy"
+      // Minting is owner-only, so the orchestrator signs it server-side; no key ever ships to the browser
+      const orchestratorUrl = getOrchestratorUrl();
+      const res = await fetch(`${orchestratorUrl}/api/issue-credential`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          recipient: userId.startsWith("0x") && userId.length === 42 ? userId : undefined,
+          learnerName: userName
+        })
+      }).catch(() => {
+        throw new Error(`Orchestrator unreachable at ${orchestratorUrl}`);
       });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.details || data.error || `HTTP ${res.status}`);
 
-      const tx = await credentialContract.issueCredential(recipient, userName, metadataUri);
-      const receipt = await tx.wait();
-
-      let tokenId = "1";
-      if (receipt && receipt.logs) {
-        for (const log of receipt.logs) {
-          try {
-            const parsed = credentialContract.interface.parseLog(log);
-            if (parsed && parsed.name === "CredentialIssued") {
-              tokenId = parsed.args.tokenId.toString();
-              break;
-            }
-          } catch {}
-        }
-      }
-
-      issueCertificate(tx.hash, tokenId);
+      const { txHash, blockNumber, recipient, issuer } = data;
+      const tokenId: string = data.tokenId ?? "?";
+      issueCertificate(txHash, tokenId);
 
       // Record soulbound mint transaction in Activity Feed
       try {
@@ -164,11 +145,11 @@ export default function CertificatePage() {
           type: "soulbound_credential",
           title: `Soulbound Monad Scholar NFT Minted (#${tokenId})`,
           description: `Issued official non-transferable Monad Academy completion credential to ${recipient}.`,
-          txHash: tx.hash,
-          blockNumber: receipt?.blockNumber,
+          txHash,
+          blockNumber,
           timestamp: new Date().toISOString(),
           status: "confirmed",
-          from: wallet.address,
+          from: issuer,
           to: MONAD_CONTRACTS.academyCredential,
           contractName: "AcademyCredential",
           amount: "0 MON",
@@ -186,31 +167,29 @@ export default function CertificatePage() {
       alert(`Soulbound Credential minted successfully on Monad Testnet! Token ID #${tokenId}`);
     } catch (err: any) {
       console.error("Minting error:", err);
-      // Fallback demonstration
-      issueCertificate("0xd06443315a6e87a224dbbbf2bc3e6d8a39d883da4e9b97779fec147fc2b9ef7f", "1");
-      alert("Certificate already recorded onchain on Monad Testnet.");
+      alert(`Could not mint the credential: ${err.message}`);
     } finally {
       setMinting(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#f8f9fa] py-8 px-4 sm:px-8 flex flex-col justify-between font-sans">
+    <div className="min-h-screen bg-white/[0.03] py-8 px-4 sm:px-8 flex flex-col justify-between font-sans">
       <div className="max-w-6xl mx-auto w-full">
         {/* Top Header Navigation */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
           <div className="flex items-center space-x-3">
             <Link
               href="/dashboard"
-              className="w-9 h-9 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-700 hover:text-black hover:border-gray-400 transition-all shadow-sm font-bold"
+              className="w-9 h-9 rounded-full bg-[#121214] border border-white/10 flex items-center justify-center text-white/75 hover:text-[#ccff00] hover:border-[#ccff00]/40 transition-all shadow-sm font-bold"
             >
               ←
             </Link>
             <div>
-              <h1 className="text-xl font-bold text-gray-950 tracking-tight">
+              <h1 className="font-display uppercase text-white leading-[0.95] text-[clamp(1.9rem,4.6vw,3.4rem)]">
                 Official Completion Certificate
               </h1>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-white/50">
                 Verified Monad Academy Scholar Credential
               </p>
             </div>
@@ -221,7 +200,7 @@ export default function CertificatePage() {
             <button
               onClick={handleDownloadPNG}
               disabled={downloading}
-              className="px-4 py-2 rounded-full bg-white border border-gray-200 text-xs font-bold text-gray-800 hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm flex items-center space-x-1.5"
+              className="px-4 py-2 rounded-full bg-[#121214] border border-white/10 text-xs font-bold text-white/85 hover:bg-white/[0.06] hover:border-[#ccff00]/40 transition-all shadow-sm flex items-center space-x-1.5"
             >
               <span>🖼️</span>
               <span>{downloading ? "Exporting..." : "Download PNG"}</span>
@@ -230,7 +209,7 @@ export default function CertificatePage() {
             <button
               onClick={handleDownloadPDF}
               disabled={downloading}
-              className="px-4 py-2 rounded-full bg-white border border-gray-200 text-xs font-bold text-gray-800 hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm flex items-center space-x-1.5"
+              className="px-4 py-2 rounded-full bg-[#121214] border border-white/10 text-xs font-bold text-white/85 hover:bg-white/[0.06] hover:border-[#ccff00]/40 transition-all shadow-sm flex items-center space-x-1.5"
             >
               <span>📄</span>
               <span>Download PDF</span>
@@ -238,7 +217,7 @@ export default function CertificatePage() {
 
             <button
               onClick={handleCopyLink}
-              className="px-4 py-2 rounded-full bg-white border border-gray-200 text-xs font-bold text-gray-800 hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm flex items-center space-x-1.5"
+              className="px-4 py-2 rounded-full bg-[#121214] border border-white/10 text-xs font-bold text-white/85 hover:bg-white/[0.06] hover:border-[#ccff00]/40 transition-all shadow-sm flex items-center space-x-1.5"
             >
               <span>🔗</span>
               <span>{copied ? "Link Copied!" : "Share Link"}</span>
@@ -247,7 +226,7 @@ export default function CertificatePage() {
             <button
               onClick={handleMintOnchain}
               disabled={minting}
-              className="btn-monad-lime px-5 py-2 text-xs font-bold shadow-sm hover:shadow-md transition-all flex items-center space-x-1.5"
+              className="btn-neon btn-sm px-5 py-2 text-xs font-bold shadow-sm hover:shadow-md transition-all flex items-center space-x-1.5"
             >
               <span>⚡</span>
               <span>{minting ? "Minting..." : certificateTxHash ? "Credential Minted ✓" : "Mint Soulbound NFT"}</span>
@@ -375,7 +354,7 @@ export default function CertificatePage() {
 
         {/* Onchain verification badge */}
         {certificateTxHash && (
-          <div className="mt-4 bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-emerald-950">
+          <div className="mt-4 bg-emerald-400/10 border border-emerald-400/30 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-emerald-200">
             <div className="flex items-center space-x-2">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
               <span className="font-bold">Soulbound NFT Credential Confirmed on Monad Testnet</span>
@@ -384,7 +363,7 @@ export default function CertificatePage() {
               href={`https://testnet.monadvision.com/tx/${certificateTxHash}`}
               target="_blank"
               rel="noreferrer"
-              className="font-bold text-emerald-800 underline hover:text-emerald-950 flex items-center space-x-1"
+              className="font-bold text-emerald-300 underline hover:text-white flex items-center space-x-1"
             >
               <span>View on MonadVision</span>
               <span>↗</span>
@@ -393,12 +372,7 @@ export default function CertificatePage() {
         )}
       </div>
 
-      {/* Mandatory Ecosystem Legal Disclaimer */}
-      <footer className="mt-12 pt-6 border-t border-gray-200 text-center text-xs text-gray-500 max-w-4xl mx-auto w-full">
-        <p className="leading-relaxed">
-          Built for the Monad ecosystem. Not an official Monad Labs product unless otherwise stated. Issued by Monad Academy.
-        </p>
-      </footer>
+      <SiteFooter note="Built for the Monad ecosystem. Not an official Monad Labs product unless otherwise stated. Issued by Monad Academy." />
     </div>
   );
 }

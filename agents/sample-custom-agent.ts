@@ -3,131 +3,179 @@ import cors from "cors";
 import { ethers } from "ethers";
 import * as dotenv from "dotenv";
 import * as path from "path";
+import { callMonadRpc } from "./shared/monadRpc";
+import { getLogsChunked, TRANSFER_TOPIC, decodeAbiString, ethCall } from "./shared/evm";
+import { createX402Middleware } from "./shared/x402Middleware";
 
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
+/**
+ * Whale & Liquidity Sentinel (community agent #4)
+ * Scans real Monad Testnet blocks for large native MON moves, or Transfer logs for a given token,
+ * and classifies where the size is flowing (wallets vs contracts/pools).
+ */
+
 const app = express();
 const PORT = process.env.CUSTOM_AGENT_PORT || 4004;
+const NATIVE_BLOCKS = Number(process.env.WHALE_NATIVE_BLOCKS || 300); // ≈ 100s at ~0.33s blocks
+const TOKEN_BLOCKS = Number(process.env.WHALE_TOKEN_BLOCKS || 3000); // ≈ 16 min
+const MIN_MON = Number(process.env.WHALE_MIN_MON || 5);
 
 app.use(cors());
 app.use(express.json());
 
-const RPC_URL = process.env.NEXT_PUBLIC_MONAD_RPC_URL || "https://testnet-rpc.monad.xyz";
-const provider = new ethers.JsonRpcProvider(RPC_URL);
+const x402 = createX402Middleware("whale-tracker", `http://localhost:${PORT}/api/whale`);
 
-// x402 Payment Verification Middleware
-function verifyX402Payment(req: express.Request, res: express.Response, next: express.NextFunction) {
-  const authHeader = req.headers["x-payment-authorization"] as string;
-  if (!authHeader) {
-    return res.status(402).json({
-      error: "Payment Required",
-      message: "Missing X-Payment-Authorization header (x402 protocol)"
-    });
+interface Move {
+  txHash: string;
+  block: number;
+  from: string;
+  to: string;
+  amount: number;
+  toContract: boolean;
+}
+
+const isContractCache = new Map<string, boolean>();
+async function isContract(addr: string) {
+  if (!isContractCache.has(addr)) {
+    const code = await callMonadRpc("eth_getCode", [addr, "latest"]).catch(() => "0x");
+    isContractCache.set(addr, !!code && code !== "0x");
   }
+  return isContractCache.get(addr)!;
+}
 
-  try {
-    const auth = JSON.parse(authHeader);
-    const { from, to, value, validAfter, validBefore, nonce, signature } = auth;
-    const now = Math.floor(Date.now() / 1000);
+async function scanNative(): Promise<{ moves: Move[]; fromBlock: number; toBlock: number; txScanned: number }> {
+  const latest = parseInt(await callMonadRpc("eth_blockNumber", []), 16);
+  const fromBlock = latest - NATIVE_BLOCKS + 1;
+  const moves: Move[] = [];
+  let txScanned = 0;
+  const numbers = Array.from({ length: NATIVE_BLOCKS }, (_, i) => fromBlock + i);
 
-    if (now < validAfter || now > validBefore) {
-      return res.status(402).json({ error: "Payment expired or not yet valid" });
+  for (let i = 0; i < numbers.length; i += 60) {
+    const blocks = await Promise.allSettled(
+      numbers.slice(i, i + 60).map((n) => callMonadRpc("eth_getBlockByNumber", ["0x" + n.toString(16), true]))
+    );
+    for (const b of blocks) {
+      if (b.status !== "fulfilled" || !b.value) continue;
+      for (const tx of b.value.transactions || []) {
+        txScanned++;
+        const amount = Number(ethers.formatEther(BigInt(tx.value || "0x0")));
+        if (amount >= MIN_MON && tx.to) {
+          moves.push({ txHash: tx.hash, block: parseInt(b.value.number, 16), from: tx.from, to: tx.to, amount, toContract: false });
+        }
+      }
     }
-
-    const domain = {
-      name: "USD Coin",
-      version: "2",
-      chainId: 10143,
-      verifyingContract: process.env.NEXT_PUBLIC_MONAD_USDC_ADDRESS || "0x534b2f3A21130d7a60830c2Df862319e593943A3"
-    };
-
-    const types = {
-      TransferWithAuthorization: [
-        { name: "from", type: "address" },
-        { name: "to", type: "address" },
-        { name: "value", type: "uint256" },
-        { name: "validAfter", type: "uint256" },
-        { name: "validBefore", type: "uint256" },
-        { name: "nonce", type: "bytes32" }
-      ]
-    };
-
-    const message = { from, to, value, validAfter, validBefore, nonce };
-    const recovered = ethers.verifyTypedData(domain, types, message, signature);
-
-    if (recovered.toLowerCase() !== from.toLowerCase()) {
-      return res.status(402).json({ error: "Cryptographic signature verification failed" });
-    }
-
-    (req as any).paymentAuth = auth;
-    next();
-  } catch (err: any) {
-    return res.status(400).json({ error: "Invalid payment format", details: err.message });
   }
+  await Promise.all(moves.map(async (m) => (m.toContract = await isContract(m.to))));
+  return { moves, fromBlock, toBlock: latest, txScanned };
+}
+
+async function scanToken(token: string) {
+  const [decRaw, symRaw] = await Promise.all([ethCall(token, "0x313ce567"), ethCall(token, "0x95d89b41")]);
+  const decimals = decRaw && decRaw !== "0x" ? Number(BigInt(decRaw)) : 18;
+  const symbol = decodeAbiString(symRaw) || "TOKEN";
+  const { logs, fromBlock, toBlock } = await getLogsChunked({ address: token, topics: [TRANSFER_TOPIC] }, TOKEN_BLOCKS);
+
+  const all: Move[] = logs
+    .filter((l) => l.topics?.length >= 3)
+    .map((l) => ({
+      txHash: l.transactionHash,
+      block: parseInt(l.blockNumber, 16),
+      from: ethers.getAddress("0x" + l.topics[1].slice(26)),
+      to: ethers.getAddress("0x" + l.topics[2].slice(26)),
+      amount: Number(ethers.formatUnits(l.data && l.data !== "0x" ? BigInt(l.data) : 0n, decimals)),
+      toContract: false
+    }));
+
+  // "Whale" = top 5% of transfers by size in the window (at least the single largest)
+  const sorted = [...all].sort((a, b) => b.amount - a.amount);
+  const cutoff = sorted.length ? sorted[Math.max(0, Math.floor(sorted.length * 0.05) - 1)].amount : 0;
+  const moves = sorted.filter((m) => m.amount >= cutoff && m.amount > 0).slice(0, 25);
+  await Promise.all(moves.map(async (m) => (m.toContract = await isContract(m.to))));
+  return { moves, all, fromBlock, toBlock, symbol };
 }
 
 app.get("/health", (req, res) => {
-  res.json({
-    status: "online",
-    agent: "Whale & Liquidity Sentinel",
-    skill: "whale-tracker",
-    port: PORT,
-    network: "Monad Testnet 10143",
-    timestamp: new Date().toISOString()
-  });
+  res.json({ status: "online", agent: "Whale & Liquidity Sentinel", skill: "whale-tracker", port: PORT, network: "Monad Testnet 10143", timestamp: new Date().toISOString() });
 });
 
-app.post("/api/whale", verifyX402Payment, async (req, res) => {
+app.post("/api/whale", x402, async (req, res) => {
   try {
-    const { tokenAddress } = req.body;
-    const auth = (req as any).paymentAuth;
+    const { tokenAddress } = req.body || {};
+    const useToken = typeof tokenAddress === "string" && /^0x[a-fA-F0-9]{40}$/.test(tokenAddress);
 
-    // Query Monad Testnet block number
-    const blockNumber = await provider.getBlockNumber();
+    let moves: Move[];
+    let fromBlock: number;
+    let toBlock: number;
+    let unit = "MON";
+    let activityBase = 0;
+    let scannedLabel: string;
 
-    const simulatedWhaleTransfers = [
-      {
-        from: "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
-        amount: "150,000 MON",
-        type: "Accumulation",
-        block: blockNumber - 12
-      },
-      {
-        from: "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
-        amount: "85,000 MON",
-        type: "DEX Liquidity Addition",
-        block: blockNumber - 4
-      }
-    ];
+    if (useToken) {
+      const r = await scanToken(ethers.getAddress(tokenAddress));
+      ({ moves, fromBlock, toBlock } = r);
+      unit = r.symbol;
+      activityBase = r.all.length;
+      scannedLabel = `${r.all.length} ${unit} transfers`;
+    } else {
+      const r = await scanNative();
+      ({ moves, fromBlock, toBlock } = r);
+      activityBase = r.txScanned;
+      scannedLabel = `${r.txScanned} transactions`;
+    }
+
+    const volume = moves.reduce((s, m) => s + m.amount, 0);
+    const toContracts = moves.filter((m) => m.toContract).reduce((s, m) => s + m.amount, 0);
+    const uniqueWhales = new Set(moves.map((m) => m.from.toLowerCase())).size;
+    const contractShare = volume ? toContracts / volume : 0;
+
+    // Activity score: how many sizeable moves happened, damped logarithmically
+    const whaleActivityScore = Math.min(100, Math.round(Math.log10(1 + moves.length) * 45 + Math.log10(1 + uniqueWhales) * 25));
+    const sentiment =
+      moves.length === 0
+        ? "Quiet — no whale-sized moves"
+        : contractShare > 0.6
+        ? "Liquidity deployment — size flowing into contracts/pools"
+        : contractShare < 0.3
+        ? "Wallet accumulation — size flowing to EOAs"
+        : "Mixed rotation between wallets and contracts";
+    const liquidityHealth = activityBase > 200 ? "Deep" : activityBase > 30 ? "Moderate" : "Thin";
+
+    const summary =
+      `Whale & Liquidity: ${moves.length} large ${unit} move(s) from ${uniqueWhales} wallet(s) in blocks ${fromBlock}–${toBlock} ` +
+      `(${volume.toLocaleString("en-US", { maximumFractionDigits: 2 })} ${unit}). ${sentiment}. Activity ${whaleActivityScore}/100, liquidity ${liquidityHealth.toLowerCase()} (${scannedLabel} scanned).`;
 
     return res.json({
       success: true,
       agent: "Whale & Liquidity Sentinel",
       skill: "whale-tracker",
+      settlement: (req as any).x402Settlement,
       data: {
         network: "Monad Testnet",
         chainId: 10143,
-        monitoredAsset: tokenAddress || "Native MON",
-        blockNumber,
-        whaleActivityScore: 88,
-        sentiment: "Bullish Accumulation",
-        recentLargeTransfers: simulatedWhaleTransfers,
-        liquidityHealth: "High Depth",
-        timestamp: new Date().toISOString()
-      },
-      settlement: {
-        mode: "Live",
-        settled: true,
-        signatureVerified: true,
-        txHash: ethers.hexlify(ethers.randomBytes(32)),
-        network: "eip155:10143",
-        amount: "0.001 tUSDC",
-        payTo: auth.to,
-        from: auth.from,
+        monitoredAsset: useToken ? `${unit} (${tokenAddress})` : "Native MON",
+        fromBlock,
+        toBlock,
+        threshold: useToken ? "Top 5% of transfers by size" : `≥ ${MIN_MON} MON`,
+        whaleActivityScore,
+        sentiment,
+        liquidityHealth,
+        uniqueWhales,
+        totalWhaleVolume: `${volume.toLocaleString("en-US", { maximumFractionDigits: 4 })} ${unit}`,
+        recentLargeTransfers: moves
+          .sort((a, b) => b.amount - a.amount)
+          .slice(0, 8)
+          .map((m) => ({
+            ...m,
+            amount: `${m.amount.toLocaleString("en-US", { maximumFractionDigits: 4 })} ${unit}`,
+            explorerUrl: `https://testnet.monadvision.com/tx/${m.txHash}`
+          })),
+        summary,
         timestamp: new Date().toISOString()
       }
     });
   } catch (err: any) {
+    console.error("[Whale Sentinel Error]:", err);
     return res.status(500).json({ error: "Whale tracker execution failed", details: err.message });
   }
 });

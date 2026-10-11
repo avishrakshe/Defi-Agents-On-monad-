@@ -33,8 +33,8 @@ app.get("/info", (req, res) => {
     name: "Smart Contract Auditor",
     skill: "contract-audit",
     priceUSDC: "$0.001",
-    dataSource: "Monadscan Public API + Static AST Analyzer",
-    description: "Fetches verified source from Monadscan, executes deterministic static vulnerability scanning for reentrancy, unhandled calls, and authorization bypasses."
+    dataSource: "Sourcify verified source + Monad RPC bytecode disassembly",
+    description: "Resolves proxies, pulls verified source from Sourcify, runs deterministic static rules (reentrancy, tx.origin, unchecked calls, selfdestruct) and decodes runtime bytecode for dangerous opcodes and privileged functions."
   });
 });
 

@@ -3,18 +3,38 @@
 import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { Navbar } from "../../components/Navbar";
+import { PageBackdrop, SiteFooter } from "../../components/PageChrome";
 import { useActivityStore, TransactionActivity, TransactionType } from "../../lib/activity-store";
 import { MONAD_CONTRACTS } from "../../lib/contracts";
 import { ethers } from "ethers";
+import { fetchOnchainActivity } from "../../lib/onchain-activity";
 
 export default function ActivityPage() {
-  const { activities, resetToDefault, clearActivities } = useActivityStore();
+  const { activities, mergeActivities } = useActivityStore();
   const [activeType, setActiveType] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [expandedTxId, setExpandedTxId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [currentBlock, setCurrentBlock] = useState<number | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [scan, setScan] = useState<{ loading: boolean; window?: string; found?: number; error?: string }>({ loading: false });
+
+  // Pull the marketplace's real contract events from Monad Testnet
+  const scanChain = async () => {
+    setScan({ loading: true });
+    try {
+      const { items, fromBlock, toBlock } = await fetchOnchainActivity(3000);
+      mergeActivities(items);
+      setScan({ loading: false, window: `${fromBlock.toLocaleString()}–${toBlock.toLocaleString()}`, found: items.length });
+    } catch (e: any) {
+      setScan({ loading: false, error: e.message });
+    }
+  };
+
+  useEffect(() => {
+    scanChain();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Fetch real-time Monad Testnet block height
   const fetchBlockHeight = async () => {
@@ -78,45 +98,50 @@ export default function ActivityPage() {
   const registrationCount = activities.filter((a) => a.type === "agent_registration").length;
   const credentialCount = activities.filter((a) => a.type === "soulbound_credential").length;
 
-  const totalVolumeUSDC = (paymentCount * 0.001).toFixed(3);
+  // Only count USDC that actually moved (status "settled"), not merely recorded calls
+  const settledCount = activities.filter((a) => a.type === "x402_payment" && a.status === "settled").length;
+  const totalVolumeUSDC = (settledCount * 0.001).toFixed(3);
+  const scores = activities.map((a) => a.metadata?.scoreGiven).filter((s): s is number => typeof s === "number");
+  const avgScore = scores.length ? Math.round(scores.reduce((x, y) => x + y, 0) / scores.length) : null;
 
   return (
-    <div className="min-h-screen flex flex-col justify-between bg-[#f8f9fa] font-sans">
+    <div className="relative isolate min-h-screen flex flex-col justify-between font-sans bg-[#0e0e0f] text-white overflow-x-clip">
+      <PageBackdrop />
       <div>
         <Navbar />
 
         <main className="py-10 px-4 sm:px-8 max-w-7xl mx-auto">
           {/* Top Header */}
-          <div className="bg-white rounded-3xl border border-gray-200 shadow-[0_4px_24px_rgba(0,0,0,0.03)] p-8 sm:p-10 mb-8 relative overflow-hidden">
+          <div className="bg-[#121214] rounded-3xl border border-white/10 shadow-[0_20px_60px_-30px_rgba(0,0,0,0.9)] p-8 sm:p-10 mb-8 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-96 h-96 bg-[#ccff00]/10 blur-3xl rounded-full pointer-events-none -mr-20 -mt-20" />
 
             <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
               <div>
                 <div className="flex items-center space-x-2 mb-2">
-                  <span className="text-xs font-bold tracking-wider text-black uppercase bg-[#ccff00]/30 px-3 py-1 rounded-full border border-[#ccff00]/60">
+                  <span className="text-xs font-bold tracking-wider text-[#ccff00] uppercase bg-[#ccff00]/10 px-3 py-1 rounded-full border border-[#ccff00]/60">
                     ONCHAIN TRANSACTION AUDIT TRAIL
                   </span>
-                  <span className="text-xs text-emerald-700 font-mono font-semibold flex items-center space-x-1 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                  <span className="text-xs text-emerald-300 font-mono font-semibold flex items-center space-x-1 bg-emerald-400/10 px-2.5 py-0.5 rounded-full border border-emerald-400/30">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                     <span>Monad Testnet 10143</span>
                   </span>
                 </div>
 
-                <h1 className="text-3xl sm:text-4xl font-black text-gray-950 tracking-tight">
+                <h1 className="font-display uppercase text-white leading-[0.95] text-[clamp(1.9rem,4.6vw,3.4rem)]">
                   Autonomous Activity & Transaction Explorer
                 </h1>
-                <p className="text-sm text-gray-600 mt-2 max-w-3xl leading-relaxed">
+                <p className="text-sm text-white/60 mt-2 max-w-3xl leading-relaxed">
                   Every x402 micropayment settlement, onchain reputation rating, ERC-8004 agent registration, and soulbound certificate minted on Monad Testnet is deterministically logged with verified transaction hashes and explorer links.
                 </p>
               </div>
 
               {/* Current Block Height Pill & Refresh Button */}
               <div className="flex items-center space-x-3 shrink-0">
-                <div className="bg-[#f8f9fa] border border-gray-200 rounded-2xl p-4 text-right">
-                  <span className="text-[10px] font-mono text-gray-400 uppercase tracking-wider block">
+                <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4 text-right">
+                  <span className="text-[10px] font-mono text-white/40 uppercase tracking-wider block">
                     Current Block Height
                   </span>
-                  <span className="font-mono font-black text-gray-950 text-base">
+                  <span className="font-mono font-black text-white text-base">
                     {currentBlock ? `#${currentBlock.toLocaleString()}` : "Syncing..."}
                   </span>
                 </div>
@@ -124,7 +149,7 @@ export default function ActivityPage() {
                 <button
                   onClick={fetchBlockHeight}
                   disabled={refreshing}
-                  className="p-3 rounded-2xl bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm font-bold text-xs flex items-center justify-center"
+                  className="p-3 rounded-2xl bg-[#121214] border border-white/10 text-white/75 hover:bg-white/[0.06] hover:border-[#ccff00]/40 transition-all shadow-sm font-bold text-xs flex items-center justify-center"
                   title="Sync RPC Block Height"
                 >
                   <span className={refreshing ? "animate-spin" : ""}>🔄</span>
@@ -135,61 +160,61 @@ export default function ActivityPage() {
 
           {/* Key Metrics Cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
-              <span className="text-xs font-semibold text-gray-400 block mb-1">
+            <div className="bg-[#121214] border border-white/10 rounded-2xl p-5 shadow-sm">
+              <span className="text-xs font-semibold text-white/40 block mb-1">
                 Total Transactions
               </span>
               <div className="flex items-baseline space-x-2">
-                <span className="text-3xl font-black text-gray-950">{totalCount}</span>
-                <span className="text-xs font-mono text-emerald-600 font-bold">100% Onchain</span>
+                <span className="text-3xl font-black text-white">{totalCount}</span>
+                <span className="text-xs font-mono text-emerald-300 font-bold">Onchain</span>
               </div>
-              <span className="text-[11px] text-gray-500 mt-1 block">
-                Across all contracts & agents
+              <span className="text-[11px] text-white/50 mt-1 block">
+                {scan.loading ? "Scanning recent blocks…" : scan.window ? `Blocks ${scan.window} + your session` : "Your session"}
               </span>
             </div>
 
-            <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
-              <span className="text-xs font-semibold text-gray-400 block mb-1">
-                Settled Micropayments
+            <div className="bg-[#121214] border border-white/10 rounded-2xl p-5 shadow-sm">
+              <span className="text-xs font-semibold text-white/40 block mb-1">
+                x402 Paid Calls
               </span>
               <div className="flex items-baseline space-x-2">
-                <span className="text-3xl font-black text-gray-950">{paymentCount}</span>
-                <span className="text-xs font-mono text-gray-500">calls</span>
+                <span className="text-3xl font-black text-white">{paymentCount}</span>
+                <span className="text-xs font-mono text-white/50">recorded</span>
               </div>
-              <span className="text-[11px] text-gray-500 mt-1 block">
-                Volume: ${totalVolumeUSDC} tUSDC
+              <span className="text-[11px] text-white/50 mt-1 block">
+                {settledCount} settled in USDC · ${totalVolumeUSDC}
               </span>
             </div>
 
-            <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
-              <span className="text-xs font-semibold text-gray-400 block mb-1">
+            <div className="bg-[#121214] border border-white/10 rounded-2xl p-5 shadow-sm">
+              <span className="text-xs font-semibold text-white/40 block mb-1">
                 Reputation Feedbacks
               </span>
               <div className="flex items-baseline space-x-2">
-                <span className="text-3xl font-black text-gray-950">{feedbackCount}</span>
-                <span className="text-xs font-mono text-emerald-600 font-bold">Verified</span>
+                <span className="text-3xl font-black text-white">{feedbackCount}</span>
+                <span className="text-xs font-mono text-emerald-300 font-bold">Onchain</span>
               </div>
-              <span className="text-[11px] text-gray-500 mt-1 block">
-                Average score: 98/100
+              <span className="text-[11px] text-white/50 mt-1 block">
+                {avgScore !== null ? `Average score: ${avgScore}/100` : "No scores yet"}
               </span>
             </div>
 
-            <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
-              <span className="text-xs font-semibold text-gray-400 block mb-1">
-                Settlement Latency
+            <div className="bg-[#121214] border border-white/10 rounded-2xl p-5 shadow-sm">
+              <span className="text-xs font-semibold text-white/40 block mb-1">
+                Registrations & Credentials
               </span>
               <div className="flex items-baseline space-x-2">
-                <span className="text-3xl font-black text-gray-950">~600</span>
-                <span className="text-xs font-mono text-gray-500">ms</span>
+                <span className="text-3xl font-black text-white">{registrationCount + credentialCount}</span>
+                <span className="text-xs font-mono text-white/50">events</span>
               </div>
-              <span className="text-[11px] text-gray-500 mt-1 block">
-                Single-slot Monad finality
+              <span className="text-[11px] text-white/50 mt-1 block">
+                {registrationCount} agents · {credentialCount} soulbound
               </span>
             </div>
           </div>
 
           {/* Filter Bar & Search */}
-          <div className="bg-white rounded-3xl border border-gray-200 shadow-sm p-6 mb-8">
+          <div className="bg-[#121214] rounded-3xl border border-white/10 shadow-sm p-6 mb-8">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               {/* Type Filters */}
               <div className="flex flex-wrap items-center gap-2">
@@ -197,8 +222,8 @@ export default function ActivityPage() {
                   onClick={() => setActiveType("all")}
                   className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all ${
                     activeType === "all"
-                      ? "bg-gray-950 text-white shadow-sm"
-                      : "bg-[#f1f3f5] text-gray-700 hover:bg-gray-200"
+                      ? "bg-white/10 text-white shadow-sm"
+                      : "bg-white/[0.06] text-white/75 hover:bg-white/15"
                   }`}
                 >
                   All ({totalCount})
@@ -209,11 +234,11 @@ export default function ActivityPage() {
                   className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all flex items-center space-x-1.5 ${
                     activeType === "x402_payment"
                       ? "bg-[#ccff00] text-black shadow-sm font-black"
-                      : "bg-[#f1f3f5] text-gray-700 hover:bg-gray-200"
+                      : "bg-white/[0.06] text-white/75 hover:bg-white/15"
                   }`}
                 >
                   <span>x402 Micropayments</span>
-                  <span className="text-[10px] px-1.5 py-0.2 bg-black/10 rounded-full">{paymentCount}</span>
+                  <span className="text-[10px] px-1.5 py-0.2 bg-white/10 rounded-full">{paymentCount}</span>
                 </button>
 
                 <button
@@ -221,23 +246,23 @@ export default function ActivityPage() {
                   className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all flex items-center space-x-1.5 ${
                     activeType === "reputation_feedback"
                       ? "bg-blue-600 text-white shadow-sm font-black"
-                      : "bg-[#f1f3f5] text-gray-700 hover:bg-gray-200"
+                      : "bg-white/[0.06] text-white/75 hover:bg-white/15"
                   }`}
                 >
                   <span>Reputation Feedback</span>
-                  <span className="text-[10px] px-1.5 py-0.2 bg-black/10 rounded-full">{feedbackCount}</span>
+                  <span className="text-[10px] px-1.5 py-0.2 bg-white/10 rounded-full">{feedbackCount}</span>
                 </button>
 
                 <button
                   onClick={() => setActiveType("agent_registration")}
                   className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all flex items-center space-x-1.5 ${
                     activeType === "agent_registration"
-                      ? "bg-gray-950 text-white shadow-sm font-black"
-                      : "bg-[#f1f3f5] text-gray-700 hover:bg-gray-200"
+                      ? "bg-white/10 text-white shadow-sm font-black"
+                      : "bg-white/[0.06] text-white/75 hover:bg-white/15"
                   }`}
                 >
                   <span>Agent Registrations</span>
-                  <span className="text-[10px] px-1.5 py-0.2 bg-black/10 rounded-full">{registrationCount}</span>
+                  <span className="text-[10px] px-1.5 py-0.2 bg-white/10 rounded-full">{registrationCount}</span>
                 </button>
 
                 <button
@@ -245,11 +270,11 @@ export default function ActivityPage() {
                   className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all flex items-center space-x-1.5 ${
                     activeType === "soulbound_credential"
                       ? "bg-emerald-600 text-white shadow-sm font-black"
-                      : "bg-[#f1f3f5] text-gray-700 hover:bg-gray-200"
+                      : "bg-white/[0.06] text-white/75 hover:bg-white/15"
                   }`}
                 >
                   <span>Soulbound Credentials</span>
-                  <span className="text-[10px] px-1.5 py-0.2 bg-black/10 rounded-full">{credentialCount}</span>
+                  <span className="text-[10px] px-1.5 py-0.2 bg-white/10 rounded-full">{credentialCount}</span>
                 </button>
               </div>
 
@@ -260,12 +285,12 @@ export default function ActivityPage() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Filter by hash, agent, skill, address..."
-                  className="w-full bg-[#f8f9fa] border border-gray-200 rounded-xl px-3.5 py-2 text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#ccff00] focus:border-black font-mono"
+                  className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-3.5 py-2 text-xs text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#ccff00] focus:border-[#ccff00]/60 font-mono"
                 />
                 {searchQuery && (
                   <button
                     onClick={() => setSearchQuery("")}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-black text-xs"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-[#ccff00] text-xs"
                   >
                     ✕
                   </button>
@@ -275,95 +300,98 @@ export default function ActivityPage() {
           </div>
 
           {/* Transactions List */}
-          <div className="bg-white rounded-3xl border border-gray-200 shadow-[0_4px_24px_rgba(0,0,0,0.03)] overflow-hidden">
-            <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+          <div className="bg-[#121214] rounded-3xl border border-white/10 shadow-[0_20px_60px_-30px_rgba(0,0,0,0.9)] overflow-hidden">
+            <div className="p-6 border-b border-white/10 flex items-center justify-between">
               <div>
-                <h2 className="text-base font-bold text-gray-950">
+                <h2 className="text-base font-bold text-white">
                   Transaction Records ({filteredActivities.length})
                 </h2>
-                <p className="text-xs text-gray-500">
-                  Showing real Monad Testnet executions with complete transaction payloads.
+                <p className="text-xs text-white/50">
+                  {scan.error
+                    ? `Chain scan failed: ${scan.error}`
+                    : "Decoded from IdentityRegistry, ReputationRegistry and AcademyCredential events, plus transactions sent from this browser."}
                 </p>
               </div>
 
               <div className="flex items-center space-x-2">
-                <button
-                  onClick={resetToDefault}
-                  className="text-xs font-bold text-gray-600 hover:text-black px-3 py-1.5 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-all"
-                >
-                  Restore Verified Baseline
+                <button onClick={scanChain} disabled={scan.loading} className="btn-ghost btn-sm disabled:opacity-50">
+                  <span>{scan.loading ? "Scanning…" : "Rescan chain"}</span>
                 </button>
               </div>
             </div>
 
             {filteredActivities.length === 0 ? (
-              <div className="py-20 text-center text-gray-400 font-mono text-xs">
-                No transactions match the selected filter or search term.
+              <div className="py-20 text-center text-white/40 font-mono text-xs">
+                {scan.loading
+                  ? "Reading the last 3,000 blocks of contract events from Monad Testnet…"
+                  : activities.length === 0
+                  ? "No marketplace events in the scanned window yet — run a task from the Command Deck to create some."
+                  : "No transactions match the selected filter or search term."}
               </div>
             ) : (
-              <div className="divide-y divide-gray-100">
+              <div className="divide-y divide-white/10">
                 {filteredActivities.map((act) => {
                   const isExpanded = expandedTxId === act.id;
                   const isCopied = copiedId === act.id;
 
                   const typeBadge =
                     act.type === "x402_payment" ? (
-                      <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-full bg-[#ccff00]/30 text-black border border-[#ccff00]/60">
+                      <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-full bg-[#ccff00]/10 text-[#ccff00] border border-[#ccff00]/60">
                         x402 Micropayment
                       </span>
                     ) : act.type === "reputation_feedback" ? (
-                      <span className="text-[10px] font-bold uppercase px-2.5 py-1 rounded-full bg-blue-50 text-blue-800 border border-blue-200">
+                      <span className="text-[10px] font-bold uppercase px-2.5 py-1 rounded-full bg-blue-400/10 text-blue-300 border border-blue-400/30">
                         Reputation Rating
                       </span>
                     ) : act.type === "agent_registration" ? (
-                      <span className="text-[10px] font-bold uppercase px-2.5 py-1 rounded-full bg-gray-100 text-gray-800 border border-gray-200">
+                      <span className="text-[10px] font-bold uppercase px-2.5 py-1 rounded-full bg-white/[0.06] text-white/85 border border-white/10">
                         Agent Registration
                       </span>
                     ) : (
-                      <span className="text-[10px] font-bold uppercase px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
+                      <span className="text-[10px] font-bold uppercase px-2.5 py-1 rounded-full bg-emerald-400/10 text-emerald-300 border border-emerald-400/30">
                         Soulbound Credential
                       </span>
                     );
 
                   return (
-                    <div key={act.id} className="p-6 hover:bg-[#fbfbfd] transition-colors">
+                    <div key={act.id} className="p-6 hover:bg-white/[0.03] transition-colors">
                       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                         {/* Left Info */}
                         <div className="space-y-1.5 flex-1">
                           <div className="flex items-center space-x-2.5">
                             {typeBadge}
-                            <span className="text-xs font-mono text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center space-x-1">
+                            <span className="text-xs font-mono text-emerald-300 bg-emerald-400/10 border border-emerald-400/30 px-2 py-0.5 rounded-full flex items-center space-x-1">
                               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                               <span>Confirmed</span>
                             </span>
                             {act.blockNumber && (
-                              <span className="text-xs font-mono text-gray-500">
+                              <span className="text-xs font-mono text-white/50">
                                 Block #{act.blockNumber}
                               </span>
                             )}
-                            <span className="text-xs text-gray-400 font-mono">
+                            <span className="text-xs text-white/40 font-mono">
                               {new Date(act.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
                             </span>
                           </div>
 
-                          <h3 className="text-base font-bold text-gray-950 leading-snug">
+                          <h3 className="text-base font-bold text-white leading-snug">
                             {act.title}
                           </h3>
 
-                          <p className="text-xs text-gray-600 leading-relaxed max-w-4xl">
+                          <p className="text-xs text-white/60 leading-relaxed max-w-4xl">
                             {act.description}
                           </p>
 
                           {/* Address & Hash Routing Row */}
-                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-mono pt-1 text-gray-500">
+                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-mono pt-1 text-white/50">
                             <div className="flex items-center space-x-1">
-                              <span className="text-gray-400">Tx:</span>
-                              <span className="font-semibold text-gray-800">
+                              <span className="text-white/40">Tx:</span>
+                              <span className="font-semibold text-white/85">
                                 {act.txHash.slice(0, 10)}...{act.txHash.slice(-8)}
                               </span>
                               <button
                                 onClick={() => handleCopy(act.txHash, act.id)}
-                                className="text-gray-400 hover:text-black ml-1"
+                                className="text-white/40 hover:text-[#ccff00] ml-1"
                                 title="Copy Full Hash"
                               >
                                 {isCopied ? "✓" : "📋"}
@@ -373,8 +401,8 @@ export default function ActivityPage() {
                             <span>•</span>
 
                             <div className="flex items-center space-x-1">
-                              <span className="text-gray-400">From:</span>
-                              <span title={act.from} className="text-gray-700">
+                              <span className="text-white/40">From:</span>
+                              <span title={act.from} className="text-white/75">
                                 {act.from.slice(0, 6)}...{act.from.slice(-4)}
                               </span>
                             </div>
@@ -382,8 +410,8 @@ export default function ActivityPage() {
                             <span>→</span>
 
                             <div className="flex items-center space-x-1">
-                              <span className="text-gray-400">To:</span>
-                              <span title={act.to} className="text-gray-700 font-semibold">
+                              <span className="text-white/40">To:</span>
+                              <span title={act.to} className="text-white/75 font-semibold">
                                 {act.contractName || `${act.to.slice(0, 6)}...${act.to.slice(-4)}`}
                               </span>
                             </div>
@@ -392,8 +420,8 @@ export default function ActivityPage() {
                               <>
                                 <span>•</span>
                                 <div>
-                                  <span className="text-gray-400">Value: </span>
-                                  <span className="font-bold text-gray-900">{act.amount}</span>
+                                  <span className="text-white/40">Value: </span>
+                                  <span className="font-bold text-white">{act.amount}</span>
                                 </div>
                               </>
                             )}
@@ -401,7 +429,7 @@ export default function ActivityPage() {
                             {act.gasFee && (
                               <>
                                 <span>•</span>
-                                <div className="text-gray-400">
+                                <div className="text-white/40">
                                   Gas: {act.gasFee}
                                 </div>
                               </>
@@ -416,7 +444,7 @@ export default function ActivityPage() {
                               href={act.explorerUrl}
                               target="_blank"
                               rel="noreferrer"
-                              className="px-3 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-xs flex items-center space-x-1 transition-all"
+                              className="px-3 py-1.5 rounded-xl bg-white/[0.06] hover:bg-white/15 text-white/85 font-bold text-xs flex items-center space-x-1 transition-all"
                             >
                               <span>MonadVision</span>
                               <span>↗</span>
@@ -425,7 +453,7 @@ export default function ActivityPage() {
                               href={act.monadscanUrl}
                               target="_blank"
                               rel="noreferrer"
-                              className="px-3 py-1.5 rounded-xl bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-600 font-bold text-xs flex items-center space-x-1 transition-all"
+                              className="px-3 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/10 border border-white/10 text-white/60 font-bold text-xs flex items-center space-x-1 transition-all"
                             >
                               <span>Monadscan</span>
                               <span>↗</span>
@@ -434,7 +462,7 @@ export default function ActivityPage() {
 
                           <button
                             onClick={() => setExpandedTxId(isExpanded ? null : act.id)}
-                            className="text-xs text-gray-500 hover:text-black font-semibold flex items-center space-x-1 mt-1"
+                            className="text-xs text-white/50 hover:text-[#ccff00] font-semibold flex items-center space-x-1 mt-1"
                           >
                             <span>{isExpanded ? "Hide Payload ▲" : "Inspect Payload ▼"}</span>
                           </button>
@@ -443,37 +471,37 @@ export default function ActivityPage() {
 
                       {/* Expandable Details Drawer */}
                       {isExpanded && (
-                        <div className="mt-4 pt-4 border-t border-gray-100 bg-gray-50 rounded-2xl p-4 animate-fadeIn font-mono text-xs text-gray-800 space-y-3">
-                          <div className="flex items-center justify-between border-b border-gray-200 pb-2">
-                            <span className="font-bold uppercase text-[10px] tracking-wider text-gray-500">
+                        <div className="mt-4 pt-4 border-t border-white/10 bg-white/[0.04] rounded-2xl p-4 animate-fadeIn font-mono text-xs text-white/85 space-y-3">
+                          <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                            <span className="font-bold uppercase text-[10px] tracking-wider text-white/50">
                               Complete Transaction Payload & Verification State
                             </span>
-                            <span className="text-[10px] text-gray-400">Chain ID: 10143 (Monad Testnet)</span>
+                            <span className="text-[10px] text-white/40">Chain ID: 10143 (Monad Testnet)</span>
                           </div>
 
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-[11px]">
                             <div>
-                              <span className="text-gray-400 block text-[10px]">Full Transaction Hash:</span>
-                              <span className="break-all font-bold text-gray-950">{act.txHash}</span>
+                              <span className="text-white/40 block text-[10px]">Full Transaction Hash:</span>
+                              <span className="break-all font-bold text-white">{act.txHash}</span>
                             </div>
                             <div>
-                              <span className="text-gray-400 block text-[10px]">Target Contract Address:</span>
-                              <span className="break-all font-bold text-gray-950">{act.to}</span>
+                              <span className="text-white/40 block text-[10px]">Target Contract Address:</span>
+                              <span className="break-all font-bold text-white">{act.to}</span>
                             </div>
                             <div>
-                              <span className="text-gray-400 block text-[10px]">Caller / Origin Wallet:</span>
-                              <span className="break-all text-gray-700">{act.from}</span>
+                              <span className="text-white/40 block text-[10px]">Caller / Origin Wallet:</span>
+                              <span className="break-all text-white/75">{act.from}</span>
                             </div>
                             <div>
-                              <span className="text-gray-400 block text-[10px]">Block Timestamp:</span>
-                              <span className="text-gray-700">{act.timestamp}</span>
+                              <span className="text-white/40 block text-[10px]">Block Timestamp:</span>
+                              <span className="text-white/75">{act.timestamp}</span>
                             </div>
                           </div>
 
                           {act.metadata && (
-                            <div className="pt-2 border-t border-gray-200">
-                              <span className="text-gray-400 block text-[10px] mb-1">Decoded Parameters / Metadata:</span>
-                              <pre className="bg-white p-3 rounded-xl border border-gray-200 text-[11px] overflow-x-auto text-gray-800">
+                            <div className="pt-2 border-t border-white/10">
+                              <span className="text-white/40 block text-[10px] mb-1">Decoded Parameters / Metadata:</span>
+                              <pre className="bg-[#121214] p-3 rounded-xl border border-white/10 text-[11px] overflow-x-auto text-white/85">
                                 {JSON.stringify(act.metadata, null, 2)}
                               </pre>
                             </div>
@@ -489,12 +517,7 @@ export default function ActivityPage() {
         </main>
       </div>
 
-      {/* Mandatory Ecosystem Legal Disclaimer */}
-      <footer className="border-t border-gray-200/80 py-8 px-4 sm:px-8 text-center text-xs text-gray-500 mt-12 bg-white">
-        <p className="max-w-4xl mx-auto leading-relaxed">
-          Built for the Monad ecosystem. Not an official Monad Labs product unless otherwise stated. All transactions settled on Monad Testnet Chain ID 10143.
-        </p>
-      </footer>
+      <SiteFooter note="All transactions are settled on Monad Testnet (Chain ID 10143). Not an official Monad Labs product." />
     </div>
   );
 }

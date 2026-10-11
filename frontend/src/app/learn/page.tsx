@@ -3,6 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { Navbar } from "../../components/Navbar";
+import { PageBackdrop, SiteFooter } from "../../components/PageChrome";
 import { useAcademyStore } from "../../lib/progress-store";
 
 export default function LearnCatalogPage() {
@@ -45,7 +46,8 @@ export default function LearnCatalogPage() {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col justify-between bg-[#f8f9fa] font-sans">
+    <div className="relative isolate min-h-screen flex flex-col justify-between font-sans bg-[#0e0e0f] text-white overflow-x-clip">
+      <PageBackdrop />
       <div>
         <Navbar />
 
@@ -54,17 +56,17 @@ export default function LearnCatalogPage() {
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-10">
             <div>
               <div className="flex items-center space-x-2.5 mb-2">
-                <span className="text-xs font-bold tracking-wider text-black uppercase bg-[#ccff00]/30 px-3 py-1 rounded-full border border-[#ccff00]/60">
+                <span className="text-xs font-bold tracking-wider text-[#ccff00] uppercase bg-[#ccff00]/10 px-3 py-1 rounded-full border border-[#ccff00]/60">
                   MONAD ACADEMY CURRICULUM
                 </span>
-                <span className="text-xs text-gray-500 font-medium">
+                <span className="text-xs text-white/50 font-medium">
                   3 Builder Paths
                 </span>
               </div>
-              <h1 className="text-4xl font-black text-gray-950 tracking-tight">
+              <h1 className="font-display uppercase text-white leading-[0.95] text-[clamp(1.9rem,4.6vw,3.4rem)]">
                 Understand Monad. Build at Internet Speed.
               </h1>
-              <p className="text-base text-gray-600 mt-1 max-w-2xl">
+              <p className="text-base text-white/60 mt-1 max-w-2xl">
                 Hands-on developer modules with interactive docs, live contextual quizzes, onchain testnet transactions, and an official scholar certificate.
               </p>
             </div>
@@ -72,7 +74,7 @@ export default function LearnCatalogPage() {
             <div className="flex items-center space-x-3">
               <Link
                 href="/dashboard"
-                className="btn-monad-lime text-xs sm:text-sm font-bold py-3 px-6 shadow-sm hover:shadow-md transition-all"
+                className="btn-neon btn-sm text-xs sm:text-sm font-bold py-3 px-6 shadow-sm hover:shadow-md transition-all"
               >
                 Go to My Dashboard →
               </Link>
@@ -88,34 +90,34 @@ export default function LearnCatalogPage() {
               return (
                 <div
                   key={course.id}
-                  className="bg-white rounded-3xl border border-gray-200 shadow-[0_4px_24px_rgba(0,0,0,0.03)] p-6 sm:p-8 flex flex-col justify-between hover:border-gray-400 hover:shadow-md transition-all group"
+                  className="bg-[#121214] rounded-3xl border border-white/10 shadow-[0_20px_60px_-30px_rgba(0,0,0,0.9)] p-6 sm:p-8 flex flex-col justify-between hover:border-[#ccff00]/40 hover:shadow-md transition-all group"
                 >
                   <div>
                     <div className="flex items-start justify-between mb-3">
-                      <span className="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-800 border border-gray-200">
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-white/[0.06] text-white/85 border border-white/10">
                         {course.badge}
                       </span>
-                      <span className="text-xs font-mono font-bold text-gray-950">
+                      <span className="text-xs font-mono font-bold text-white">
                         +{course.xp} XP
                       </span>
                     </div>
 
-                    <h2 className="text-xl font-extrabold text-gray-950 group-hover:text-black transition-colors tracking-tight mb-1 leading-snug">
+                    <h2 className="text-xl font-extrabold text-white group-hover:text-[#ccff00] transition-colors tracking-tight mb-1 leading-snug">
                       {course.title}
                     </h2>
-                    <span className="text-xs font-mono text-gray-400 block mb-4">
+                    <span className="text-xs font-mono text-white/40 block mb-4">
                       {course.category}
                     </span>
 
-                    <p className="text-xs text-gray-600 leading-relaxed mb-6">
+                    <p className="text-xs text-white/60 leading-relaxed mb-6">
                       {course.description}
                     </p>
 
-                    <div className="mb-6 pt-4 border-t border-gray-100">
-                      <span className="text-[10px] font-bold uppercase text-gray-400 block mb-2 tracking-wider">
+                    <div className="mb-6 pt-4 border-t border-white/10">
+                      <span className="text-[10px] font-bold uppercase text-white/40 block mb-2 tracking-wider">
                         Syllabus Highlights:
                       </span>
-                      <ul className="space-y-1 text-xs text-gray-700 font-medium">
+                      <ul className="space-y-1 text-xs text-white/75 font-medium">
                         {course.topics.map((t, idx) => (
                           <li key={idx} className="flex items-center space-x-2">
                             <span className="w-1.5 h-1.5 rounded-full bg-[#ccff00] border border-black/30"></span>
@@ -129,11 +131,11 @@ export default function LearnCatalogPage() {
                   <div>
                     {/* Progress Bar */}
                     <div className="mb-4">
-                      <div className="flex items-center justify-between text-[11px] text-gray-500 font-medium mb-1">
+                      <div className="flex items-center justify-between text-[11px] text-white/50 font-medium mb-1">
                         <span>{pathProgress.completedLessons.length}/{pathProgress.totalLessons} Lessons</span>
                         <span className="font-mono">{percent}% Complete</span>
                       </div>
-                      <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="w-full h-2 bg-white/[0.06] rounded-full overflow-hidden">
                         <div
                           className="h-full bg-[#ccff00] rounded-full transition-all duration-300"
                           style={{ width: `${percent}%` }}
@@ -145,8 +147,8 @@ export default function LearnCatalogPage() {
                       href={course.href}
                       className={`w-full py-2.5 rounded-full font-bold text-xs flex items-center justify-center space-x-2 transition-all shadow-sm ${
                         pathProgress.completed
-                          ? "bg-gray-950 text-white hover:bg-black"
-                          : "btn-monad-lime"
+                          ? "bg-white/10 text-white hover:bg-white/20"
+                          : "btn-neon btn-sm"
                       }`}
                     >
                       <span>{pathProgress.completed ? "Review Course" : percent > 0 ? "Continue Learning" : "Start Course"}</span>
@@ -160,12 +162,7 @@ export default function LearnCatalogPage() {
         </main>
       </div>
 
-      {/* Mandatory Ecosystem Legal Disclaimer */}
-      <footer className="border-t border-gray-200/80 py-8 px-4 sm:px-8 text-center text-xs text-gray-500">
-        <p className="max-w-4xl mx-auto leading-relaxed">
-          Built for the Monad ecosystem. Not an official Monad Labs product unless otherwise stated. Issued by Monad Academy.
-        </p>
-      </footer>
+      <SiteFooter note="Built for the Monad ecosystem. Not an official Monad Labs product unless otherwise stated. Issued by Monad Academy." />
     </div>
   );
 }
