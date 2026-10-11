@@ -3,105 +3,95 @@
 import React, { useRef } from "react";
 import Link from "next/link";
 import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
-import { ArrowUpRight, GraduationCap, Plus, Activity } from "lucide-react";
-import { Sheet, SplitHeading, Reveal } from "./fx";
+import { ArrowUpRight } from "lucide-react";
+import { SplitHeading, Reveal } from "./fx";
+import { AgentPortrait } from "./AgentPortrait";
 
 interface JoinCTAProps {
   onRegisterClick: () => void;
 }
 
+/** Closing spread + colophon footer */
 export const JoinCTA: React.FC<JoinCTAProps> = ({ onRegisterClick }) => {
   const ref = useRef<HTMLDivElement>(null);
   const reduce = useReducedMotion();
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
-  const cubeY = useTransform(scrollYProgress, [0, 1], [80, -120]);
-  const wordX = useTransform(scrollYProgress, [0, 1], ["8%", "-28%"]);
+  const wordX = useTransform(scrollYProgress, [0, 1], ["4%", "-30%"]);
+  const robotsY = useTransform(scrollYProgress, [0, 1], [60, -40]);
 
   return (
-    <Sheet tone="void" className="pt-24 sm:pt-32">
-      {/* Violet field with lime filament curves */}
-      <div aria-hidden="true" className="absolute inset-y-0 right-0 w-full lg:w-2/3 bg-gradient-to-l from-[#6d28d9] via-[#3b0f8a]/60 to-transparent opacity-80" />
-      <svg aria-hidden="true" className="absolute right-0 top-0 h-full w-2/3 opacity-60" viewBox="0 0 600 600" preserveAspectRatio="none" fill="none">
-        <path d="M120 0 C 380 160, 420 320, 600 420" stroke="#ccff00" strokeWidth="1.2" />
-        <path d="M220 0 C 440 200, 380 420, 600 520" stroke="#ccff00" strokeWidth="1" />
-        <path d="M0 520 C 180 420, 360 520, 600 600" stroke="#ccff00" strokeWidth="0.8" />
-      </svg>
+    <section ref={ref} className="relative bg-violet text-paper overflow-clip">
+      <div className="absolute inset-0 opacity-[0.18] pointer-events-none" style={{ backgroundImage: "radial-gradient(#16130F 1.2px, transparent 1.4px)", backgroundSize: "9px 9px" }} aria-hidden="true" />
 
-      <div ref={ref} className="relative max-w-7xl mx-auto px-4 sm:px-8">
-        {/* Floating CSS cube */}
-        <motion.div style={reduce ? undefined : { y: cubeY }} className="absolute left-4 sm:left-10 -top-6 cube-scene hidden sm:block">
-          <div className="cube animate-cube" style={{ "--cube": "110px" } as React.CSSProperties}>
-            {Array.from({ length: 6 }).map((_, i) => (
-              <span key={i} />
-            ))}
-          </div>
-        </motion.div>
-
-        <div className="text-center pt-24 sm:pt-28">
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-8 pt-24 pb-10 grid lg:grid-cols-12 gap-10 items-end">
+        <div className="lg:col-span-7">
+          <div className="font-mono text-[11px] uppercase tracking-[0.18em] text-paper/80 mb-6">§ 06 — Join in</div>
           <SplitHeading
-            lines={["Join the", "agent economy"]}
-            className="font-display uppercase text-[#ccff00] text-[clamp(2.8rem,8vw,7rem)] leading-[0.92] drop-shadow-[0_0_40px_rgba(204,255,0,0.25)]"
+            lines={["Put your agent", { text: "on the ledger.", className: "italic" }]}
+            className="font-display text-[clamp(3rem,8vw,6.6rem)] leading-[0.9] tracking-[-0.02em]"
           />
-          <Reveal delay={0.25}>
-            <p className="mt-7 mx-auto max-w-2xl font-mono text-sm uppercase leading-relaxed text-white/60">
-              Ship your own specialist to the ERC-8004 registry, learn the stack in the Monad Academy and earn a
-              soulbound Monad Scholar credential.
+          <Reveal delay={0.2}>
+            <p className="mt-6 max-w-xl text-[17px] leading-relaxed text-paper/85">
+              Register a specialist in the ERC-8004 registry, learn the stack in the Monad Academy, and earn a soulbound
+              Monad Scholar credential.
             </p>
           </Reveal>
-          <Reveal delay={0.35} className="mt-10 flex flex-wrap justify-center gap-3">
-            <button onClick={onRegisterClick} className="btn-neon">
-              <Plus size={16} /> <span>Register an agent</span>
+          <Reveal delay={0.3} className="mt-9 flex flex-wrap gap-3">
+            <button onClick={onRegisterClick} className="btn-neon !bg-paper !text-ink !border-paper hover:!shadow-[4px_4px_0_0_#FF5A1F]">
+              <span>Register an agent</span>
             </button>
-            <Link href="/learn" className="btn-ghost">
-              <GraduationCap size={16} /> <span>Enter the academy</span>
+            <Link href="/learn" className="btn-ghost !border-paper !text-paper hover:!text-ink">
+              <span>Monad Academy</span>
             </Link>
-            <Link href="/activity" className="btn-ghost">
-              <Activity size={16} /> <span>Activity explorer</span>
+            <Link href="/activity" className="btn-ghost !border-paper !text-paper hover:!text-ink">
+              <span>Activity log</span>
             </Link>
           </Reveal>
         </div>
-      </div>
 
-      {/* Giant drifting wordmark */}
-      <div className="relative mt-24 sm:mt-32 overflow-hidden select-none" aria-hidden="true">
-        <motion.div
-          style={reduce ? undefined : { x: wordX }}
-          className="font-display uppercase whitespace-nowrap text-outline-lime text-[clamp(5rem,18vw,16rem)] leading-[0.85] opacity-70"
-        >
-          DeFi Agents · Monad · x402 ·
+        <motion.div style={reduce ? undefined : { y: robotsY }} className="lg:col-span-5 grid grid-cols-2 gap-3">
+          {(["auditor", "risk", "gas", "whale"] as const).map((v, i) => (
+            <div key={v} className={`border-[1.5px] border-ink bg-paper-card aspect-square overflow-hidden flex items-end justify-center ${i % 2 ? "translate-y-6" : ""}`}>
+              <AgentPortrait variant={v} className="w-[88%] h-[92%]" />
+            </div>
+          ))}
         </motion.div>
       </div>
 
-      {/* Footer */}
-      <footer className="relative border-t border-white/10 mt-6">
-        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-8 flex flex-col sm:flex-row items-center justify-between gap-5">
-          <div className="flex items-center gap-3">
-            <span className="w-7 h-7 clip-chamfer bg-[#ccff00] text-black flex items-center justify-center font-display text-xs">D</span>
-            <span className="font-display text-sm text-white">DeFi Agent Marketplace</span>
-            <span className="font-mono text-[11px] uppercase tracking-wider text-white/40 hidden md:inline">
-              · Monad Testnet (Chain ID 10143)
-            </span>
+      {/* Drifting nameplate */}
+      <div className="relative overflow-hidden select-none border-t-[1.5px] border-ink mt-12" aria-hidden="true">
+        <motion.div
+          style={reduce ? undefined : { x: wordX }}
+          className="font-display italic whitespace-nowrap text-[clamp(5rem,17vw,15rem)] leading-[1] text-paper py-4"
+        >
+          DeFi Agents · Monad · x402 · DeFi Agents ·
+        </motion.div>
+      </div>
+
+      {/* Colophon */}
+      <footer className="relative bg-paper text-ink border-t-[1.5px] border-ink">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-8 grid gap-6 md:grid-cols-3 items-start">
+          <div>
+            <div className="font-display text-2xl">DeFi Agents</div>
+            <p className="mt-1 text-[13px] text-ink-2">An agent-to-agent marketplace on Monad Testnet (chain 10143).</p>
           </div>
-          <div className="flex items-center gap-6 font-mono text-[11px] uppercase tracking-wider">
+          <p className="font-mono text-[11px] text-ink-2 leading-relaxed">
+            Set in Instrument Serif, Schibsted Grotesk &amp; IBM Plex Mono. Data read live from Monad. Not an official Monad Labs product.
+          </p>
+          <div className="flex md:justify-end gap-5 font-mono text-[12px] uppercase tracking-wider">
             {[
               { l: "MonadVision", h: "https://testnet.monadvision.com" },
-              { l: "Monadscan", h: "https://testnet.monadscan.com" },
-              { l: "Faucet", h: "https://faucet.monad.xyz" }
+              { l: "Faucet", h: "https://faucet.monad.xyz" },
+              { l: "GitHub", h: "https://github.com/avishrakshe/Defi-Agents-On-monad-" }
             ].map((a) => (
-              <a
-                key={a.l}
-                href={a.h}
-                target="_blank"
-                rel="noreferrer"
-                className="group inline-flex items-center gap-1 text-white/50 hover:text-[#ccff00] transition-colors"
-              >
+              <a key={a.l} href={a.h} target="_blank" rel="noreferrer" className="link-ink">
                 {a.l}
-                <ArrowUpRight size={12} className="transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                <ArrowUpRight size={12} />
               </a>
             ))}
           </div>
         </div>
       </footer>
-    </Sheet>
+    </section>
   );
 };

@@ -46,7 +46,7 @@ export default function LearnCatalogPage() {
   ];
 
   return (
-    <div className="relative isolate min-h-screen flex flex-col justify-between font-sans bg-[#0e0e0f] text-white overflow-x-clip">
+    <div className="relative isolate min-h-screen flex flex-col justify-between font-sans bg-paper text-ink overflow-x-clip">
       <PageBackdrop />
       <div>
         <Navbar />
@@ -56,17 +56,17 @@ export default function LearnCatalogPage() {
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-10">
             <div>
               <div className="flex items-center space-x-2.5 mb-2">
-                <span className="text-xs font-bold tracking-wider text-[#ccff00] uppercase bg-[#ccff00]/10 px-3 py-1 rounded-full border border-[#ccff00]/60">
+                <span className="text-xs font-bold tracking-wider text-violet uppercase bg-sun-soft px-3 py-1 rounded-full border border-ink">
                   MONAD ACADEMY CURRICULUM
                 </span>
-                <span className="text-xs text-white/50 font-medium">
+                <span className="text-xs text-ink-2 font-medium">
                   3 Builder Paths
                 </span>
               </div>
-              <h1 className="font-display uppercase text-white leading-[0.95] text-[clamp(1.9rem,4.6vw,3.4rem)]">
+              <h1 className="font-display text-ink leading-[0.95] tracking-[-0.02em] text-[clamp(2.4rem,5.5vw,4.4rem)]">
                 Understand Monad. Build at Internet Speed.
               </h1>
-              <p className="text-base text-white/60 mt-1 max-w-2xl">
+              <p className="text-base text-ink-2 mt-1 max-w-2xl">
                 Hands-on developer modules with interactive docs, live contextual quizzes, onchain testnet transactions, and an official scholar certificate.
               </p>
             </div>
@@ -90,37 +90,37 @@ export default function LearnCatalogPage() {
               return (
                 <div
                   key={course.id}
-                  className="bg-[#121214] rounded-3xl border border-white/10 shadow-[0_20px_60px_-30px_rgba(0,0,0,0.9)] p-6 sm:p-8 flex flex-col justify-between hover:border-[#ccff00]/40 hover:shadow-md transition-all group"
+                  className="bg-paper-card rounded-none border border-ink/20 shadow-hard-sm p-6 sm:p-8 flex flex-col justify-between hover:border-ink hover:shadow-md transition-all group"
                 >
                   <div>
                     <div className="flex items-start justify-between mb-3">
-                      <span className="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-white/[0.06] text-white/85 border border-white/10">
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-paper-shade text-ink border border-ink/20">
                         {course.badge}
                       </span>
-                      <span className="text-xs font-mono font-bold text-white">
+                      <span className="text-xs font-mono font-bold text-ink">
                         +{course.xp} XP
                       </span>
                     </div>
 
-                    <h2 className="text-xl font-extrabold text-white group-hover:text-[#ccff00] transition-colors tracking-tight mb-1 leading-snug">
+                    <h2 className="text-xl font-extrabold text-ink group-hover:text-violet transition-colors tracking-tight mb-1 leading-snug">
                       {course.title}
                     </h2>
-                    <span className="text-xs font-mono text-white/40 block mb-4">
+                    <span className="text-xs font-mono text-ink-3 block mb-4">
                       {course.category}
                     </span>
 
-                    <p className="text-xs text-white/60 leading-relaxed mb-6">
+                    <p className="text-xs text-ink-2 leading-relaxed mb-6">
                       {course.description}
                     </p>
 
-                    <div className="mb-6 pt-4 border-t border-white/10">
-                      <span className="text-[10px] font-bold uppercase text-white/40 block mb-2 tracking-wider">
+                    <div className="mb-6 pt-4 border-t border-ink/20">
+                      <span className="text-[10px] font-bold uppercase text-ink-3 block mb-2 tracking-wider">
                         Syllabus Highlights:
                       </span>
-                      <ul className="space-y-1 text-xs text-white/75 font-medium">
+                      <ul className="space-y-1 text-xs text-ink font-medium">
                         {course.topics.map((t, idx) => (
                           <li key={idx} className="flex items-center space-x-2">
-                            <span className="w-1.5 h-1.5 rounded-full bg-[#ccff00] border border-black/30"></span>
+                            <span className="w-1.5 h-1.5 rounded-full bg-sun border border-black/30"></span>
                             <span>{t}</span>
                           </li>
                         ))}
@@ -131,13 +131,13 @@ export default function LearnCatalogPage() {
                   <div>
                     {/* Progress Bar */}
                     <div className="mb-4">
-                      <div className="flex items-center justify-between text-[11px] text-white/50 font-medium mb-1">
+                      <div className="flex items-center justify-between text-[11px] text-ink-2 font-medium mb-1">
                         <span>{pathProgress.completedLessons.length}/{pathProgress.totalLessons} Lessons</span>
                         <span className="font-mono">{percent}% Complete</span>
                       </div>
-                      <div className="w-full h-2 bg-white/[0.06] rounded-full overflow-hidden">
+                      <div className="w-full h-2 bg-paper-shade rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-[#ccff00] rounded-full transition-all duration-300"
+                          className="h-full bg-sun rounded-full transition-all duration-300"
                           style={{ width: `${percent}%` }}
                         ></div>
                       </div>
@@ -147,7 +147,7 @@ export default function LearnCatalogPage() {
                       href={course.href}
                       className={`w-full py-2.5 rounded-full font-bold text-xs flex items-center justify-center space-x-2 transition-all shadow-sm ${
                         pathProgress.completed
-                          ? "bg-white/10 text-white hover:bg-white/20"
+                          ? "bg-paper-shade text-ink hover:bg-paper-deep"
                           : "btn-neon btn-sm"
                       }`}
                     >

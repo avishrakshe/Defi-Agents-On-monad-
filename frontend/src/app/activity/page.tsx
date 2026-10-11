@@ -105,43 +105,42 @@ export default function ActivityPage() {
   const avgScore = scores.length ? Math.round(scores.reduce((x, y) => x + y, 0) / scores.length) : null;
 
   return (
-    <div className="relative isolate min-h-screen flex flex-col justify-between font-sans bg-[#0e0e0f] text-white overflow-x-clip">
+    <div className="relative isolate min-h-screen flex flex-col justify-between font-sans bg-paper text-ink overflow-x-clip">
       <PageBackdrop />
       <div>
         <Navbar />
 
         <main className="py-10 px-4 sm:px-8 max-w-7xl mx-auto">
           {/* Top Header */}
-          <div className="bg-[#121214] rounded-3xl border border-white/10 shadow-[0_20px_60px_-30px_rgba(0,0,0,0.9)] p-8 sm:p-10 mb-8 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-96 h-96 bg-[#ccff00]/10 blur-3xl rounded-full pointer-events-none -mr-20 -mt-20" />
+          <div className="bg-paper-card rounded-none border border-ink/20 shadow-hard-sm p-8 sm:p-10 mb-8 relative overflow-hidden">
 
             <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
               <div>
                 <div className="flex items-center space-x-2 mb-2">
-                  <span className="text-xs font-bold tracking-wider text-[#ccff00] uppercase bg-[#ccff00]/10 px-3 py-1 rounded-full border border-[#ccff00]/60">
+                  <span className="text-xs font-bold tracking-wider text-violet uppercase bg-sun-soft px-3 py-1 rounded-full border border-ink">
                     ONCHAIN TRANSACTION AUDIT TRAIL
                   </span>
-                  <span className="text-xs text-emerald-300 font-mono font-semibold flex items-center space-x-1 bg-emerald-400/10 px-2.5 py-0.5 rounded-full border border-emerald-400/30">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <span className="text-xs text-moss font-mono font-semibold flex items-center space-x-1 bg-moss-soft px-2.5 py-0.5 rounded-full border border-moss/40">
+                    <span className="w-1.5 h-1.5 rounded-full bg-moss animate-pulse"></span>
                     <span>Monad Testnet 10143</span>
                   </span>
                 </div>
 
-                <h1 className="font-display uppercase text-white leading-[0.95] text-[clamp(1.9rem,4.6vw,3.4rem)]">
+                <h1 className="font-display text-ink leading-[0.95] tracking-[-0.02em] text-[clamp(2.4rem,5.5vw,4.4rem)]">
                   Autonomous Activity & Transaction Explorer
                 </h1>
-                <p className="text-sm text-white/60 mt-2 max-w-3xl leading-relaxed">
+                <p className="text-sm text-ink-2 mt-2 max-w-3xl leading-relaxed">
                   Every x402 micropayment settlement, onchain reputation rating, ERC-8004 agent registration, and soulbound certificate minted on Monad Testnet is deterministically logged with verified transaction hashes and explorer links.
                 </p>
               </div>
 
               {/* Current Block Height Pill & Refresh Button */}
               <div className="flex items-center space-x-3 shrink-0">
-                <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4 text-right">
-                  <span className="text-[10px] font-mono text-white/40 uppercase tracking-wider block">
+                <div className="bg-paper border border-ink/20 rounded-none p-4 text-right">
+                  <span className="text-[10px] font-mono text-ink-3 uppercase tracking-wider block">
                     Current Block Height
                   </span>
-                  <span className="font-mono font-black text-white text-base">
+                  <span className="font-mono font-black text-ink text-base">
                     {currentBlock ? `#${currentBlock.toLocaleString()}` : "Syncing..."}
                   </span>
                 </div>
@@ -149,10 +148,10 @@ export default function ActivityPage() {
                 <button
                   onClick={fetchBlockHeight}
                   disabled={refreshing}
-                  className="p-3 rounded-2xl bg-[#121214] border border-white/10 text-white/75 hover:bg-white/[0.06] hover:border-[#ccff00]/40 transition-all shadow-sm font-bold text-xs flex items-center justify-center"
+                  className="p-3 rounded-none bg-paper-card border border-ink/20 text-ink hover:bg-sun-soft hover:border-ink transition-all shadow-sm font-bold text-xs flex items-center justify-center"
                   title="Sync RPC Block Height"
                 >
-                  <span className={refreshing ? "animate-spin" : ""}>🔄</span>
+                  <span className={`font-mono ${refreshing ? "animate-spin inline-block" : ""}`}>↻</span>
                 </button>
               </div>
             </div>
@@ -160,61 +159,61 @@ export default function ActivityPage() {
 
           {/* Key Metrics Cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            <div className="bg-[#121214] border border-white/10 rounded-2xl p-5 shadow-sm">
-              <span className="text-xs font-semibold text-white/40 block mb-1">
+            <div className="bg-paper-card border border-ink/20 rounded-none p-5 shadow-sm">
+              <span className="text-xs font-semibold text-ink-3 block mb-1">
                 Total Transactions
               </span>
               <div className="flex items-baseline space-x-2">
-                <span className="text-3xl font-black text-white">{totalCount}</span>
-                <span className="text-xs font-mono text-emerald-300 font-bold">Onchain</span>
+                <span className="text-3xl font-black text-ink">{totalCount}</span>
+                <span className="text-xs font-mono text-moss font-bold">Onchain</span>
               </div>
-              <span className="text-[11px] text-white/50 mt-1 block">
+              <span className="text-[11px] text-ink-2 mt-1 block">
                 {scan.loading ? "Scanning recent blocks…" : scan.window ? `Blocks ${scan.window} + your session` : "Your session"}
               </span>
             </div>
 
-            <div className="bg-[#121214] border border-white/10 rounded-2xl p-5 shadow-sm">
-              <span className="text-xs font-semibold text-white/40 block mb-1">
+            <div className="bg-paper-card border border-ink/20 rounded-none p-5 shadow-sm">
+              <span className="text-xs font-semibold text-ink-3 block mb-1">
                 x402 Paid Calls
               </span>
               <div className="flex items-baseline space-x-2">
-                <span className="text-3xl font-black text-white">{paymentCount}</span>
-                <span className="text-xs font-mono text-white/50">recorded</span>
+                <span className="text-3xl font-black text-ink">{paymentCount}</span>
+                <span className="text-xs font-mono text-ink-2">recorded</span>
               </div>
-              <span className="text-[11px] text-white/50 mt-1 block">
+              <span className="text-[11px] text-ink-2 mt-1 block">
                 {settledCount} settled in USDC · ${totalVolumeUSDC}
               </span>
             </div>
 
-            <div className="bg-[#121214] border border-white/10 rounded-2xl p-5 shadow-sm">
-              <span className="text-xs font-semibold text-white/40 block mb-1">
+            <div className="bg-paper-card border border-ink/20 rounded-none p-5 shadow-sm">
+              <span className="text-xs font-semibold text-ink-3 block mb-1">
                 Reputation Feedbacks
               </span>
               <div className="flex items-baseline space-x-2">
-                <span className="text-3xl font-black text-white">{feedbackCount}</span>
-                <span className="text-xs font-mono text-emerald-300 font-bold">Onchain</span>
+                <span className="text-3xl font-black text-ink">{feedbackCount}</span>
+                <span className="text-xs font-mono text-moss font-bold">Onchain</span>
               </div>
-              <span className="text-[11px] text-white/50 mt-1 block">
+              <span className="text-[11px] text-ink-2 mt-1 block">
                 {avgScore !== null ? `Average score: ${avgScore}/100` : "No scores yet"}
               </span>
             </div>
 
-            <div className="bg-[#121214] border border-white/10 rounded-2xl p-5 shadow-sm">
-              <span className="text-xs font-semibold text-white/40 block mb-1">
+            <div className="bg-paper-card border border-ink/20 rounded-none p-5 shadow-sm">
+              <span className="text-xs font-semibold text-ink-3 block mb-1">
                 Registrations & Credentials
               </span>
               <div className="flex items-baseline space-x-2">
-                <span className="text-3xl font-black text-white">{registrationCount + credentialCount}</span>
-                <span className="text-xs font-mono text-white/50">events</span>
+                <span className="text-3xl font-black text-ink">{registrationCount + credentialCount}</span>
+                <span className="text-xs font-mono text-ink-2">events</span>
               </div>
-              <span className="text-[11px] text-white/50 mt-1 block">
+              <span className="text-[11px] text-ink-2 mt-1 block">
                 {registrationCount} agents · {credentialCount} soulbound
               </span>
             </div>
           </div>
 
           {/* Filter Bar & Search */}
-          <div className="bg-[#121214] rounded-3xl border border-white/10 shadow-sm p-6 mb-8">
+          <div className="bg-paper-card rounded-none border border-ink/20 shadow-sm p-6 mb-8">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               {/* Type Filters */}
               <div className="flex flex-wrap items-center gap-2">
@@ -222,8 +221,8 @@ export default function ActivityPage() {
                   onClick={() => setActiveType("all")}
                   className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all ${
                     activeType === "all"
-                      ? "bg-white/10 text-white shadow-sm"
-                      : "bg-white/[0.06] text-white/75 hover:bg-white/15"
+                      ? "bg-paper-shade text-ink shadow-sm"
+                      : "bg-paper-shade text-ink hover:bg-paper-deep"
                   }`}
                 >
                   All ({totalCount})
@@ -233,48 +232,48 @@ export default function ActivityPage() {
                   onClick={() => setActiveType("x402_payment")}
                   className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all flex items-center space-x-1.5 ${
                     activeType === "x402_payment"
-                      ? "bg-[#ccff00] text-black shadow-sm font-black"
-                      : "bg-white/[0.06] text-white/75 hover:bg-white/15"
+                      ? "bg-sun text-black shadow-sm font-black"
+                      : "bg-paper-shade text-ink hover:bg-paper-deep"
                   }`}
                 >
                   <span>x402 Micropayments</span>
-                  <span className="text-[10px] px-1.5 py-0.2 bg-white/10 rounded-full">{paymentCount}</span>
+                  <span className="text-[10px] px-1.5 py-0.2 bg-paper-shade rounded-full">{paymentCount}</span>
                 </button>
 
                 <button
                   onClick={() => setActiveType("reputation_feedback")}
                   className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all flex items-center space-x-1.5 ${
                     activeType === "reputation_feedback"
-                      ? "bg-blue-600 text-white shadow-sm font-black"
-                      : "bg-white/[0.06] text-white/75 hover:bg-white/15"
+                      ? "bg-violet text-ink shadow-sm font-black"
+                      : "bg-paper-shade text-ink hover:bg-paper-deep"
                   }`}
                 >
                   <span>Reputation Feedback</span>
-                  <span className="text-[10px] px-1.5 py-0.2 bg-white/10 rounded-full">{feedbackCount}</span>
+                  <span className="text-[10px] px-1.5 py-0.2 bg-paper-shade rounded-full">{feedbackCount}</span>
                 </button>
 
                 <button
                   onClick={() => setActiveType("agent_registration")}
                   className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all flex items-center space-x-1.5 ${
                     activeType === "agent_registration"
-                      ? "bg-white/10 text-white shadow-sm font-black"
-                      : "bg-white/[0.06] text-white/75 hover:bg-white/15"
+                      ? "bg-paper-shade text-ink shadow-sm font-black"
+                      : "bg-paper-shade text-ink hover:bg-paper-deep"
                   }`}
                 >
                   <span>Agent Registrations</span>
-                  <span className="text-[10px] px-1.5 py-0.2 bg-white/10 rounded-full">{registrationCount}</span>
+                  <span className="text-[10px] px-1.5 py-0.2 bg-paper-shade rounded-full">{registrationCount}</span>
                 </button>
 
                 <button
                   onClick={() => setActiveType("soulbound_credential")}
                   className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all flex items-center space-x-1.5 ${
                     activeType === "soulbound_credential"
-                      ? "bg-emerald-600 text-white shadow-sm font-black"
-                      : "bg-white/[0.06] text-white/75 hover:bg-white/15"
+                      ? "bg-moss text-ink shadow-sm font-black"
+                      : "bg-paper-shade text-ink hover:bg-paper-deep"
                   }`}
                 >
                   <span>Soulbound Credentials</span>
-                  <span className="text-[10px] px-1.5 py-0.2 bg-white/10 rounded-full">{credentialCount}</span>
+                  <span className="text-[10px] px-1.5 py-0.2 bg-paper-shade rounded-full">{credentialCount}</span>
                 </button>
               </div>
 
@@ -285,12 +284,12 @@ export default function ActivityPage() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Filter by hash, agent, skill, address..."
-                  className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-3.5 py-2 text-xs text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#ccff00] focus:border-[#ccff00]/60 font-mono"
+                  className="w-full bg-paper border border-ink/20 rounded-none px-3.5 py-2 text-xs text-ink placeholder:text-ink-3 focus:outline-none focus:ring-2 focus:ring-violet focus:border-ink font-mono"
                 />
                 {searchQuery && (
                   <button
                     onClick={() => setSearchQuery("")}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-[#ccff00] text-xs"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-3 hover:text-violet text-xs"
                   >
                     ✕
                   </button>
@@ -300,13 +299,13 @@ export default function ActivityPage() {
           </div>
 
           {/* Transactions List */}
-          <div className="bg-[#121214] rounded-3xl border border-white/10 shadow-[0_20px_60px_-30px_rgba(0,0,0,0.9)] overflow-hidden">
-            <div className="p-6 border-b border-white/10 flex items-center justify-between">
+          <div className="bg-paper-card rounded-none border border-ink/20 shadow-hard-sm overflow-hidden">
+            <div className="p-6 border-b border-ink/20 flex items-center justify-between">
               <div>
-                <h2 className="text-base font-bold text-white">
+                <h2 className="text-base font-bold text-ink">
                   Transaction Records ({filteredActivities.length})
                 </h2>
-                <p className="text-xs text-white/50">
+                <p className="text-xs text-ink-2">
                   {scan.error
                     ? `Chain scan failed: ${scan.error}`
                     : "Decoded from IdentityRegistry, ReputationRegistry and AcademyCredential events, plus transactions sent from this browser."}
@@ -321,7 +320,7 @@ export default function ActivityPage() {
             </div>
 
             {filteredActivities.length === 0 ? (
-              <div className="py-20 text-center text-white/40 font-mono text-xs">
+              <div className="py-20 text-center text-ink-3 font-mono text-xs">
                 {scan.loading
                   ? "Reading the last 3,000 blocks of contract events from Monad Testnet…"
                   : activities.length === 0
@@ -329,80 +328,80 @@ export default function ActivityPage() {
                   : "No transactions match the selected filter or search term."}
               </div>
             ) : (
-              <div className="divide-y divide-white/10">
+              <div className="divide-y divide-ink/15">
                 {filteredActivities.map((act) => {
                   const isExpanded = expandedTxId === act.id;
                   const isCopied = copiedId === act.id;
 
                   const typeBadge =
                     act.type === "x402_payment" ? (
-                      <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-full bg-[#ccff00]/10 text-[#ccff00] border border-[#ccff00]/60">
+                      <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-full bg-sun-soft text-violet border border-ink">
                         x402 Micropayment
                       </span>
                     ) : act.type === "reputation_feedback" ? (
-                      <span className="text-[10px] font-bold uppercase px-2.5 py-1 rounded-full bg-blue-400/10 text-blue-300 border border-blue-400/30">
+                      <span className="text-[10px] font-bold uppercase px-2.5 py-1 rounded-full bg-violet-soft text-violet border border-violet/40">
                         Reputation Rating
                       </span>
                     ) : act.type === "agent_registration" ? (
-                      <span className="text-[10px] font-bold uppercase px-2.5 py-1 rounded-full bg-white/[0.06] text-white/85 border border-white/10">
+                      <span className="text-[10px] font-bold uppercase px-2.5 py-1 rounded-full bg-paper-shade text-ink border border-ink/20">
                         Agent Registration
                       </span>
                     ) : (
-                      <span className="text-[10px] font-bold uppercase px-2.5 py-1 rounded-full bg-emerald-400/10 text-emerald-300 border border-emerald-400/30">
+                      <span className="text-[10px] font-bold uppercase px-2.5 py-1 rounded-full bg-moss-soft text-moss border border-moss/40">
                         Soulbound Credential
                       </span>
                     );
 
                   return (
-                    <div key={act.id} className="p-6 hover:bg-white/[0.03] transition-colors">
+                    <div key={act.id} className="p-6 hover:bg-sun-soft transition-colors">
                       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                         {/* Left Info */}
                         <div className="space-y-1.5 flex-1">
                           <div className="flex items-center space-x-2.5">
                             {typeBadge}
-                            <span className="text-xs font-mono text-emerald-300 bg-emerald-400/10 border border-emerald-400/30 px-2 py-0.5 rounded-full flex items-center space-x-1">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                            <span className="text-xs font-mono text-moss bg-moss-soft border border-moss/40 px-2 py-0.5 rounded-full flex items-center space-x-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-moss animate-pulse"></span>
                               <span>Confirmed</span>
                             </span>
                             {act.blockNumber && (
-                              <span className="text-xs font-mono text-white/50">
+                              <span className="text-xs font-mono text-ink-2">
                                 Block #{act.blockNumber}
                               </span>
                             )}
-                            <span className="text-xs text-white/40 font-mono">
+                            <span className="text-xs text-ink-3 font-mono">
                               {new Date(act.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
                             </span>
                           </div>
 
-                          <h3 className="text-base font-bold text-white leading-snug">
+                          <h3 className="text-base font-bold text-ink leading-snug">
                             {act.title}
                           </h3>
 
-                          <p className="text-xs text-white/60 leading-relaxed max-w-4xl">
+                          <p className="text-xs text-ink-2 leading-relaxed max-w-4xl">
                             {act.description}
                           </p>
 
                           {/* Address & Hash Routing Row */}
-                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-mono pt-1 text-white/50">
+                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-mono pt-1 text-ink-2">
                             <div className="flex items-center space-x-1">
-                              <span className="text-white/40">Tx:</span>
-                              <span className="font-semibold text-white/85">
+                              <span className="text-ink-3">Tx:</span>
+                              <span className="font-semibold text-ink">
                                 {act.txHash.slice(0, 10)}...{act.txHash.slice(-8)}
                               </span>
                               <button
                                 onClick={() => handleCopy(act.txHash, act.id)}
-                                className="text-white/40 hover:text-[#ccff00] ml-1"
+                                className="text-ink-3 hover:text-violet ml-1"
                                 title="Copy Full Hash"
                               >
-                                {isCopied ? "✓" : "📋"}
+                                {isCopied ? "copied" : "copy"}
                               </button>
                             </div>
 
                             <span>•</span>
 
                             <div className="flex items-center space-x-1">
-                              <span className="text-white/40">From:</span>
-                              <span title={act.from} className="text-white/75">
+                              <span className="text-ink-3">From:</span>
+                              <span title={act.from} className="text-ink">
                                 {act.from.slice(0, 6)}...{act.from.slice(-4)}
                               </span>
                             </div>
@@ -410,8 +409,8 @@ export default function ActivityPage() {
                             <span>→</span>
 
                             <div className="flex items-center space-x-1">
-                              <span className="text-white/40">To:</span>
-                              <span title={act.to} className="text-white/75 font-semibold">
+                              <span className="text-ink-3">To:</span>
+                              <span title={act.to} className="text-ink font-semibold">
                                 {act.contractName || `${act.to.slice(0, 6)}...${act.to.slice(-4)}`}
                               </span>
                             </div>
@@ -420,8 +419,8 @@ export default function ActivityPage() {
                               <>
                                 <span>•</span>
                                 <div>
-                                  <span className="text-white/40">Value: </span>
-                                  <span className="font-bold text-white">{act.amount}</span>
+                                  <span className="text-ink-3">Value: </span>
+                                  <span className="font-bold text-ink">{act.amount}</span>
                                 </div>
                               </>
                             )}
@@ -429,7 +428,7 @@ export default function ActivityPage() {
                             {act.gasFee && (
                               <>
                                 <span>•</span>
-                                <div className="text-white/40">
+                                <div className="text-ink-3">
                                   Gas: {act.gasFee}
                                 </div>
                               </>
@@ -444,7 +443,7 @@ export default function ActivityPage() {
                               href={act.explorerUrl}
                               target="_blank"
                               rel="noreferrer"
-                              className="px-3 py-1.5 rounded-xl bg-white/[0.06] hover:bg-white/15 text-white/85 font-bold text-xs flex items-center space-x-1 transition-all"
+                              className="px-3 py-1.5 rounded-none bg-paper-shade hover:bg-paper-deep text-ink font-bold text-xs flex items-center space-x-1 transition-all"
                             >
                               <span>MonadVision</span>
                               <span>↗</span>
@@ -453,7 +452,7 @@ export default function ActivityPage() {
                               href={act.monadscanUrl}
                               target="_blank"
                               rel="noreferrer"
-                              className="px-3 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/10 border border-white/10 text-white/60 font-bold text-xs flex items-center space-x-1 transition-all"
+                              className="px-3 py-1.5 rounded-none bg-paper hover:bg-sun-soft border border-ink/20 text-ink-2 font-bold text-xs flex items-center space-x-1 transition-all"
                             >
                               <span>Monadscan</span>
                               <span>↗</span>
@@ -462,7 +461,7 @@ export default function ActivityPage() {
 
                           <button
                             onClick={() => setExpandedTxId(isExpanded ? null : act.id)}
-                            className="text-xs text-white/50 hover:text-[#ccff00] font-semibold flex items-center space-x-1 mt-1"
+                            className="text-xs text-ink-2 hover:text-violet font-semibold flex items-center space-x-1 mt-1"
                           >
                             <span>{isExpanded ? "Hide Payload ▲" : "Inspect Payload ▼"}</span>
                           </button>
@@ -471,37 +470,37 @@ export default function ActivityPage() {
 
                       {/* Expandable Details Drawer */}
                       {isExpanded && (
-                        <div className="mt-4 pt-4 border-t border-white/10 bg-white/[0.04] rounded-2xl p-4 animate-fadeIn font-mono text-xs text-white/85 space-y-3">
-                          <div className="flex items-center justify-between border-b border-white/10 pb-2">
-                            <span className="font-bold uppercase text-[10px] tracking-wider text-white/50">
+                        <div className="mt-4 pt-4 border-t border-ink/20 bg-paper rounded-none p-4 animate-fadeIn font-mono text-xs text-ink space-y-3">
+                          <div className="flex items-center justify-between border-b border-ink/20 pb-2">
+                            <span className="font-bold uppercase text-[10px] tracking-wider text-ink-2">
                               Complete Transaction Payload & Verification State
                             </span>
-                            <span className="text-[10px] text-white/40">Chain ID: 10143 (Monad Testnet)</span>
+                            <span className="text-[10px] text-ink-3">Chain ID: 10143 (Monad Testnet)</span>
                           </div>
 
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-[11px]">
                             <div>
-                              <span className="text-white/40 block text-[10px]">Full Transaction Hash:</span>
-                              <span className="break-all font-bold text-white">{act.txHash}</span>
+                              <span className="text-ink-3 block text-[10px]">Full Transaction Hash:</span>
+                              <span className="break-all font-bold text-ink">{act.txHash}</span>
                             </div>
                             <div>
-                              <span className="text-white/40 block text-[10px]">Target Contract Address:</span>
-                              <span className="break-all font-bold text-white">{act.to}</span>
+                              <span className="text-ink-3 block text-[10px]">Target Contract Address:</span>
+                              <span className="break-all font-bold text-ink">{act.to}</span>
                             </div>
                             <div>
-                              <span className="text-white/40 block text-[10px]">Caller / Origin Wallet:</span>
-                              <span className="break-all text-white/75">{act.from}</span>
+                              <span className="text-ink-3 block text-[10px]">Caller / Origin Wallet:</span>
+                              <span className="break-all text-ink">{act.from}</span>
                             </div>
                             <div>
-                              <span className="text-white/40 block text-[10px]">Block Timestamp:</span>
-                              <span className="text-white/75">{act.timestamp}</span>
+                              <span className="text-ink-3 block text-[10px]">Block Timestamp:</span>
+                              <span className="text-ink">{act.timestamp}</span>
                             </div>
                           </div>
 
                           {act.metadata && (
-                            <div className="pt-2 border-t border-white/10">
-                              <span className="text-white/40 block text-[10px] mb-1">Decoded Parameters / Metadata:</span>
-                              <pre className="bg-[#121214] p-3 rounded-xl border border-white/10 text-[11px] overflow-x-auto text-white/85">
+                            <div className="pt-2 border-t border-ink/20">
+                              <span className="text-ink-3 block text-[10px] mb-1">Decoded Parameters / Metadata:</span>
+                              <pre className="bg-paper-card p-3 rounded-none border border-ink/20 text-[11px] overflow-x-auto text-ink">
                                 {JSON.stringify(act.metadata, null, 2)}
                               </pre>
                             </div>

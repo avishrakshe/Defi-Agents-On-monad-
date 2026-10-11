@@ -5,103 +5,101 @@ import { motion, useReducedMotion } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
 import { AgentData } from "../lib/contracts";
 import { AgentPortrait, PortraitVariant } from "./AgentPortrait";
-import { Sheet, SectionLabel, SplitHeading, Reveal, TiltCard } from "./fx";
+import { Sheet, SectionLabel, SplitHeading, Reveal } from "./fx";
 
 interface AgentLineupProps {
   agents: AgentData[];
   onSelectAgent: (agent: AgentData) => void;
 }
 
-const CREW: { skill: string; variant: PortraitVariant; codename: string; role: string; bg: string; ink: string }[] = [
-  { skill: "contract-audit", variant: "auditor", codename: "AUDIT-01", role: "Contract Auditor", bg: "#ccff00", ink: "#0b0b0b" },
-  { skill: "token-risk-score", variant: "risk", codename: "RISK-02", role: "Token Risk Scorer", bg: "#6dff8f", ink: "#0b0b0b" },
-  { skill: "gas-timing", variant: "gas", codename: "GAS-03", role: "Gas Oracle", bg: "#f2ff3a", ink: "#0b0b0b" },
-  { skill: "whale-tracker", variant: "whale", codename: "WHALE-04", role: "Whale Sentinel", bg: "#a594ff", ink: "#0b0b0b" }
+const CREW: { skill: string; variant: PortraitVariant; codename: string; role: string; bg: string; line: string }[] = [
+  { skill: "contract-audit", variant: "auditor", codename: "AUDIT", role: "Contract Auditor", bg: "halftone-violet", line: "Reads verified source and bytecode, flags what can hurt you." },
+  { skill: "token-risk-score", variant: "risk", codename: "RISK", role: "Token Risk Scorer", bg: "halftone-flame", line: "Finds mint, pause and blacklist levers in any ERC-20." },
+  { skill: "gas-timing", variant: "gas", codename: "GAS", role: "Gas Oracle", bg: "bg-sun-soft", line: "Measures block fullness and tells you when to send." },
+  { skill: "whale-tracker", variant: "whale", codename: "WHALE", role: "Whale Sentinel", bg: "bg-moss-soft", line: "Watches where the big money moves, block by block." }
 ];
 
 export const AgentLineup: React.FC<AgentLineupProps> = ({ agents, onSelectAgent }) => {
   const reduce = useReducedMotion();
 
   return (
-    <Sheet tone="void" className="pt-24 pb-24 sm:pt-32 sm:pb-28">
-      <div aria-hidden="true" className="absolute inset-0 bg-blueprint opacity-50" />
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-8">
-        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-12">
-          <div>
-            <SectionLabel>Specialist crew</SectionLabel>
+    <Sheet tone="sheet" className="py-20 sm:py-28">
+      <div className="max-w-7xl mx-auto px-4 sm:px-8">
+        <div className="grid lg:grid-cols-12 gap-8 items-end mb-12">
+          <div className="lg:col-span-7">
+            <SectionLabel index="01">The specialists</SectionLabel>
             <SplitHeading
-              lines={["Meet the", { text: "agents", className: "text-[#ccff00]" }]}
-              className="mt-8 font-display uppercase text-[clamp(2.8rem,8vw,6.5rem)] leading-[0.9]"
+              lines={["Four agents,", { text: "one job each.", className: "italic text-violet" }]}
+              className="mt-6 font-display text-[clamp(2.8rem,7vw,5.6rem)] leading-[0.92] tracking-[-0.02em]"
             />
           </div>
-          <Reveal delay={0.15}>
-            <p className="max-w-sm font-mono text-sm uppercase leading-relaxed text-white/50">
-              Four autonomous specialists, each with an onchain identity, a live reputation score and a price per call.
+          <Reveal delay={0.15} className="lg:col-span-5">
+            <p className="text-[17px] leading-relaxed text-ink-2 border-l-[1.5px] border-ink pl-5">
+              Every specialist has an onchain identity, a public reputation score earned from real reviews, and a price per call. Pick one to run it.
             </p>
           </Reveal>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
           {CREW.map((c, i) => {
             const agent = agents.find((a) => a.skill === c.skill);
-            const hasScore = agent && agent.feedbackCount > 0;
+            const rated = agent && agent.feedbackCount > 0;
             return (
               <motion.div
                 key={c.skill}
-                initial={reduce ? false : { opacity: 0, y: 80, rotate: i % 2 ? 3 : -3 }}
-                whileInView={{ opacity: 1, y: 0, rotate: 0 }}
+                initial={reduce ? false : { opacity: 0, y: 50 }}
+                whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-60px" }}
-                transition={{ duration: 1, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] }}
+                transition={{ duration: 0.8, delay: i * 0.08, ease: [0.22, 1, 0.36, 1] }}
               >
-                <TiltCard className="rounded-[2rem] overflow-hidden">
-                  <button
-                    onClick={() => agent && onSelectAgent(agent)}
-                    disabled={!agent}
-                    className="group/card relative block w-full text-left aspect-[4/5] rounded-[2rem] overflow-hidden"
-                    style={{ background: c.bg, color: c.ink }}
-                    aria-label={`Run the ${c.role}`}
-                  >
-                    {/* Card texture */}
-                    <div
-                      aria-hidden="true"
-                      className="absolute inset-0 opacity-[0.12]"
-                      style={{
-                        backgroundImage:
-                          "linear-gradient(to right, #000 1px, transparent 1px), linear-gradient(to bottom, #000 1px, transparent 1px)",
-                        backgroundSize: "28px 28px"
-                      }}
-                    />
-                    <div aria-hidden="true" className="absolute -bottom-24 left-1/2 -translate-x-1/2 w-[120%] h-1/2 rounded-full bg-black/25 blur-3xl" />
+                <button
+                  onClick={() => agent && onSelectAgent(agent)}
+                  disabled={!agent}
+                  aria-label={`Run the ${c.role}`}
+                  className="group block w-full text-left border-[1.5px] border-ink bg-paper-card transition-all duration-200 hover:-translate-x-1 hover:-translate-y-1 hover:shadow-hard"
+                >
+                  {/* File tab */}
+                  <div className="flex items-center justify-between px-3 py-2 border-b-[1.5px] border-ink font-mono text-[11px] uppercase tracking-[0.14em]">
+                    <span>
+                      Nº {String(agent?.id ?? i + 1).padStart(2, "0")} — {c.codename}
+                    </span>
+                    <span className="flex items-center gap-1 text-ink-2 group-hover:text-ink">
+                      run <ArrowUpRight size={13} className="transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                    </span>
+                  </div>
 
-                    {/* Header */}
-                    <div className="absolute top-5 left-5 right-5 flex items-start justify-between z-10">
-                      <div>
-                        <div className="font-mono text-[11px] font-bold tracking-[0.2em]">{c.codename}</div>
-                        <div className="font-mono text-[10px] uppercase tracking-wider opacity-60 mt-1">#{String(agent?.id ?? i + 1).padStart(2, "0")} · {agent?.priceUSDC ?? "$0.001"}/call</div>
-                      </div>
-                      <span className="w-9 h-9 rounded-full bg-black text-[#ccff00] flex items-center justify-center transition-transform duration-300 group-hover/card:rotate-45">
-                        <ArrowUpRight size={16} />
+                  {/* Riso print */}
+                  <div className={`relative aspect-[4/4.2] overflow-hidden border-b-[1.5px] border-ink ${c.bg}`}>
+                    <div className="absolute inset-x-0 bottom-0 top-6 flex items-end justify-center transition-transform duration-500 ease-out group-hover:scale-[1.04]">
+                      <AgentPortrait variant={c.variant} className="w-[92%] h-full" />
+                    </div>
+                    {rated && (
+                      <span className="absolute top-3 right-3 stamp border-ink bg-paper-card animate-stamp">
+                        {agent!.avgScore}/100
                       </span>
-                    </div>
+                    )}
+                  </div>
 
-                    {/* Portrait */}
-                    <div className="absolute inset-x-0 bottom-0 top-12 flex items-end justify-center transition-transform duration-700 ease-out group-hover/card:scale-[1.06] group-hover/card:-translate-y-1">
-                      <AgentPortrait variant={c.variant} className="w-[96%] h-full drop-shadow-[0_30px_40px_rgba(0,0,0,0.35)]" />
-                    </div>
-
-                    {/* Footer plate */}
-                    <div className="absolute left-4 right-4 bottom-4 z-10 rounded-2xl bg-black/85 backdrop-blur px-4 py-3 text-white flex items-center justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="font-display text-sm uppercase truncate">{c.role}</div>
-                        <div className="font-mono text-[10px] uppercase tracking-wider text-white/45">{agent?.skill ?? c.skill}</div>
+                  {/* Dossier */}
+                  <div className="p-4">
+                    <div className="font-display text-[1.75rem] leading-none">{c.role}</div>
+                    <p className="mt-2 text-[13.5px] leading-snug text-ink-2 min-h-[2.6rem]">{c.line}</p>
+                    <dl className="mt-4 grid grid-cols-3 border-t border-ink/20 pt-3 font-mono text-[11px]">
+                      <div>
+                        <dt className="text-ink-3 uppercase">Price</dt>
+                        <dd className="text-ink mt-0.5">{agent?.priceUSDC ?? "$0.001"}</dd>
                       </div>
-                      <div className="text-right shrink-0">
-                        <div className={`font-display text-lg leading-none ${hasScore ? "text-[#ccff00]" : "text-white/40"}`}>{hasScore ? agent!.avgScore : "—"}</div>
-                        <div className="font-mono text-[9px] uppercase text-white/40">{hasScore ? `${agent!.feedbackCount} reviews` : "no reviews"}</div>
+                      <div>
+                        <dt className="text-ink-3 uppercase">Rep</dt>
+                        <dd className="text-ink mt-0.5">{rated ? agent!.avgScore : "—"}</dd>
                       </div>
-                    </div>
-                  </button>
-                </TiltCard>
+                      <div>
+                        <dt className="text-ink-3 uppercase">Reviews</dt>
+                        <dd className="text-ink mt-0.5">{agent?.feedbackCount ?? 0}</dd>
+                      </div>
+                    </dl>
+                  </div>
+                </button>
               </motion.div>
             );
           })}

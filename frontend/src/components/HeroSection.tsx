@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
 import { ArrowRight, ArrowDownRight } from "lucide-react";
-import { AgentData } from "../lib/contracts";
-import { GridPattern3D } from "./GridPattern3D";
-import { AgentOrbit } from "./AgentOrbit";
+import { ethers } from "ethers";
+import { AgentData, MONAD_CONTRACTS } from "../lib/contracts";
+import { AgentPortrait, variantForSkill } from "./AgentPortrait";
 
 interface HeroSectionProps {
   agents: AgentData[];
@@ -15,162 +15,155 @@ interface HeroSectionProps {
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
-const STATS = [
-  { k: "300ms", v: "Block time" },
-  { k: "$0.001", v: "Per agent call" },
-  { k: "10K", v: "TPS target" },
-  { k: "ERC-8004", v: "Agent identity" }
-];
+/** Live Monad block height for the front-page dateline */
+function useBlockHeight() {
+  const [block, setBlock] = useState<number | null>(null);
+  useEffect(() => {
+    const provider = new ethers.JsonRpcProvider(MONAD_CONTRACTS.rpcUrl, 10143, { staticNetwork: true });
+    let alive = true;
+    const tick = () => provider.getBlockNumber().then((b) => alive && setBlock(b)).catch(() => {});
+    tick();
+    const id = setInterval(tick, 4000);
+    return () => {
+      alive = false;
+      clearInterval(id);
+    };
+  }, []);
+  return block;
+}
 
 export const HeroSection: React.FC<HeroSectionProps> = ({ agents, onRunClick, onExploreClick }) => {
   const ref = useRef<HTMLElement>(null);
   const reduce = useReducedMotion();
+  const block = useBlockHeight();
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
+  const headY = useTransform(scrollYProgress, [0, 1], [0, -80]);
+  const boardY = useTransform(scrollYProgress, [0, 1], [0, 40]);
 
-  // Scroll-out choreography: headline drifts up and widens, orbit sinks and dims
-  const headY = useTransform(scrollYProgress, [0, 1], [0, -160]);
-  const headSpacing = useTransform(scrollYProgress, [0, 1], ["-0.02em", "0.08em"]);
-  const fade = useTransform(scrollYProgress, [0, 0.7], [1, 0]);
-  const orbitY = useTransform(scrollYProgress, [0, 1], [0, 120]);
-  const orbitScale = useTransform(scrollYProgress, [0, 1], [1, 0.86]);
-
-  const liveCount = agents.length;
+  const rise = (delay: number) =>
+    reduce ? {} : { initial: { opacity: 0, y: 18 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.8, delay, ease: EASE } };
 
   return (
-    <section
-      ref={ref}
-      className="relative overflow-clip bg-[#151516] text-white noise min-h-[100svh] pt-32 sm:pt-36 pb-28"
-    >
-      <GridPattern3D />
+    <section ref={ref} className="relative bg-paper text-ink overflow-clip">
+      <div className="absolute inset-0 bg-blueprint pointer-events-none" aria-hidden="true" />
 
-      {/* Ambient colour fields */}
-      <div aria-hidden="true" className="absolute -left-40 top-1/3 w-[520px] h-[520px] rounded-full bg-[#6d28d9] opacity-30 blur-[120px]" />
-      <div aria-hidden="true" className="absolute -right-32 top-20 w-[420px] h-[420px] rounded-full bg-[#ccff00] opacity-[0.12] blur-[110px]" />
-
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-8">
-        {/* Meta row */}
-        <motion.div
-          initial={reduce ? false : { opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, ease: EASE }}
-          className="flex flex-wrap items-center gap-x-6 gap-y-3 mb-8 sm:mb-10"
-        >
-          <div className="flex items-center gap-3">
-            <span className="stripe-bar" />
-            <span className="font-mono text-[11px] sm:text-xs uppercase tracking-[0.2em] text-white/60">
-              Monad Testnet · Chain 10143
-            </span>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {["Mode A · Autonomous", "Mode B · Your wallet", "x402 Micropayments"].map((t) => (
-              <span
-                key={t}
-                className="font-mono text-[10px] sm:text-[11px] uppercase tracking-wider text-white/70 border border-white/10 bg-white/[0.03] px-3 py-1 rounded-full"
-              >
-                {t}
-              </span>
-            ))}
-          </div>
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-8 pt-10 sm:pt-14 pb-16">
+        {/* Front-page dateline */}
+        <motion.div {...rise(0)} className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-ink/20 font-mono text-[11px] uppercase tracking-[0.16em] text-ink-2">
+          <span>No. 10143 — Agent economy desk</span>
+          <span className="flex items-center gap-2">
+            <span className="w-1.5 h-1.5 bg-flame animate-blink" />
+            Block {block ? `#${block.toLocaleString()}` : "syncing…"}
+          </span>
         </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-6 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 pt-10">
           {/* Headline column */}
-          <motion.div style={reduce ? undefined : { y: headY, opacity: fade }} className="lg:col-span-7 relative z-10">
-            <motion.h1
-              style={reduce ? undefined : { letterSpacing: headSpacing }}
-              className="font-display uppercase leading-[0.92] text-[clamp(3.2rem,9.5vw,8.5rem)] lg:text-[clamp(3.5rem,7.4vw,7.6rem)]"
-            >
-              {[
-                { t: "Agents", c: "text-white" },
-                { t: "pay", c: "text-[#ccff00]" },
-                { t: "agents.", c: "text-white" }
-              ].map((w, i) => (
-                <span key={w.t} className="block overflow-hidden pb-[0.06em]">
+          <motion.div style={reduce ? undefined : { y: headY }} className="lg:col-span-7">
+            <h1 className="font-display leading-[0.88] tracking-[-0.02em] text-[clamp(3.6rem,10vw,8.8rem)]">
+              {["Agents", "pay", "agents."].map((w, i) => (
+                <span key={w} className="block overflow-hidden pb-[0.18em] -mb-[0.12em]">
                   <motion.span
-                    className={`inline-block ${w.c}`}
+                    className={`inline-block ${w === "pay" ? "italic text-violet" : ""}`}
                     initial={reduce ? false : { y: "105%" }}
                     animate={{ y: 0 }}
-                    transition={{ duration: 1, delay: 0.15 + i * 0.12, ease: EASE }}
+                    transition={{ duration: 1, delay: 0.1 + i * 0.12, ease: EASE }}
                   >
-                    {w.t}
+                    {w === "pay" ? (
+                      <>
+                        pay<span className="not-italic text-flame">*</span>
+                      </>
+                    ) : (
+                      w
+                    )}
                   </motion.span>
                 </span>
               ))}
-            </motion.h1>
+            </h1>
 
-            <motion.p
-              initial={reduce ? false : { opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.6, ease: EASE }}
-              className="font-display uppercase text-outline text-[clamp(1.4rem,3.2vw,2.6rem)] leading-none mt-4"
-            >
-              No wallet required
-            </motion.p>
+            <motion.div {...rise(0.55)} className="mt-8 grid sm:grid-cols-2 gap-6 border-t border-ink/20 pt-6">
+              <p className="text-[17px] leading-relaxed text-ink">
+                Specialist AI agents discover each other on Monad, check reputation onchain, and pay per call in USDC
+                — settled inside a single request.
+              </p>
+              <p className="text-[14px] leading-relaxed text-ink-2">
+                <span className="text-flame">*</span> No wallet required: the orchestrator signs EIP-3009 payments for you. Connect
+                MetaMask to pay from your own funds instead.
+              </p>
+            </motion.div>
 
-            <motion.p
-              initial={reduce ? false : { opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.75, ease: EASE }}
-              className="mt-7 max-w-xl text-base sm:text-lg text-white/60 leading-relaxed"
-            >
-              Run tasks instantly — the orchestrator wallet pays specialist agents via EIP-3009.
-              Optionally connect MetaMask to pay with your own funds.
-            </motion.p>
-
-            <motion.div
-              initial={reduce ? false : { opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.9, ease: EASE }}
-              className="mt-9 flex flex-wrap gap-3"
-            >
+            <motion.div {...rise(0.7)} className="mt-8 flex flex-wrap items-center gap-4">
               <button onClick={onRunClick} className="btn-neon group">
-                <span>Run without connecting</span>
+                <span>Run a task — free</span>
                 <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
               </button>
               {onExploreClick && (
                 <button onClick={onExploreClick} className="btn-ghost group">
-                  <span>Explore {liveCount > 0 ? liveCount : ""} agents</span>
-                  <ArrowDownRight size={16} className="transition-transform group-hover:translate-x-0.5 group-hover:translate-y-0.5" />
+                  <span>Browse {agents.length || 4} agents</span>
+                  <ArrowDownRight size={16} />
                 </button>
               )}
             </motion.div>
           </motion.div>
 
-          {/* Live agent network */}
-          <motion.div
-            style={reduce ? undefined : { y: orbitY, scale: orbitScale }}
-            initial={reduce ? false : { opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 1.2, delay: 0.3, ease: EASE }}
-            className="lg:col-span-5 relative"
-          >
-            <div className="absolute -top-2 right-2 sm:right-6 font-mono text-[10px] uppercase tracking-[0.2em] text-white/40 flex items-center gap-2 z-10">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#ccff00] animate-pulse" />
-              Live onchain reputation
-            </div>
-            <AgentOrbit agents={agents} />
-          </motion.div>
+          {/* Live agent board */}
+          <motion.aside style={reduce ? undefined : { y: boardY }} className="lg:col-span-5">
+            <motion.div {...rise(0.35)} className="border-[1.5px] border-ink bg-paper-card shadow-hard">
+              <div className="flex items-center justify-between px-4 py-2.5 border-b-[1.5px] border-ink bg-sun">
+                <span className="font-mono text-[11px] uppercase tracking-[0.16em]">Agent board · live</span>
+                <span className="font-mono text-[11px]">rep / reviews / price</span>
+              </div>
+              <ul>
+                {(agents.length ? agents : []).slice(0, 4).map((a, i) => {
+                  const rated = a.feedbackCount > 0;
+                  return (
+                    <motion.li
+                      key={a.id}
+                      initial={reduce ? false : { opacity: 0, x: 16 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.6, delay: 0.5 + i * 0.08, ease: EASE }}
+                      className="flex items-center gap-3 px-4 py-3 border-b border-ink/10 last:border-b-0"
+                    >
+                      <span className="w-12 h-12 shrink-0 border-[1.5px] border-ink bg-paper overflow-hidden flex items-end justify-center">
+                        <AgentPortrait variant={variantForSkill(a.skill)} crop="head" className="w-full h-full" />
+                      </span>
+                      <span className="flex-1 min-w-0">
+                        <span className="block text-[15px] font-semibold leading-tight truncate">{a.name}</span>
+                        <span className="block font-mono text-[11px] text-ink-2">#{String(a.id).padStart(2, "0")} · {a.skill}</span>
+                      </span>
+                      <span className="text-right shrink-0">
+                        <span className="block font-display text-3xl leading-none">{rated ? a.avgScore : "—"}</span>
+                        <span className="block font-mono text-[10px] text-ink-2 mt-1">
+                          {rated ? `${a.feedbackCount} rev` : "new"} · {a.priceUSDC}
+                        </span>
+                      </span>
+                    </motion.li>
+                  );
+                })}
+                {!agents.length && <li className="px-4 py-10 text-center font-mono text-xs text-ink-2">Reading IdentityRegistry…</li>}
+              </ul>
+              <div className="px-4 py-2.5 border-t-[1.5px] border-ink font-mono text-[10.5px] uppercase tracking-wider text-ink-2 flex justify-between">
+                <span>Source: ReputationRegistry</span>
+                <span>Monad 10143</span>
+              </div>
+            </motion.div>
+          </motion.aside>
         </div>
 
-        {/* Stat strip */}
-        <motion.div
-          initial={reduce ? false : { opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.9, delay: 1.05, ease: EASE }}
-          className="mt-16 lg:mt-10 grid grid-cols-2 md:grid-cols-4 border-t border-white/10"
-        >
-          {STATS.map((s, i) => (
-            <div
-              key={s.k}
-              className={`py-5 pr-4 ${i % 2 === 1 ? "pl-4 md:pl-6 border-l border-white/10" : ""} ${i === 2 ? "md:pl-6 md:border-l md:border-white/10" : ""}`}
-            >
-              <div className="font-display text-xl sm:text-3xl text-white whitespace-nowrap">{s.k}</div>
-              <div className="font-mono text-[10px] sm:text-[11px] uppercase tracking-[0.18em] text-white/45 mt-1">
-                {s.v}
-              </div>
+        {/* Figures strip — broadsheet columns */}
+        <motion.dl {...rise(0.9)} className="mt-14 grid grid-cols-2 md:grid-cols-4 border-y-[1.5px] border-ink">
+          {[
+            ["~0.3s", "Block time"],
+            ["$0.001", "Per agent call"],
+            ["0", "LLMs in the money path"],
+            ["ERC-8004", "Identity standard"]
+          ].map(([k, v], i) => (
+            <div key={v} className={`py-5 px-4 ${i > 0 ? "md:border-l border-ink/20" : ""} ${i % 2 === 1 ? "border-l border-ink/20 md:border-l" : ""} ${i >= 2 ? "border-t md:border-t-0 border-ink/20" : ""}`}>
+              <dt className="font-display text-[2.6rem] leading-none">{k}</dt>
+              <dd className="kicker mt-2">{v}</dd>
             </div>
           ))}
-        </motion.div>
+        </motion.dl>
       </div>
     </section>
   );

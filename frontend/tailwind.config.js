@@ -8,73 +8,49 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        // "Riso Ledger" palette: warm paper, ink, and two risograph spot colours
+        paper: { DEFAULT: "#F4EFE6", card: "#FBF8F2", shade: "#EAE2D3", deep: "#DED3BF" },
+        ink: { DEFAULT: "#16130F", 2: "#4A453D", 3: "#8A8377" },
+        violet: { DEFAULT: "#5B3DF5", soft: "#E4DEFF" },
+        flame: { DEFAULT: "#FF5A1F", soft: "#FFE1D3" },
+        moss: { DEFAULT: "#1E7A46", soft: "#D8EEDF" },
+        sun: { DEFAULT: "#F2B705", soft: "#FCEFC2" },
         monad: {
           lime: "#ccff00",
-          "lime-hover": "#b8e600",
-          "lime-light": "#e8ff80",
-          purple: "#836ef9",
-          dark: "#0a0a0a",
-          card: "#ffffff",
-          muted: "#64748b",
-          border: "#e2e8f0"
-        },
-        // Dark "Agent OS" surface tokens used by the homepage sheets
-        void: {
-          DEFAULT: "#0c0c0d",
-          sheet: "#151516",
-          raised: "#1c1c1e",
-          line: "rgba(255,255,255,0.08)"
+          purple: "#836ef9"
         }
       },
       fontFamily: {
-        sans: ["var(--font-sans)", "Inter", "system-ui", "-apple-system", "sans-serif"],
-        mono: ["var(--font-mono)", "JetBrains Mono", "Menlo", "monospace"],
-        display: ["var(--font-display)", "var(--font-sans)", "sans-serif"]
+        sans: ["var(--font-sans)", "system-ui", "-apple-system", "sans-serif"],
+        mono: ["var(--font-mono)", "ui-monospace", "Menlo", "monospace"],
+        display: ["var(--font-display)", "Georgia", "serif"]
       },
       boxShadow: {
-        card: "0 2px 8px -2px rgba(0, 0, 0, 0.05), 0 1px 4px -1px rgba(0, 0, 0, 0.03)",
-        elevated: "0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01)",
-        navbar: "0 4px 20px -2px rgba(0, 0, 0, 0.04)",
-        glow: "0 0 0 1px rgba(204,255,0,0.35), 0 0 40px -6px rgba(204,255,0,0.45)"
+        hard: "4px 4px 0 0 #16130F",
+        "hard-sm": "2px 2px 0 0 #16130F",
+        "hard-violet": "5px 5px 0 0 #5B3DF5",
+        "hard-flame": "5px 5px 0 0 #FF5A1F"
       },
       borderRadius: {
-        "3xl": "1.5rem",
-        "4xl": "2rem",
-        sheet: "2.75rem"
+        sheet: "0px"
       },
       keyframes: {
-        marquee: {
-          "0%": { transform: "translateX(0)" },
-          "100%": { transform: "translateX(-50%)" }
-        },
-        "spin-slow": {
-          "0%": { transform: "rotate(0deg)" },
-          "100%": { transform: "rotate(360deg)" }
-        },
-        cube: {
-          "0%": { transform: "rotateX(-24deg) rotateY(0deg)" },
-          "100%": { transform: "rotateX(-24deg) rotateY(360deg)" }
-        },
-        float: {
-          "0%,100%": { transform: "translateY(0)" },
-          "50%": { transform: "translateY(-14px)" }
-        },
-        scan: {
-          "0%": { transform: "translateY(-100%)" },
-          "100%": { transform: "translateY(100%)" }
-        },
-        fadeIn: {
-          "0%": { opacity: "0", transform: "translateY(4px)" },
-          "100%": { opacity: "1", transform: "translateY(0)" }
-        }
+        marquee: { "0%": { transform: "translateX(0)" }, "100%": { transform: "translateX(-50%)" } },
+        "spin-slow": { "0%": { transform: "rotate(0deg)" }, "100%": { transform: "rotate(360deg)" } },
+        float: { "0%,100%": { transform: "translateY(0)" }, "50%": { transform: "translateY(-8px)" } },
+        scan: { "0%": { transform: "translateY(-100%)" }, "100%": { transform: "translateY(100%)" } },
+        fadeIn: { "0%": { opacity: "0", transform: "translateY(4px)" }, "100%": { opacity: "1", transform: "translateY(0)" } },
+        blink: { "0%,49%": { opacity: "1" }, "50%,100%": { opacity: "0" } },
+        stamp: { "0%": { transform: "scale(1.6) rotate(-14deg)", opacity: "0" }, "100%": { transform: "scale(1) rotate(-8deg)", opacity: "1" } }
       },
       animation: {
-        marquee: "marquee 32s linear infinite",
+        marquee: "marquee 38s linear infinite",
         "spin-slow": "spin-slow 40s linear infinite",
-        cube: "cube 14s linear infinite",
         float: "float 6s ease-in-out infinite",
-        scan: "scan 4s linear infinite",
-        fadeIn: "fadeIn 0.35s ease-out both"
+        scan: "scan 3s linear infinite",
+        fadeIn: "fadeIn 0.35s ease-out both",
+        blink: "blink 1s steps(1) infinite",
+        stamp: "stamp 0.5s cubic-bezier(0.22,1,0.36,1) both"
       }
     },
   },

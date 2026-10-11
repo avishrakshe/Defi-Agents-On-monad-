@@ -163,38 +163,38 @@ export const RegisterAgentModal: React.FC<RegisterAgentModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn">
-      <div className="bg-[#121214] rounded-3xl border border-white/10 shadow-2xl max-w-xl w-full max-h-[90vh] overflow-y-auto p-6 sm:p-8 relative">
+      <div className="bg-paper-card rounded-none border border-ink/20 shadow-2xl max-w-xl w-full max-h-[90vh] overflow-y-auto p-6 sm:p-8 relative">
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-6 right-6 text-white/40 hover:text-white w-8 h-8 rounded-full flex items-center justify-center bg-white/[0.06] hover:bg-white/15 transition-colors"
+          className="absolute top-6 right-6 text-ink-3 hover:text-ink w-8 h-8 rounded-full flex items-center justify-center bg-paper-shade hover:bg-paper-deep transition-colors"
         >
           ✕
         </button>
 
         {/* Modal Title */}
         <div className="mb-6">
-          <span className="text-[11px] font-bold tracking-wider text-emerald-300 uppercase bg-emerald-400/10 px-2.5 py-0.5 rounded-full border border-emerald-400/30">
+          <span className="text-[11px] font-bold tracking-wider text-moss uppercase bg-moss-soft px-2.5 py-0.5 rounded-full border border-moss/40">
             ERC-8004 Onchain Identity
           </span>
-          <h2 className="text-2xl font-extrabold text-white tracking-tight mt-2">
+          <h2 className="text-2xl font-extrabold text-ink tracking-tight mt-2">
             Register Your Custom Agent
           </h2>
-          <p className="text-xs text-white/50 mt-1">
+          <p className="text-xs text-ink-2 mt-1">
             Publish an autonomous agent to the Monad Testnet registry to receive x402 micropayments.
           </p>
         </div>
 
         {successData ? (
-          <div className="bg-emerald-400/10 border border-emerald-400/30 rounded-2xl p-6 text-center space-y-4">
-            <div className="w-12 h-12 bg-emerald-500 text-white rounded-full flex items-center justify-center mx-auto text-xl font-bold">
+          <div className="bg-moss-soft border border-moss/40 rounded-none p-6 text-center space-y-4">
+            <div className="w-12 h-12 bg-moss text-ink rounded-full flex items-center justify-center mx-auto text-xl font-bold">
               ✓
             </div>
             <div>
-              <h3 className="text-lg font-bold text-emerald-200">
+              <h3 className="text-lg font-bold text-moss">
                 Agent #{successData.agentId} Registered Onchain!
               </h3>
-              <p className="text-xs text-emerald-300 mt-1">
+              <p className="text-xs text-moss mt-1">
                 Your agent is now live on the Monad Testnet IdentityRegistry and ready to execute tasks.
               </p>
             </div>
@@ -204,7 +204,7 @@ export const RegisterAgentModal: React.FC<RegisterAgentModalProps> = ({
                 href={successData.explorerUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-sm"
+                className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-none bg-moss hover:bg-emerald-700 text-ink text-xs font-bold transition-all shadow-sm"
               >
                 <span>View on MonadVision</span>
                 <span>↗</span>
@@ -213,7 +213,7 @@ export const RegisterAgentModal: React.FC<RegisterAgentModalProps> = ({
 
             <button
               onClick={onClose}
-              className="w-full mt-4 bg-white/[0.06] hover:bg-white/15 text-white/85 font-semibold text-xs py-2.5 rounded-xl transition-all"
+              className="w-full mt-4 bg-paper-shade hover:bg-paper-deep text-ink font-semibold text-xs py-2.5 rounded-none transition-all"
             >
               Done & View Marketplace
             </button>
@@ -221,13 +221,13 @@ export const RegisterAgentModal: React.FC<RegisterAgentModalProps> = ({
         ) : (
           <form onSubmit={handleRegister} className="space-y-4">
             {errorMsg && (
-              <div className="bg-rose-400/10 border border-rose-400/30 text-rose-300 text-xs p-3 rounded-xl">
+              <div className="bg-flame-soft border border-flame/40 text-flame text-xs p-3 rounded-none">
                 {errorMsg}
               </div>
             )}
 
             <div>
-              <label className="block text-xs font-bold text-white/75 mb-1">
+              <label className="block text-xs font-bold text-ink mb-1">
                 Agent Name *
               </label>
               <input
@@ -236,13 +236,13 @@ export const RegisterAgentModal: React.FC<RegisterAgentModalProps> = ({
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g. Whale & Liquidity Sentinel"
-                className="w-full bg-white/[0.04] text-white placeholder:text-white/30 rounded-xl border border-white/10 px-3.5 py-2.5 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#ccff00] focus:border-transparent font-sans"
+                className="w-full bg-paper text-ink placeholder:text-ink-3 rounded-none border border-ink/20 px-3.5 py-2.5 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-violet focus:border-transparent font-sans"
               />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-white/75 mb-1">
+                <label className="block text-xs font-bold text-ink mb-1">
                   Skill Slug / Keyword *
                 </label>
                 <input
@@ -251,12 +251,12 @@ export const RegisterAgentModal: React.FC<RegisterAgentModalProps> = ({
                   value={skill}
                   onChange={(e) => setSkill(e.target.value)}
                   placeholder="e.g. whale-tracker"
-                  className="w-full bg-white/[0.04] text-white placeholder:text-white/30 rounded-xl border border-white/10 px-3.5 py-2.5 text-xs sm:text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#ccff00] focus:border-transparent"
+                  className="w-full bg-paper text-ink placeholder:text-ink-3 rounded-none border border-ink/20 px-3.5 py-2.5 text-xs sm:text-sm font-mono focus:outline-none focus:ring-2 focus:ring-violet focus:border-transparent"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-white/75 mb-1">
+                <label className="block text-xs font-bold text-ink mb-1">
                   Price per Call (USDC)
                 </label>
                 <input
@@ -264,13 +264,13 @@ export const RegisterAgentModal: React.FC<RegisterAgentModalProps> = ({
                   value={priceUSDC}
                   onChange={(e) => setPriceUSDC(e.target.value)}
                   placeholder="0.001"
-                  className="w-full bg-white/[0.04] text-white placeholder:text-white/30 rounded-xl border border-white/10 px-3.5 py-2.5 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#ccff00] focus:border-transparent font-sans"
+                  className="w-full bg-paper text-ink placeholder:text-ink-3 rounded-none border border-ink/20 px-3.5 py-2.5 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-violet focus:border-transparent font-sans"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-white/75 mb-1">
+              <label className="block text-xs font-bold text-ink mb-1">
                 API Endpoint URL *
               </label>
               <input
@@ -279,15 +279,15 @@ export const RegisterAgentModal: React.FC<RegisterAgentModalProps> = ({
                 value={endpoint}
                 onChange={(e) => setEndpoint(e.target.value)}
                 placeholder="e.g. http://localhost:4004/api/whale"
-                className="w-full bg-white/[0.04] text-white placeholder:text-white/30 rounded-xl border border-white/10 px-3.5 py-2.5 text-xs sm:text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#ccff00] focus:border-transparent"
+                className="w-full bg-paper text-ink placeholder:text-ink-3 rounded-none border border-ink/20 px-3.5 py-2.5 text-xs sm:text-sm font-mono focus:outline-none focus:ring-2 focus:ring-violet focus:border-transparent"
               />
-              <span className="text-[10px] text-white/40 mt-0.5 block">
+              <span className="text-[10px] text-ink-3 mt-0.5 block">
                 The agent must implement the x402 payment verification header.
               </span>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-white/75 mb-1">
+              <label className="block text-xs font-bold text-ink mb-1">
                 Description
               </label>
               <textarea
@@ -295,12 +295,12 @@ export const RegisterAgentModal: React.FC<RegisterAgentModalProps> = ({
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Describe what your agent does..."
-                className="w-full bg-white/[0.04] text-white placeholder:text-white/30 rounded-xl border border-white/10 px-3.5 py-2 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#ccff00] focus:border-transparent font-sans"
+                className="w-full bg-paper text-ink placeholder:text-ink-3 rounded-none border border-ink/20 px-3.5 py-2 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-violet focus:border-transparent font-sans"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-white/75 mb-1">
+              <label className="block text-xs font-bold text-ink mb-1">
                 Data Source / Verification
               </label>
               <input
@@ -308,7 +308,7 @@ export const RegisterAgentModal: React.FC<RegisterAgentModalProps> = ({
                 value={dataSource}
                 onChange={(e) => setDataSource(e.target.value)}
                 placeholder="e.g. Monad RPC Block Scanner"
-                className="w-full bg-white/[0.04] text-white placeholder:text-white/30 rounded-xl border border-white/10 px-3.5 py-2.5 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#ccff00] focus:border-transparent font-sans"
+                className="w-full bg-paper text-ink placeholder:text-ink-3 rounded-none border border-ink/20 px-3.5 py-2.5 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-violet focus:border-transparent font-sans"
               />
             </div>
 
@@ -319,20 +319,20 @@ export const RegisterAgentModal: React.FC<RegisterAgentModalProps> = ({
                   type="checkbox"
                   checked={useWalletGas}
                   onChange={(e) => setUseWalletGas(e.target.checked)}
-                  className="w-4 h-4 rounded border-white/15 text-lime-600 focus:ring-[#ccff00]"
+                  className="w-4 h-4 rounded border-ink/25 text-violet focus:ring-violet"
                 />
-                <span className="text-xs text-white/60">
+                <span className="text-xs text-ink-2">
                   Pay transaction gas with my connected MetaMask wallet{" "}
-                  <span className="text-white/40">(uncheck for free orchestrator subsidy)</span>
+                  <span className="text-ink-3">(uncheck for free orchestrator subsidy)</span>
                 </span>
               </label>
             </div>
 
-            <div className="pt-4 flex items-center justify-end space-x-3 border-t border-white/10">
+            <div className="pt-4 flex items-center justify-end space-x-3 border-t border-ink/20">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-5 py-2.5 rounded-xl border border-white/10 text-white/60 text-xs font-semibold hover:bg-white/[0.06] transition-colors"
+                className="px-5 py-2.5 rounded-none border border-ink/20 text-ink-2 text-xs font-semibold hover:bg-sun-soft transition-colors"
               >
                 Cancel
               </button>

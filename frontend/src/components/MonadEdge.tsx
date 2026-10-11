@@ -4,55 +4,47 @@ import React from "react";
 import { Sheet, SectionLabel, SplitHeading, CountUp, Reveal } from "./fx";
 
 const METRICS = [
-  { to: 10000, suffix: "", unit: "TPS", label: "Throughput target", note: "Dense agent-to-agent traffic without congestion." },
-  { to: 300, suffix: "", unit: "MS", label: "Block time", note: "Settlement inline with the request, not batched later." },
-  { to: 600, prefix: "~", suffix: "", unit: "MS", label: "Finality", note: "Fast enough for synchronous machine commerce." },
-  { to: 0.001, prefix: "$", decimals: 3, unit: "USDC", label: "Per agent call", note: "Sub-cent micropayments that are actually viable." }
+  { to: 10000, unit: "TPS", label: "Throughput target", note: "Dense agent-to-agent traffic without queueing.", fn: "1" },
+  { to: 0.3, decimals: 1, prefix: "~", unit: "sec", label: "Block time", note: "Measured live by the gas agent on every run.", fn: "2" },
+  { to: 0.001, prefix: "$", decimals: 3, unit: "USDC", label: "Per agent call", note: "Sub-cent pricing that is actually worth settling.", fn: "3" },
+  { to: 100, unit: "%", label: "EVM compatible", note: "Solidity, ethers, Hardhat — no new toolchain.", fn: "4" }
 ];
 
 export const MonadEdge: React.FC = () => (
-  <Sheet tone="raised" className="py-24 sm:py-32">
-    <div aria-hidden="true" className="absolute inset-0 bg-blueprint" />
-    <div aria-hidden="true" className="absolute -left-40 top-1/4 w-[560px] h-[560px] rounded-full bg-[#6d28d9] opacity-40 blur-[140px]" />
-    <div aria-hidden="true" className="absolute -right-24 -bottom-24 w-[460px] h-[460px] rounded-full bg-[#ccff00] opacity-20 blur-[130px]" />
-
-    <div className="relative max-w-7xl mx-auto px-4 sm:px-8">
-      <SectionLabel index="004">Why Monad</SectionLabel>
-
-      <div className="mt-10 grid lg:grid-cols-12 gap-8 items-end">
-        <SplitHeading
-          lines={["Built for", { text: "machine speed", className: "text-[#ccff00]" }]}
-          className="lg:col-span-7 font-display uppercase text-[clamp(2.6rem,6.5vw,5.5rem)] leading-[0.95]"
-        />
-        <Reveal className="lg:col-span-5" delay={0.2}>
-          <p className="font-mono text-sm uppercase leading-relaxed text-white/55">
-            Payments, tokenization and agents at speed — this marketplace needs all three at once. Full EVM
-            compatibility, MON for gas, USDC for value.
+  <Sheet tone="void" className="py-20 sm:py-28">
+    <div className="max-w-7xl mx-auto px-4 sm:px-8">
+      <div className="grid lg:grid-cols-12 gap-8 items-end">
+        <div className="lg:col-span-7">
+          <SectionLabel index="05">Why Monad</SectionLabel>
+          <SplitHeading
+            lines={["Built for", { text: "machine speed.", className: "italic text-violet" }]}
+            className="mt-6 font-display text-[clamp(2.8rem,7vw,5.6rem)] leading-[0.92] tracking-[-0.02em]"
+          />
+        </div>
+        <Reveal delay={0.15} className="lg:col-span-5">
+          <p className="text-[17px] leading-relaxed text-ink-2 border-l-[1.5px] border-ink pl-5">
+            Payments, tokenization and agents at speed. This marketplace needs all three at once — and settlement fast
+            enough to happen inside a single HTTP request.
           </p>
         </Reveal>
       </div>
 
-      <div className="mt-16 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="mt-14 grid sm:grid-cols-2 lg:grid-cols-4 border-y-[1.5px] border-ink">
         {METRICS.map((m, i) => (
-          <Reveal key={m.label} delay={i * 0.08}>
-            <div className="group h-full clip-chamfer bg-white/[0.08] p-px transition-colors hover:bg-[#ccff00]/60">
-              <div className="clip-chamfer h-full bg-[#141415]/95 backdrop-blur p-6 sm:p-7">
-                <div className="flex items-baseline gap-2">
-                  <CountUp
-                    to={m.to}
-                    prefix={m.prefix}
-                    decimals={m.decimals}
-                    className="font-display text-4xl sm:text-5xl text-white group-hover:text-[#ccff00] transition-colors"
-                  />
-                  <span className="font-mono text-xs text-[#ccff00]">{m.unit}</span>
-                </div>
-                <div className="mt-5 font-display uppercase text-sm tracking-wider text-white/90">{m.label}</div>
-                <p className="mt-2 font-mono text-[12px] uppercase leading-relaxed text-white/45">{m.note}</p>
-              </div>
+          <Reveal key={m.label} delay={i * 0.07} className={`py-8 px-5 ${i > 0 ? "lg:border-l border-ink/20" : ""} ${i % 2 === 1 ? "sm:border-l border-ink/20" : ""} ${i >= 2 ? "border-t sm:border-t lg:border-t-0 border-ink/20" : ""} ${i === 1 ? "border-t sm:border-t-0" : ""}`}>
+            <div className="flex items-baseline gap-2">
+              <CountUp to={m.to} prefix={m.prefix} decimals={m.decimals} className="font-display text-[3.6rem] leading-none" />
+              <span className="font-mono text-[12px] text-ink-2">{m.unit}</span>
+              <sup className="font-mono text-[10px] text-flame">{m.fn}</sup>
             </div>
+            <div className="mt-4 text-[15px] font-semibold">{m.label}</div>
+            <p className="mt-1 text-[13.5px] text-ink-2 leading-relaxed">{m.note}</p>
           </Reveal>
         ))}
       </div>
+      <p className="mt-4 font-mono text-[10.5px] text-ink-3">
+        ¹ Monad design target. ² Average over the last 200 blocks, measured by the Gas Oracle. ³ x402 price per specialist call. ⁴ Standard EVM bytecode.
+      </p>
     </div>
   </Sheet>
 );

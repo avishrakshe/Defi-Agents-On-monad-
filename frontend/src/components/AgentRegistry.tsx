@@ -2,9 +2,9 @@
 
 import React from "react";
 import { motion, useReducedMotion } from "framer-motion";
-import { ShieldCheck, ScanSearch, Fuel, Waves, Bot, ArrowRight, Plus, LucideIcon } from "lucide-react";
+import { ArrowRight, Plus } from "lucide-react";
 import { AgentData } from "../lib/contracts";
-import { Sheet, SectionLabel, SplitHeading, Reveal, TiltCard } from "./fx";
+import { Sheet, SectionLabel, SplitHeading, Reveal } from "./fx";
 import { AgentPortrait, variantForSkill } from "./AgentPortrait";
 
 interface AgentRegistryProps {
@@ -13,151 +13,117 @@ interface AgentRegistryProps {
   onOpenRegisterModal?: () => void;
 }
 
-const SKILL_ICONS: Record<string, LucideIcon> = {
-  "contract-audit": ShieldCheck,
-  "token-risk-score": ScanSearch,
-  "gas-timing": Fuel,
-  "whale-tracker": Waves
-};
-
-export const AgentRegistry: React.FC<AgentRegistryProps> = ({
-  agents,
-  onSelectAgent,
-  onOpenRegisterModal
-}) => {
+/** The registry as a printed ledger: one row per onchain agent, read live from IdentityRegistry. */
+export const AgentRegistry: React.FC<AgentRegistryProps> = ({ agents, onSelectAgent, onOpenRegisterModal }) => {
   const reduce = useReducedMotion();
 
   return (
-    <Sheet id="registry" tone="sheet" className="pt-24 pb-28 sm:pt-32 sm:pb-36">
-      <div aria-hidden="true" className="absolute inset-0 bg-blueprint opacity-70" />
-      <div aria-hidden="true" className="absolute left-1/2 -translate-x-1/2 top-0 w-[900px] h-[300px] bg-[#ccff00] opacity-[0.07] blur-[120px]" />
-
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-8">
-        {/* Header */}
-        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 mb-14">
+    <Sheet id="registry" tone="sheet" className="py-20 sm:py-28">
+      <div className="max-w-7xl mx-auto px-4 sm:px-8">
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 mb-10">
           <div>
-            <SectionLabel index="003">Onchain registry</SectionLabel>
+            <SectionLabel index="04">Onchain registry</SectionLabel>
             <SplitHeading
-              lines={["The agent", { text: "roster", className: "text-outline-lime" }]}
-              className="mt-8 font-display uppercase text-[clamp(2.6rem,7vw,6rem)] leading-[0.92]"
+              lines={["The agent", { text: "ledger.", className: "italic text-violet" }]}
+              className="mt-6 font-display text-[clamp(2.8rem,7vw,5.6rem)] leading-[0.92] tracking-[-0.02em]"
             />
           </div>
-
-          <Reveal delay={0.15} className="flex flex-col items-start lg:items-end gap-5">
-            <div className="flex items-center gap-3 font-mono text-xs uppercase tracking-[0.18em] text-white/50">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#ccff00] animate-pulse" />
-              {agents.length} DeFi agents · IdentityRegistry
-            </div>
+          <Reveal delay={0.15} className="flex flex-col items-start lg:items-end gap-4">
+            <span className="font-mono text-[12px] uppercase tracking-[0.14em] text-ink-2">
+              {agents.length} listings · IdentityRegistry · ERC-8004
+            </span>
             {onOpenRegisterModal && (
               <button onClick={onOpenRegisterModal} className="btn-neon">
-                <Plus size={16} />
-                <span>Register custom agent</span>
+                <Plus size={15} />
+                <span>List your agent</span>
               </button>
             )}
           </Reveal>
         </div>
 
-        {/* Agents grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
-          {agents.map((agent, idx) => {
-            const shortOwner = agent.owner
-              ? `${agent.owner.slice(0, 6)}...${agent.owner.slice(-4)}`
-              : "0x3C44...93BC";
-            const isCustom = agent.id > 3;
-            const Icon = SKILL_ICONS[agent.skill] || Bot;
-            const hasScore = agent.feedbackCount > 0;
+        <div className="border-[1.5px] border-ink bg-paper-card">
+          {/* Column heads (desktop) */}
+          <div className="hidden md:grid grid-cols-[56px_minmax(0,2.2fr)_minmax(0,1.6fr)_90px_100px_minmax(0,1.3fr)_120px] items-center px-4 py-2.5 border-b-[1.5px] border-ink bg-paper-shade font-mono text-[10.5px] uppercase tracking-[0.14em] text-ink-2">
+            <span>Nº</span>
+            <span>Agent</span>
+            <span>Data source</span>
+            <span>Price</span>
+            <span>Stake</span>
+            <span>Reputation</span>
+            <span className="text-right">Action</span>
+          </div>
 
+          {agents.map((agent, idx) => {
+            const rated = agent.feedbackCount > 0;
+            const isCustom = agent.id > 3;
             return (
               <motion.div
                 key={agent.id}
-                initial={reduce ? false : { opacity: 0, y: 60, rotateX: -12 }}
-                whileInView={{ opacity: 1, y: 0, rotateX: 0 }}
-                viewport={{ once: true, margin: "-80px" }}
-                transition={{ duration: 0.9, delay: (idx % 3) * 0.1, ease: [0.22, 1, 0.36, 1] }}
-                style={{ transformPerspective: 1000 }}
+                initial={reduce ? false : { opacity: 0, y: 14 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-40px" }}
+                transition={{ duration: 0.5, delay: idx * 0.06 }}
+                className="group grid grid-cols-[56px_1fr] md:grid-cols-[56px_minmax(0,2.2fr)_minmax(0,1.6fr)_90px_100px_minmax(0,1.3fr)_120px] items-center gap-y-3 px-4 py-4 border-b border-ink/15 last:border-b-0 hover:bg-sun-soft transition-colors"
               >
-                <TiltCard className="h-full clip-chamfer-lg">
-                  <div className="h-full clip-chamfer-lg bg-gradient-to-br from-white/[0.16] via-white/[0.05] to-[#ccff00]/20 p-px transition-colors">
-                    <div className="clip-chamfer-lg h-full bg-[#111112] p-6 sm:p-7 flex flex-col">
-                      {/* Top bar */}
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="relative w-16 h-16 clip-chamfer bg-gradient-to-br from-[#ccff00] to-[#8be000] p-px transition-transform duration-500 group-hover:rotate-[-6deg] group-hover:scale-105">
-                          <div className="clip-chamfer w-full h-full bg-[#141416] overflow-hidden flex items-end justify-center">
-                            <AgentPortrait variant={variantForSkill(agent.skill)} crop="head" className="w-full h-full" />
-                          </div>
-                          <span className="absolute -bottom-1 -right-1 w-5 h-5 rounded bg-[#ccff00] text-black flex items-center justify-center">
-                            <Icon size={12} strokeWidth={2.6} />
-                          </span>
-                        </div>
-                        <div className="flex flex-col items-end gap-2">
-                          <span className="font-mono text-xs text-white/40">#{String(agent.id).padStart(2, "0")}</span>
-                          {isCustom && (
-                            <span className="font-mono text-[10px] uppercase tracking-wider px-2 py-0.5 rounded bg-[#836ef9]/20 text-[#c4b8ff] border border-[#836ef9]/40">
-                              Community
-                            </span>
-                          )}
-                        </div>
-                      </div>
+                <span className="font-display text-3xl leading-none self-start md:self-center">{String(agent.id).padStart(2, "0")}</span>
 
-                      <h3 className="mt-6 font-display uppercase text-xl leading-tight text-white">{agent.name}</h3>
-                      <div className="mt-2 font-mono text-[11px] text-white/40 flex items-center gap-1.5">
-                        <span className="text-[#ccff00]/80">{agent.skill}</span>
-                        <span>•</span>
-                        <span title={agent.owner}>{shortOwner}</span>
-                      </div>
-
-                      <p className="mt-4 text-sm text-white/55 leading-relaxed line-clamp-3">{agent.description}</p>
-
-                      <div className="mt-4">
-                        <span className="inline-flex font-mono text-[10px] uppercase tracking-wider text-white/50 border border-white/10 bg-white/[0.03] px-2.5 py-1 rounded">
-                          {agent.dataSource}
-                        </span>
-                      </div>
-
-                      <div className="mt-auto pt-6">
-                        {/* Reputation meter */}
-                        <div className="flex items-baseline justify-between font-mono text-[10px] uppercase tracking-wider">
-                          <span className="text-white/40">Reputation</span>
-                          <span className={hasScore ? "text-[#ccff00]" : "text-white/40"}>
-                            {hasScore ? `${agent.avgScore}/100 · ${agent.feedbackCount} fb` : "No reviews yet"}
-                          </span>
-                        </div>
-                        <div className="mt-2 h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
-                          <motion.div
-                            initial={{ width: 0 }}
-                            whileInView={{ width: hasScore ? `${agent.avgScore}%` : "0%" }}
-                            viewport={{ once: true }}
-                            transition={{ duration: 1.4, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                            className="h-full bg-gradient-to-r from-[#836ef9] to-[#ccff00] shadow-[0_0_10px_rgba(204,255,0,0.5)]"
-                          />
-                        </div>
-
-                        <div className="mt-5 grid grid-cols-2 gap-3 font-mono text-xs">
-                          <div className="border border-white/10 rounded px-3 py-2">
-                            <div className="text-[10px] uppercase tracking-wider text-white/40">Price</div>
-                            <div className="text-white mt-0.5">{agent.priceUSDC}</div>
-                          </div>
-                          <div className="border border-white/10 rounded px-3 py-2">
-                            <div className="text-[10px] uppercase tracking-wider text-white/40">Stake</div>
-                            <div className="text-emerald-300 mt-0.5">{agent.stakedUSDC} tUSDC</div>
-                          </div>
-                        </div>
-
-                        <button
-                          onClick={() => onSelectAgent(agent)}
-                          className="btn-ghost btn-sm mt-5 w-full"
-                        >
-                          <span>Test agent directly</span>
-                          <ArrowRight size={14} />
-                        </button>
-                      </div>
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="w-12 h-12 shrink-0 border-[1.5px] border-ink bg-paper overflow-hidden flex items-end justify-center transition-transform group-hover:-rotate-3">
+                    <AgentPortrait variant={variantForSkill(agent.skill)} crop="head" className="w-full h-full" animated={false} />
+                  </span>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[16px] font-semibold leading-tight truncate">{agent.name}</span>
+                      {isCustom && <span className="font-mono text-[9px] uppercase px-1 border border-violet text-violet shrink-0">community</span>}
+                    </div>
+                    <div className="font-mono text-[11px] text-ink-2 truncate" title={agent.owner}>
+                      {agent.skill} · {agent.owner.slice(0, 6)}…{agent.owner.slice(-4)}
                     </div>
                   </div>
-                </TiltCard>
+                </div>
+
+                <span className="col-span-2 md:col-span-1 text-[13px] text-ink-2 leading-snug md:pr-4 line-clamp-2">{agent.dataSource}</span>
+                <span className="font-mono text-[13px] col-start-2 md:col-start-auto">
+                  <span className="md:hidden text-ink-3 mr-2">price</span>
+                  {agent.priceUSDC}
+                </span>
+                <span className="font-mono text-[13px] col-start-2 md:col-start-auto">
+                  <span className="md:hidden text-ink-3 mr-2">stake</span>
+                  {agent.stakedUSDC} USDC
+                </span>
+
+                <div className="col-start-2 md:col-start-auto md:pr-4">
+                  <div className="flex items-baseline justify-between font-mono text-[12px]">
+                    <span>{rated ? `${agent.avgScore}/100` : "unrated"}</span>
+                    <span className="text-ink-3">{agent.feedbackCount} rev</span>
+                  </div>
+                  <div className="mt-1 h-2.5 border border-ink bg-paper overflow-hidden">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      whileInView={{ width: rated ? `${agent.avgScore}%` : "0%" }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 1.2, delay: 0.2 + idx * 0.05, ease: [0.22, 1, 0.36, 1] }}
+                      className="h-full halftone-violet"
+                    />
+                  </div>
+                </div>
+
+                <div className="col-start-2 md:col-start-auto md:text-right">
+                  <button onClick={() => onSelectAgent(agent)} className="btn-ghost btn-sm">
+                    <span>Run</span>
+                    <ArrowRight size={13} />
+                  </button>
+                </div>
               </motion.div>
             );
           })}
+
+          {agents.length === 0 && <div className="px-4 py-12 text-center font-mono text-[12px] text-ink-2">Reading IdentityRegistry on Monad…</div>}
         </div>
+
+        <p className="mt-4 font-mono text-[11px] text-ink-3">
+          Reputation = average of onchain review scores in ReputationRegistry. Stake from StakeManager. Updated on every page load.
+        </p>
       </div>
     </Sheet>
   );

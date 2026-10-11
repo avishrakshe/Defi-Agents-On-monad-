@@ -22,11 +22,11 @@ export default function MarketplacePage() {
   };
 
   return (
-    <div className="relative isolate min-h-screen flex flex-col justify-between bg-[#0e0e0f] text-white overflow-x-clip">
+    <div className="relative isolate min-h-screen flex flex-col justify-between bg-paper text-ink overflow-x-clip">
       <PageBackdrop />
       <div>
         <Navbar onOpenTaskModal={() => setIsTaskModalOpen(true)} />
-        <main className="pt-20">
+        <main>
           <AgentRegistry agents={agents} onSelectAgent={handleSelectAgent} />
         </main>
       </div>

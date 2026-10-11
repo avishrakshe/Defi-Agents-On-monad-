@@ -52,7 +52,7 @@ export function buildSummary(results: OrchestratorResults): string {
     const label = !r.symbol ? "Token" : r.name && r.name !== r.symbol ? `${r.name} (${r.symbol})` : r.symbol;
     const controls = [r.hasMintCapability && "mintable", r.hasPauseCapability && "pausable", r.hasBlacklistCapability && "blacklist", r.isProxy && "upgradeable"].filter(Boolean);
     parts.push(
-      `🛡 Token risk — ${label}: ${r.score}/100 (${r.riskTier || "scored"}). ` +
+      `TOKEN RISK — ${label}: ${r.score}/100 (${r.riskTier || "scored"}). ` +
         (controls.length ? `Admin controls: ${controls.join(", ")}.` : "No privileged supply or transfer controls detected.") +
         (r.knownAsset ? ` ${r.knownAsset}` : "")
     );
@@ -67,7 +67,7 @@ export function buildSummary(results: OrchestratorResults): string {
     const src = a.sourceVerified ? `verified source via ${a.verificationSource || "Sourcify"}` : "bytecode-only (unverified)";
     const top = a.findings?.find((f) => f.severity === "critical" || f.severity === "high") || a.findings?.find((f) => f.severity === "medium");
     parts.push(
-      `🔍 Audit — ${name}${a.isProxy ? " (proxy)" : ""}: security ${a.securityScore ?? "—"}/100, ${crit} critical/high, ${med} medium, ${a.gasOptimizations?.length ?? 0} gas notes; ${src}.` +
+      `AUDIT — ${name}${a.isProxy ? " (proxy)" : ""}: security ${a.securityScore ?? "—"}/100, ${crit} critical/high, ${med} medium, ${a.gasOptimizations?.length ?? 0} gas notes; ${src}.` +
         (top ? ` Top issue: ${top.title}.` : "")
     );
     verdicts.push(crit > 0 ? "contract has serious findings" : med > 0 ? "contract has medium findings to review" : "contract audit is clean");
@@ -76,7 +76,7 @@ export function buildSummary(results: OrchestratorResults): string {
   const g = results.gasTiming;
   if (g) {
     parts.push(
-      `⛽ Gas — ${g.currentGasPriceGwei} gwei, ${g.trend}${g.trendPct !== undefined ? ` (${g.trendPct}%)` : ""}` +
+      `GAS — ${g.currentGasPriceGwei} gwei, ${g.trend}${g.trendPct !== undefined ? ` (${g.trendPct}%)` : ""}` +
         (g.blockUtilizationPct !== undefined ? `, blocks ${g.blockUtilizationPct}% full` : "") +
         (g.avgBlockTimeSec ? `, ${g.avgBlockTimeSec}s blocks` : "") +
         `. ${g.recommendation}`
@@ -86,7 +86,7 @@ export function buildSummary(results: OrchestratorResults): string {
 
   for (const [key, val] of Object.entries(results)) {
     if (["riskScore", "gasTiming", "audit"].includes(key) || !val || typeof val !== "object") continue;
-    if (val.summary) parts.push(`🐋 ${val.summary}`);
+    if (val.summary) parts.push(`WHALES — ${String(val.summary).replace(/^Whale & Liquidity:\s*/, "")}`);
     else if (val.recommendation) parts.push(val.recommendation);
   }
 

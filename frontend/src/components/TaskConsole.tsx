@@ -264,226 +264,201 @@ export const TaskConsole: React.FC<TaskConsoleProps> = ({ initialPrompt }) => {
   };
 
   const payingWith = useUserWallet
-    ? `Your wallet (${userAddress ? `${userAddress.slice(0, 6)}...${userAddress.slice(-4)}` : "Not connected"})`
-    : `Orchestrator wallet (${orchestratorAddress.slice(0, 6)}...${orchestratorAddress.slice(-4)})`;
+    ? `your wallet ${userAddress ? `${userAddress.slice(0, 6)}…${userAddress.slice(-4)}` : "(not connected)"}`
+    : `orchestrator ${orchestratorAddress.slice(0, 6)}…${orchestratorAddress.slice(-4)}`;
 
   const TxLink: React.FC<{ label: string; hash?: string }> = ({ label, hash }) =>
     hash ? (
-      <div className="flex items-center gap-1.5 text-white/80">
-        <span className="text-white/40 w-16 shrink-0">{label}</span>
-        <a href={`${EXPLORER}/tx/${hash}`} target="_blank" rel="noreferrer" className="text-[#a594ff] hover:text-white hover:underline truncate">
+      <div className="flex items-center gap-2">
+        <span className="text-ink-3 w-20 shrink-0">{label}</span>
+        <a href={`${EXPLORER}/tx/${hash}`} target="_blank" rel="noreferrer" className="text-violet hover:underline truncate">
           {shortHash(hash)} ↗
         </a>
       </div>
     ) : null;
 
   return (
-    <div className="w-full">
-      {/* Main deck */}
-      <div className="clip-chamfer-lg bg-gradient-to-br from-[#ccff00]/50 via-white/10 to-[#836ef9]/40 p-px">
-        <div className="clip-chamfer-lg bg-[#0f0f10] p-5 sm:p-8">
-          {/* Deck header */}
-          <div className="flex flex-wrap items-center justify-between gap-3 pb-5 mb-6 border-b border-white/10">
-            <div className="flex items-center gap-3">
-              <div className="flex gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#ff5f57]" />
-                <span className="w-2.5 h-2.5 rounded-full bg-[#febc2e]" />
-                <span className="w-2.5 h-2.5 rounded-full bg-[#ccff00]" />
-              </div>
-              <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-white/40">orchestrator://task</span>
-            </div>
-            <div className="font-mono text-[11px] uppercase tracking-wider text-white/45">
-              Paying with: <span className="text-[#ccff00]">{payingWith}</span>
-            </div>
-          </div>
+    <div className="w-full border-[1.5px] border-ink bg-paper-card shadow-hard">
+      {/* Form header */}
+      <div className="flex flex-wrap items-center justify-between gap-3 px-5 sm:px-7 py-3 border-b-[1.5px] border-ink bg-paper-shade font-mono text-[11px] uppercase tracking-[0.14em]">
+        <span>Work order · x402 dispatch</span>
+        <span className="text-ink-2">
+          Billed to: <span className="text-ink">{payingWith}</span>
+        </span>
+      </div>
 
-          {/* Prompt input */}
-          <div className="relative group">
-            <span className="absolute left-4 top-4 font-mono text-[#ccff00] text-sm select-none">&gt;_</span>
-            <textarea
-              value={taskText}
-              onChange={(e) => setTaskText(e.target.value)}
-              rows={3}
-              className="w-full bg-white/[0.03] border border-white/10 rounded-xl pl-12 pr-4 py-4 text-sm sm:text-base text-white placeholder:text-white/30 focus:outline-none focus:border-[#ccff00]/60 focus:shadow-[0_0_0_4px_rgba(204,255,0,0.08)] resize-y font-mono leading-relaxed transition-all"
-              placeholder="Describe your DeFi task in natural language..."
-            />
-          </div>
+      <div className="p-5 sm:p-7">
+        {/* Request field */}
+        <label htmlFor="task-input" className="kicker block mb-2">
+          1. Describe the job
+        </label>
+        <textarea
+          id="task-input"
+          value={taskText}
+          onChange={(e) => setTaskText(e.target.value)}
+          rows={3}
+          className="w-full bg-ledger-lines bg-paper border-[1.5px] border-ink px-4 py-[6px] text-[15px] leading-8 text-ink placeholder:text-ink-3 focus:outline-none focus:shadow-hard-violet resize-y font-mono transition-shadow"
+          placeholder="e.g. Is token 0x… safe, and is gas good right now?"
+        />
 
-          {/* Quick prompts */}
-          <div className="mt-3 flex flex-wrap gap-2">
-            {[
-              ["Full scan", "Is token 0x534b2f3A21130d7a60830c2Df862319e593943A3 safe, audit contract 0x534b2f3A21130d7a60830c2Df862319e593943A3, track whale liquidity, and tell me if gas is good right now on Monad."],
-              ["Audit registry", "Audit contract 0x7b398a8F83133d5E28b4cce7c3131b4Ba8C486E0 for vulnerabilities"],
-              ["Gas now", "What is the current gas timing and congestion on Monad?"],
-              ["Whale watch", "Track whale and liquidity moves for 0x534b2f3A21130d7a60830c2Df862319e593943A3"]
-            ].map(([label, prompt]) => (
-              <button
-                key={label}
-                onClick={() => setTaskText(prompt)}
-                disabled={isRunning}
-                className="chip-cyber"
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-
-          {/* Controls */}
-          <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-4">
-            <button onClick={handleRunTask} disabled={isRunning || !taskText.trim()} className="btn-neon disabled:opacity-50 disabled:pointer-events-none">
-              {isRunning ? (
-                <>
-                  <span className="w-2.5 h-2.5 rounded-full bg-black animate-ping inline-block"></span>
-                  <span>Running...</span>
-                </>
-              ) : (
-                <span>Run task</span>
-              )}
+        <div className="mt-3 flex flex-wrap gap-2">
+          {[
+            ["Full scan", "Is token 0x534b2f3A21130d7a60830c2Df862319e593943A3 safe, audit contract 0x534b2f3A21130d7a60830c2Df862319e593943A3, track whale liquidity, and tell me if gas is good right now on Monad."],
+            ["Audit registry", "Audit contract 0x7b398a8F83133d5E28b4cce7c3131b4Ba8C486E0 for vulnerabilities"],
+            ["Gas now", "What is the current gas timing and congestion on Monad?"],
+            ["Whale watch", "Track whale and liquidity moves for 0x534b2f3A21130d7a60830c2Df862319e593943A3"]
+          ].map(([label, prompt]) => (
+            <button key={label} onClick={() => setTaskText(prompt)} disabled={isRunning} className="chip-cyber">
+              {label}
             </button>
-
-            {/* Wallet mode toggle */}
-            <label htmlFor="userWalletCheckbox" className="flex items-center gap-3 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                id="userWalletCheckbox"
-                checked={useUserWallet}
-                onChange={(e) => setUseUserWallet(e.target.checked)}
-                className="peer sr-only"
-              />
-              <span className="relative w-11 h-6 rounded-full bg-white/10 border border-white/15 transition-colors peer-checked:bg-[#ccff00]/90 peer-focus-visible:ring-2 peer-focus-visible:ring-[#ccff00] after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:w-[18px] after:h-[18px] after:rounded-full after:bg-white after:transition-transform peer-checked:after:translate-x-5 peer-checked:after:bg-black" />
-              <span className="font-mono text-xs uppercase tracking-wider text-white/70">
-                Run with my wallet <span className="text-white/35 normal-case">(signs one USDC authorization per agent)</span>
-              </span>
-            </label>
-          </div>
-
-          {statusMessage && (
-            <div className={`mt-4 font-mono text-xs flex items-center gap-2 ${fatalError ? "text-rose-400" : "text-[#ccff00]/80"}`}>
-              <span className={`w-1.5 h-1.5 rounded-full ${fatalError ? "bg-rose-400" : "bg-[#ccff00]"} ${isRunning ? "animate-pulse" : ""}`} />
-              {statusMessage}
-            </div>
-          )}
-
-          {/* Live progress & synthesized answer */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mt-8 items-stretch">
-            {/* Live progress */}
-            <div className="flex flex-col">
-              <h3 className="font-mono text-[11px] uppercase tracking-[0.2em] text-white/50 mb-3 flex items-center justify-between">
-                <span>Live progress</span>
-                {isRunning && (
-                  <span className="text-[#ccff00] flex items-center gap-1.5 normal-case tracking-normal">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#ccff00] animate-pulse"></span>
-                    Sequential streaming
-                  </span>
-                )}
-              </h3>
-
-              <div
-                ref={logsContainerRef}
-                data-lenis-prevent
-                className="relative bg-black/60 border border-white/10 rounded-xl p-5 min-h-[280px] max-h-[420px] overflow-y-auto font-mono text-xs scrollbar-dark"
-              >
-                {isRunning && (
-                  <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden rounded-xl">
-                    <div className="absolute inset-x-0 h-1/3 bg-gradient-to-b from-transparent via-[#ccff00]/[0.05] to-transparent animate-scan" />
-                  </div>
-                )}
-                {steps.length === 0 && !fatalError ? (
-                  <div className="text-white/35 text-xs py-12 text-center flex flex-col items-center justify-center gap-2">
-                    <span>Enter a task above and click &quot;Run task&quot; to see live step progress.</span>
-                    <span className="text-[11px] text-white/25">Each specialist is verified, paid via x402, executed and rated onchain — one after another.</span>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {steps.map((s, idx) => (
-                      <div key={idx} className="animate-fadeIn border-l-2 pl-3 space-y-1" style={{ borderColor: s.state === "failed" ? "#f43f5e" : s.state === "done" ? "#ccff00" : "rgba(255,255,255,0.15)" }}>
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="font-bold text-white">
-                            #{s.agentId} {s.agentName}
-                          </span>
-                          <span
-                            className={`text-[10px] uppercase tracking-wider ${
-                              s.state === "done" ? "text-[#ccff00]" : s.state === "failed" ? "text-rose-400" : "text-white/40 animate-pulse"
-                            }`}
-                          >
-                            {s.state === "signing" ? "queued" : s.state}
-                            {s.durationMs ? ` · ${(s.durationMs / 1000).toFixed(1)}s` : ""}
-                          </span>
-                        </div>
-                        {s.trust && (
-                          <div className={s.trust.active ? "text-[#ccff00]/80" : "text-amber-300"}>
-                            {s.trust.active ? "[reputation_ok]" : "[unregistered]"} IdentityRegistry {s.trust.active ? "active" : "inactive"}
-                            {s.trust.feedbackCount > 0 ? ` · ${s.trust.avgScore}/100 over ${s.trust.feedbackCount} reviews` : " · no reviews yet"}
-                          </div>
-                        )}
-                        {s.payment && (
-                          <div className="flex items-start gap-1.5">
-                            <span className="text-white/40 w-16 shrink-0">x402</span>
-                            {s.payment.status === "settled" ? (
-                              <a href={`${EXPLORER}/tx/${s.payment.txHash}`} target="_blank" rel="noreferrer" className="text-[#ccff00] hover:underline truncate">
-                                USDC settled {shortHash(s.payment.txHash)} ↗
-                              </a>
-                            ) : (
-                              <span className="text-amber-300/90" title={s.payment.reason}>
-                                signature verified · settlement {s.payment.status}
-                              </span>
-                            )}
-                          </div>
-                        )}
-                        <TxLink label="recorded" hash={s.recordTx} />
-                        <TxLink label="feedback" hash={s.feedbackTx} />
-                        {s.score !== undefined && (
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-white/40 w-16 shrink-0">score</span>
-                            <span className="font-bold text-black bg-[#ccff00] px-1.5 py-0.5 rounded">{s.score}/100</span>
-                          </div>
-                        )}
-                        {s.error && <div className="text-rose-400">{s.error}</div>}
-                      </div>
-                    ))}
-                    {fatalError && <div className="text-rose-400 font-semibold">{fatalError}</div>}
-                    {steps.some((s) => s.payment?.status === "unfunded") && (
-                      <div className="text-[11px] text-amber-200/70 leading-relaxed border border-amber-300/20 bg-amber-300/[0.04] rounded p-2.5">
-                        The payer wallet holds no testnet USDC, so payments are verified but not transferred. Fund it at faucet.circle.com (Monad Testnet) and the same flow settles real USDC onchain.
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Synthesized answer */}
-            <div className="flex flex-col">
-              <h3 className="font-mono text-[11px] uppercase tracking-[0.2em] text-white/50 mb-3">Synthesized answer</h3>
-
-              <div className="relative flex-1 rounded-xl p-6 min-h-[280px] flex flex-col justify-between border border-[#836ef9]/30 bg-gradient-to-br from-[#836ef9]/[0.12] via-black/40 to-[#ccff00]/[0.05] overflow-hidden">
-                {synthesizedAnswer ? (
-                  <div className="text-white/90 text-sm leading-relaxed whitespace-pre-wrap animate-fadeIn">
-                    {synthesizedAnswer}
-                    {isRunning && <span className="inline-block w-2 h-4 bg-[#ccff00] ml-1 align-middle animate-pulse"></span>}
-                  </div>
-                ) : (
-                  <div className="text-white/35 text-sm py-12 text-center flex flex-col items-center justify-center gap-4">
-                    <span className="w-12 h-12 clip-chamfer border border-dashed border-white/20 flex items-center justify-center font-display text-white/30">AI</span>
-                    <span>Synthesized summary from all verified specialists will appear here after task completion.</span>
-                  </div>
-                )}
-
-                {synthesizedAnswer && (
-                  <div className="mt-6 pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-2 font-mono text-[11px] uppercase tracking-wider">
-                    <span className="text-[#ccff00] flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#ccff00] inline-block"></span>
-                      Deterministic · zero LLM in the path
-                    </span>
-                    <span className="text-white/40">{runs.length} agents · Monad 10143</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <AgentResultCards runs={runs} />
+          ))}
         </div>
+
+        {/* Controls */}
+        <div className="mt-6 pt-5 border-t border-dashed border-ink/30 flex flex-wrap items-center gap-x-6 gap-y-4">
+          <span className="kicker">2. Dispatch</span>
+          <button onClick={handleRunTask} disabled={isRunning || !taskText.trim()} className="btn-neon disabled:opacity-50 disabled:pointer-events-none">
+            {isRunning ? (
+              <>
+                <span className="w-2 h-2 bg-flame animate-blink inline-block" />
+                <span>Agents working…</span>
+              </>
+            ) : (
+              <span>Run task →</span>
+            )}
+          </button>
+
+          <label htmlFor="userWalletCheckbox" className="flex items-center gap-3 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              id="userWalletCheckbox"
+              checked={useUserWallet}
+              onChange={(e) => setUseUserWallet(e.target.checked)}
+              className="peer sr-only"
+            />
+            <span className="relative w-11 h-6 border-[1.5px] border-ink bg-paper transition-colors peer-checked:bg-violet peer-focus-visible:ring-2 peer-focus-visible:ring-violet after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:w-[17px] after:h-[17px] after:bg-ink after:transition-transform peer-checked:after:translate-x-5 peer-checked:after:bg-paper" />
+            <span className="text-[14px] text-ink">
+              Pay with my wallet <span className="text-ink-2 text-[12px]">(one USDC signature per agent)</span>
+            </span>
+          </label>
+        </div>
+
+        {statusMessage && (
+          <div className={`mt-4 font-mono text-[12px] flex items-center gap-2 ${fatalError ? "text-flame" : "text-ink-2"}`}>
+            <span className={`w-2 h-2 ${fatalError ? "bg-flame" : "bg-moss"} ${isRunning ? "animate-blink" : ""}`} />
+            {statusMessage}
+          </div>
+        )}
+
+        {/* Dispatch log & answer */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+          {/* Receipt-style log */}
+          <div>
+            <div className="kicker mb-2 flex items-center justify-between">
+              <span>3. Dispatch log</span>
+              {isRunning && <span className="text-moss normal-case tracking-normal">● streaming</span>}
+            </div>
+            <div
+              ref={logsContainerRef}
+              data-lenis-prevent
+              className="relative bg-paper border-[1.5px] border-ink p-5 min-h-[300px] max-h-[440px] overflow-y-auto font-mono text-[12px] scrollbar-dark"
+            >
+              {steps.length === 0 && !fatalError ? (
+                <div className="text-ink-3 text-[12px] py-14 text-center leading-relaxed">
+                  Nothing dispatched yet.
+                  <br />
+                  Each agent will be verified, paid, run and rated — one line item at a time.
+                </div>
+              ) : (
+                <div>
+                  {steps.map((s, idx) => (
+                    <div key={idx} className="animate-fadeIn py-3 border-b border-dashed border-ink/30 last:border-b-0 space-y-1">
+                      <div className="flex items-baseline justify-between gap-2">
+                        <span className="font-semibold text-ink">
+                          {String(idx + 1).padStart(2, "0")} · {s.agentName}
+                        </span>
+                        <span
+                          className={`text-[10px] uppercase tracking-wider px-1.5 border ${
+                            s.state === "done"
+                              ? "border-moss text-moss"
+                              : s.state === "failed"
+                              ? "border-flame text-flame"
+                              : "border-ink/30 text-ink-3 animate-pulse"
+                          }`}
+                        >
+                          {s.state === "signing" ? "queued" : s.state}
+                          {s.durationMs ? ` ${(s.durationMs / 1000).toFixed(1)}s` : ""}
+                        </span>
+                      </div>
+                      {s.trust && (
+                        <div className="text-ink-2">
+                          {s.trust.active ? "✓ registered" : "✗ unregistered"} · rep{" "}
+                          {s.trust.feedbackCount > 0 ? `${s.trust.avgScore}/100 (${s.trust.feedbackCount})` : "none yet"}
+                        </div>
+                      )}
+                      {s.payment && (
+                        <div className="flex items-start gap-2">
+                          <span className="text-ink-3 w-20 shrink-0">payment</span>
+                          {s.payment.status === "settled" ? (
+                            <a href={`${EXPLORER}/tx/${s.payment.txHash}`} target="_blank" rel="noreferrer" className="text-moss hover:underline truncate">
+                              USDC settled {shortHash(s.payment.txHash)} ↗
+                            </a>
+                          ) : (
+                            <span className="text-flame" title={s.payment.reason}>
+                              signed · settlement {s.payment.status}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                      <TxLink label="recorded" hash={s.recordTx} />
+                      <TxLink label="review" hash={s.feedbackTx} />
+                      {s.score !== undefined && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-ink-3 w-20 shrink-0">score</span>
+                          <span className="px-1.5 bg-sun text-ink font-semibold">{s.score}/100</span>
+                        </div>
+                      )}
+                      {s.error && <div className="text-flame">{s.error}</div>}
+                    </div>
+                  ))}
+                  {fatalError && <div className="text-flame font-semibold pt-3">{fatalError}</div>}
+                  {steps.some((s) => s.payment?.status === "unfunded") && (
+                    <div className="mt-3 text-[11px] text-ink-2 leading-relaxed border border-ink/30 bg-sun-soft p-2.5">
+                      The payer holds no testnet USDC, so payments are signed and verified but not transferred. Fund it at faucet.circle.com
+                      and the same flow settles real USDC.
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Answer column */}
+          <div className="flex flex-col">
+            <div className="kicker mb-2">4. The answer</div>
+            <div className="relative flex-1 border-[1.5px] border-ink bg-paper p-6 min-h-[300px] flex flex-col">
+              {synthesizedAnswer ? (
+                <div className="text-[16px] leading-relaxed text-ink whitespace-pre-wrap animate-fadeIn first-letter:font-display first-letter:text-5xl first-letter:float-left first-letter:mr-2 first-letter:leading-[0.8]">
+                  {synthesizedAnswer}
+                  {isRunning && <span className="inline-block w-2 h-4 bg-ink ml-1 align-middle animate-blink" />}
+                </div>
+              ) : (
+                <div className="m-auto text-center text-ink-3 max-w-xs">
+                  <div className="font-display italic text-3xl text-ink-2 mb-2">Awaiting copy.</div>
+                  <p className="text-[13px] leading-relaxed">The summary from every verified specialist will be set here once the run completes.</p>
+                </div>
+              )}
+              {synthesizedAnswer && (
+                <div className="mt-auto pt-5 border-t border-ink/20 flex flex-wrap items-center justify-between gap-2 font-mono text-[11px] uppercase tracking-wider text-ink-2">
+                  <span>Deterministic · no LLM in the path</span>
+                  <span>{runs.length} agents · Monad 10143</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <AgentResultCards runs={runs} />
       </div>
     </div>
   );

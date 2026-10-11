@@ -2,14 +2,44 @@
 @tailwind components;
 @tailwind utilities;
 
+/* =====================================================================
+   "Riso Ledger" — a printed financial broadsheet, not a neon dashboard.
+   Warm paper, ink, hairline rules, two risograph spot colours.
+   ===================================================================== */
+
+:root {
+  --paper: #f4efe6;
+  --ink: #16130f;
+  --violet: #5b3df5;
+  --flame: #ff5a1f;
+}
+
 @layer base {
+  html {
+    background: var(--paper);
+  }
   body {
-    @apply bg-[#f8f9fa] text-[#0f172a] antialiased selection:bg-[#ccff00] selection:text-black;
-    font-family: var(--font-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    @apply bg-paper text-ink antialiased;
+    font-family: var(--font-sans), system-ui, sans-serif;
+  }
+  ::selection {
+    background: var(--violet);
+    color: var(--paper);
+  }
+  /* Paper grain on every page */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 100;
+    opacity: 0.35;
+    mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.09  0 0 0 0 0.07  0 0 0 0 0.05  0 0 0 0.09 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
   }
 }
 
-/* ---------- Lenis smooth scroll (recommended base styles) ---------- */
+/* ---------- Lenis smooth scroll ---------- */
 html.lenis,
 html.lenis body {
   height: auto;
@@ -24,261 +54,164 @@ html.lenis body {
   overflow: hidden;
 }
 
-.pill-badge {
-  @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-[#f1f3f5] text-[#475569] border border-[#e2e8f0];
+/* ---------- Type helpers ---------- */
+.kicker {
+  @apply font-mono text-[11px] uppercase tracking-[0.18em] text-ink-2;
+}
+.serif-italic {
+  font-family: var(--font-display), Georgia, serif;
+  font-style: italic;
 }
 
-.btn-monad-lime {
-  @apply bg-[#ccff00] hover:bg-[#b8e600] active:scale-[0.98] text-black font-semibold rounded-full px-6 py-2.5 transition-all duration-150 shadow-sm inline-flex items-center justify-center;
+/* ---------- Rules & grids ---------- */
+.rule {
+  @apply border-ink/15;
+}
+.bg-blueprint {
+  /* Ledger paper: faint ruled columns */
+  background-image: linear-gradient(to right, rgba(22, 19, 15, 0.06) 1px, transparent 1px);
+  background-size: calc(100% / 12) 100%;
+}
+.bg-ledger-lines {
+  background-image: repeating-linear-gradient(to bottom, transparent 0 31px, rgba(22, 19, 15, 0.08) 31px 32px);
 }
 
-.card-elevated {
-  @apply bg-white rounded-3xl border border-[#e2e8f0] shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)];
+/* Risograph halftone fills */
+.halftone-violet {
+  background-color: #e4deff;
+  background-image: radial-gradient(#5b3df5 1.1px, transparent 1.3px);
+  background-size: 7px 7px;
+}
+.halftone-flame {
+  background-color: #ffe1d3;
+  background-image: radial-gradient(#ff5a1f 1.1px, transparent 1.3px);
+  background-size: 7px 7px;
+}
+.halftone-ink {
+  background-image: radial-gradient(rgba(22, 19, 15, 0.22) 1px, transparent 1.2px);
+  background-size: 6px 6px;
 }
 
-/* ---------- Agent OS (dark futuristic) primitives ---------- */
-
-/* Chamfered corner shape — the signature silhouette for tiles and buttons */
-@layer utilities {
-  .clip-chamfer {
-    clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
-  }
-  .clip-chamfer-lg {
-    clip-path: polygon(28px 0, 100% 0, 100% calc(100% - 28px), calc(100% - 28px) 100%, 0 100%, 0 28px);
-  }
-  .clip-chamfer-tr {
-    clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 0 100%);
-  }
-}
-
-/* ---------- Buttons: angled "blade" with HUD corner brackets, light sweep, scanlines & glow ---------- */
+/* ---------- Buttons ---------- */
+/* Primary: solid ink slab with a hard spot-colour shadow that "prints" on hover */
 .btn-neon,
 .btn-ghost {
-  @apply relative isolate inline-flex items-center justify-center gap-2.5 overflow-hidden font-mono font-bold uppercase text-sm select-none;
-  padding: 0.95rem 1.9rem;
-  letter-spacing: 0.14em;
-  border-radius: 4px 18px 4px 18px;
-  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s ease, background-color 0.3s ease, color 0.3s ease;
+  @apply relative inline-flex items-center justify-center gap-2.5 font-mono font-medium uppercase select-none text-[13px];
+  padding: 0.9rem 1.5rem;
+  letter-spacing: 0.08em;
+  border: 1.5px solid var(--ink);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease, color 0.18s ease;
 }
-.btn-neon > *,
-.btn-ghost > * {
-  position: relative;
-  z-index: 2;
-}
-
-/* Primary — lime plasma */
 .btn-neon {
-  color: #050505;
-  background:
-    /* HUD corner brackets */
-    linear-gradient(#050505, #050505) left 7px top 7px / 9px 2px no-repeat,
-    linear-gradient(#050505, #050505) left 7px top 7px / 2px 9px no-repeat,
-    linear-gradient(#050505, #050505) right 7px bottom 7px / 9px 2px no-repeat,
-    linear-gradient(#050505, #050505) right 7px bottom 7px / 2px 9px no-repeat,
-    linear-gradient(135deg, #f1ff9b 0%, #ccff00 38%, #a8f000 100%);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.65),
-    inset 0 -3px 0 rgba(0, 0, 0, 0.18),
-    0 0 0 1px rgba(204, 255, 0, 0.55),
-    0 10px 30px -10px rgba(204, 255, 0, 0.55);
-}
-.btn-neon::before,
-.btn-ghost::before {
-  content: "";
-  position: absolute;
-  inset: -2px;
-  z-index: 1;
-  background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, 0.85) 50%, transparent 65%);
-  transform: translateX(-130%);
-  transition: transform 0.75s cubic-bezier(0.22, 1, 0.36, 1);
-  pointer-events: none;
-}
-.btn-neon::after,
-.btn-ghost::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.07) 0 1px, transparent 1px 3px);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  pointer-events: none;
-}
-.btn-neon:hover,
-.btn-ghost:hover {
-  transform: translateY(-2px);
+  background: var(--ink);
+  color: var(--paper);
+  box-shadow: 0 0 0 0 var(--violet);
 }
 .btn-neon:hover {
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.8),
-    inset 0 -3px 0 rgba(0, 0, 0, 0.18),
-    0 0 0 1px rgba(204, 255, 0, 0.9),
-    0 0 28px -2px rgba(204, 255, 0, 0.8),
-    0 0 70px -12px rgba(131, 110, 249, 0.9);
+  transform: translate(-3px, -3px);
+  box-shadow: 4px 4px 0 0 var(--violet);
 }
-.btn-neon:hover::before,
-.btn-ghost:hover::before {
-  transform: translateX(130%);
+.btn-ghost {
+  background: transparent;
+  color: var(--ink);
+  box-shadow: 0 0 0 0 var(--ink);
 }
-.btn-neon:hover::after,
-.btn-ghost:hover::after {
-  opacity: 1;
-}
-.btn-neon:hover > *:not(svg),
-.btn-ghost:hover > *:not(svg) {
-  animation: glitch-text 0.45s steps(2, end) 1;
+.btn-ghost:hover {
+  background: var(--flame);
+  color: var(--ink);
+  transform: translate(-3px, -3px);
+  box-shadow: 4px 4px 0 0 var(--ink);
 }
 .btn-neon:active,
 .btn-ghost:active {
-  transform: translateY(0) scale(0.97);
+  transform: translate(0, 0);
+  box-shadow: 0 0 0 0 transparent;
 }
 .btn-neon:focus-visible,
 .btn-ghost:focus-visible {
-  outline: 2px solid #ccff00;
+  outline: 2px solid var(--violet);
   outline-offset: 3px;
 }
-
-/* Secondary — holographic glass */
-.btn-ghost {
-  color: #fff;
-  background:
-    linear-gradient(#ccff00, #ccff00) left 7px top 7px / 9px 2px no-repeat,
-    linear-gradient(#ccff00, #ccff00) left 7px top 7px / 2px 9px no-repeat,
-    linear-gradient(#ccff00, #ccff00) right 7px bottom 7px / 9px 2px no-repeat,
-    linear-gradient(#ccff00, #ccff00) right 7px bottom 7px / 2px 9px no-repeat,
-    linear-gradient(135deg, rgba(255, 255, 255, 0.07), rgba(131, 110, 249, 0.06));
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(8px);
-}
-.btn-ghost::before {
-  background: linear-gradient(105deg, transparent 35%, rgba(204, 255, 0, 0.35) 50%, transparent 65%);
-}
-.btn-ghost::after {
-  background: repeating-linear-gradient(0deg, rgba(204, 255, 0, 0.06) 0 1px, transparent 1px 3px);
-}
-.btn-ghost:hover {
-  color: #ccff00;
-  box-shadow:
-    inset 0 0 0 1px rgba(204, 255, 0, 0.7),
-    inset 0 0 24px -6px rgba(204, 255, 0, 0.35),
-    0 0 30px -8px rgba(204, 255, 0, 0.6);
-}
-
 .btn-sm {
-  padding: 0.7rem 1.25rem;
-  font-size: 0.72rem;
-  border-radius: 3px 13px 3px 13px;
+  padding: 0.6rem 1rem;
+  font-size: 11px;
 }
 
-/* Small selectable prompt chips */
+/* Text link with sliding underline */
+.link-ink {
+  @apply relative inline-flex items-center gap-1 font-medium text-ink;
+  background-image: linear-gradient(var(--ink), var(--ink));
+  background-size: 100% 1px;
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  transition: background-size 0.25s ease, color 0.2s ease;
+}
+.link-ink:hover {
+  color: var(--violet);
+  background-image: linear-gradient(var(--violet), var(--violet));
+}
+
+/* Prompt chips: index-card tabs */
 .chip-cyber {
-  @apply relative inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.16em] text-white/60 px-3 py-1.5 transition-all duration-200 disabled:opacity-40;
-  border-radius: 2px 9px 2px 9px;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.02);
+  @apply inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider text-ink-2 px-2.5 py-1 border border-ink/25 bg-paper-card transition-colors disabled:opacity-40;
 }
 .chip-cyber::before {
-  content: "›";
-  color: #ccff00;
+  content: "+";
+  color: var(--flame);
+  font-weight: 600;
 }
 .chip-cyber:hover:not(:disabled) {
-  color: #ccff00;
-  box-shadow: inset 0 0 0 1px rgba(204, 255, 0, 0.6), 0 0 16px -6px rgba(204, 255, 0, 0.7);
-  background: rgba(204, 255, 0, 0.05);
+  @apply border-ink text-ink bg-sun-soft;
 }
 
-@keyframes glitch-text {
-  0% { text-shadow: 2px 0 #836ef9, -2px 0 #00e5ff; transform: translateX(1px); }
-  50% { text-shadow: -2px 0 #836ef9, 2px 0 #00e5ff; transform: translateX(-1px); }
-  100% { text-shadow: none; transform: none; }
+/* ---------- Legacy class names kept so every page shares the new system ---------- */
+@layer utilities {
+  .clip-chamfer,
+  .clip-chamfer-lg,
+  .clip-chamfer-tr {
+    clip-path: none;
+  }
 }
-
-/* Striped lime marker used before section labels */
 .stripe-bar {
-  @apply inline-block h-2.5 w-20;
-  background: repeating-linear-gradient(115deg, #ccff00 0 3px, transparent 3px 7px);
+  @apply inline-block w-2.5 h-2.5 bg-flame;
 }
-
 .text-outline {
   color: transparent;
-  -webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.35);
+  -webkit-text-stroke: 1.2px var(--ink);
 }
 .text-outline-lime {
   color: transparent;
-  -webkit-text-stroke: 1.5px #ccff00;
+  -webkit-text-stroke: 1.2px var(--violet);
 }
-
-/* Fine blueprint grid for dark sheets */
-.bg-blueprint {
-  background-image: linear-gradient(to right, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
-  background-size: 56px 56px;
+.noise {
 }
-
-/* Film-grain noise overlay */
-.noise::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0.06;
-  mix-blend-mode: overlay;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
-}
-
-/* Dark scrollbar for in-sheet panels */
 .scrollbar-dark::-webkit-scrollbar {
   width: 6px;
 }
 .scrollbar-dark::-webkit-scrollbar-thumb {
-  background: rgba(204, 255, 0, 0.25);
-  border-radius: 9999px;
+  background: rgba(22, 19, 15, 0.3);
 }
 .scrollbar-dark::-webkit-scrollbar-track {
   background: transparent;
 }
 
-/* Pure CSS 3D cube */
-.cube-scene {
-  perspective: 900px;
-}
-.cube {
+/* Misregistered riso print effect for illustrations */
+.riso-misreg {
   position: relative;
-  width: var(--cube, 120px);
-  height: var(--cube, 120px);
-  transform-style: preserve-3d;
 }
-.cube > span {
-  position: absolute;
-  inset: 0;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-}
-.cube > span:nth-child(1) { transform: translateZ(calc(var(--cube, 120px) / 2)); background: linear-gradient(135deg, #ccff00, #8be000); }
-.cube > span:nth-child(2) { transform: rotateY(180deg) translateZ(calc(var(--cube, 120px) / 2)); background: linear-gradient(135deg, #836ef9, #4c2fd6); }
-.cube > span:nth-child(3) { transform: rotateY(90deg) translateZ(calc(var(--cube, 120px) / 2)); background: linear-gradient(135deg, #5b3ff0, #22d3ee); }
-.cube > span:nth-child(4) { transform: rotateY(-90deg) translateZ(calc(var(--cube, 120px) / 2)); background: linear-gradient(135deg, #b8e600, #836ef9); }
-.cube > span:nth-child(5) { transform: rotateX(90deg) translateZ(calc(var(--cube, 120px) / 2)); background: linear-gradient(135deg, #e8ff80, #ccff00); }
-.cube > span:nth-child(6) { transform: rotateX(-90deg) translateZ(calc(var(--cube, 120px) / 2)); background: #2a1a7a; }
-
-@keyframes gridPatternScroll {
-  0% {
-    background-position: 0 0;
-  }
-  100% {
-    background-position: 0 var(--grid-cell-size, 48px);
-  }
+.riso-misreg > .riso-plate {
+  mix-blend-mode: multiply;
 }
 
-.grid-pattern-3d-anim {
-  animation: gridPatternScroll var(--grid-speed, 3.5s) linear infinite;
-  will-change: background-position;
+/* Rubber stamp label */
+.stamp {
+  @apply inline-flex items-center font-mono uppercase text-[11px] tracking-[0.16em] px-2 py-1 border-2;
+  transform: rotate(-8deg);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .grid-pattern-3d-anim,
   .animate-marquee,
   .animate-spin-slow,
-  .animate-cube,
   .animate-float,
   .animate-scan {
     animation: none !important;

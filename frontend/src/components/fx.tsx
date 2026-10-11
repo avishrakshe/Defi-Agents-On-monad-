@@ -1,64 +1,57 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import {
-  motion,
-  useInView,
-  useMotionValue,
-  useReducedMotion,
-  useScroll,
-  useSpring,
-  useTransform,
-  animate
-} from "framer-motion";
+import { motion, useInView, useReducedMotion, useScroll, useTransform, animate } from "framer-motion";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
 /* ------------------------------------------------------------------ */
-/* Sheet — a dark rounded panel that rises over the lime frame         */
+/* Sheet — a printed section: paper band whose top rule draws in        */
 /* ------------------------------------------------------------------ */
 
 interface SheetProps {
   id?: string;
   children: React.ReactNode;
   className?: string;
-  tone?: "sheet" | "void" | "raised";
+  tone?: "sheet" | "void" | "raised" | "violet" | "flame";
 }
 
 const TONES = {
-  sheet: "bg-[#151516]",
-  void: "bg-[#0e0e0f]",
-  raised: "bg-[#1b1b1d]"
+  sheet: "bg-paper",
+  void: "bg-paper-shade",
+  raised: "bg-paper-card",
+  violet: "bg-violet text-paper",
+  flame: "bg-flame"
 };
 
 export const Sheet: React.FC<SheetProps> = ({ id, children, className = "", tone = "sheet" }) => {
   const ref = useRef<HTMLElement>(null);
   const reduce = useReducedMotion();
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "start 35%"] });
-  const scale = useTransform(scrollYProgress, [0, 1], [0.94, 1]);
-  const radius = useTransform(scrollYProgress, [0, 1], [88, 44]);
+  const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "start 40%"] });
+  const ruleScale = useTransform(scrollYProgress, [0, 1], [0, 1]);
 
   return (
-    <motion.section
-      ref={ref}
-      id={id}
-      style={reduce ? undefined : { scale, borderTopLeftRadius: radius, borderTopRightRadius: radius }}
-      className={`relative overflow-clip rounded-t-sheet -mt-12 first:mt-0 origin-top text-white noise ${TONES[tone]} ${className}`}
-    >
+    <section ref={ref} id={id} className={`relative overflow-clip text-ink ${TONES[tone]} ${className}`}>
+      <motion.div
+        aria-hidden="true"
+        style={reduce ? undefined : { scaleX: ruleScale }}
+        className="absolute top-0 left-0 right-0 h-[1.5px] bg-ink origin-left z-10"
+      />
       {children}
-    </motion.section>
+    </section>
   );
 };
 
 /* ------------------------------------------------------------------ */
-/* SectionLabel — striped lime marker + uppercase label               */
+/* SectionLabel — "§ 01 — Label" broadsheet section header            */
 /* ------------------------------------------------------------------ */
 
 export const SectionLabel: React.FC<{ children: React.ReactNode; index?: string }> = ({ children, index }) => (
-  <Reveal className="flex items-center gap-4">
-    <span className="stripe-bar" />
-    {index && <span className="font-mono text-xs text-[#ccff00]">{index}</span>}
-    <span className="font-display text-sm sm:text-base tracking-[0.18em] uppercase text-white">{children}</span>
+  <Reveal className="flex items-center gap-3">
+    <span className="font-display italic text-2xl leading-none text-flame">§</span>
+    {index && <span className="font-mono text-xs text-ink-2">{index.replace(/^0+(?=\d{2})/, "")}</span>}
+    <span className="h-px w-10 bg-ink/40" />
+    <span className="kicker text-ink">{children}</span>
   </Reveal>
 );
 
@@ -71,15 +64,15 @@ export const Reveal: React.FC<{
   className?: string;
   delay?: number;
   y?: number;
-}> = ({ children, className = "", delay = 0, y = 28 }) => {
+}> = ({ children, className = "", delay = 0, y = 24 }) => {
   const reduce = useReducedMotion();
   return (
     <motion.div
       className={className}
-      initial={reduce ? false : { opacity: 0, y, filter: "blur(6px)" }}
-      whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+      initial={reduce ? false : { opacity: 0, y }}
+      whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-60px" }}
-      transition={{ duration: 0.8, delay, ease: EASE }}
+      transition={{ duration: 0.7, delay, ease: EASE }}
     >
       {children}
     </motion.div>
@@ -100,29 +93,25 @@ export const SplitHeading: React.FC<{
   let wordIndex = 0;
 
   return (
-    <Tag
-      className={className}
-      initial="hidden"
-      whileInView="show"
-      viewport={{ once: true, margin: "-40px" }}
-    >
+    <Tag className={className} initial="hidden" whileInView="show" viewport={{ once: true, margin: "-40px" }}>
       {lines.map((line, li) => {
         const { text, className: lineClass = "" } = typeof line === "string" ? { text: line } : line;
+        const words = text.split(" ");
         return (
           <span key={li} className={`block ${lineClass}`}>
-            {text.split(" ").map((word, wi) => {
+            {words.map((word, wi) => {
               const i = wordIndex++;
               return (
-                <span key={wi} className="inline-block overflow-hidden align-bottom pb-[0.08em] -mb-[0.08em]">
+                <span key={wi} className="inline-block overflow-hidden align-bottom pb-[0.18em] -mb-[0.18em]">
                   <motion.span
                     className="inline-block"
                     variants={{
                       hidden: reduce ? { y: 0 } : { y: "110%" },
-                      show: { y: 0, transition: { duration: 0.9, delay: i * 0.06, ease: EASE } }
+                      show: { y: 0, transition: { duration: 0.85, delay: i * 0.05, ease: EASE } }
                     }}
                   >
                     {word}
-                    {wi < text.split(" ").length - 1 ? " " : ""}
+                    {wi < words.length - 1 ? " " : ""}
                   </motion.span>
                 </span>
               );
@@ -145,18 +134,14 @@ export const CountUp: React.FC<{
   suffix?: string;
   duration?: number;
   className?: string;
-}> = ({ to, decimals = 0, prefix = "", suffix = "", duration = 1.8, className = "" }) => {
+}> = ({ to, decimals = 0, prefix = "", suffix = "", duration = 1.6, className = "" }) => {
   const ref = useRef<HTMLSpanElement>(null);
   const inView = useInView(ref, { once: true, margin: "-40px" });
   const [value, setValue] = useState(0);
 
   useEffect(() => {
     if (!inView) return;
-    const controls = animate(0, to, {
-      duration,
-      ease: EASE,
-      onUpdate: (v) => setValue(v)
-    });
+    const controls = animate(0, to, { duration, ease: EASE, onUpdate: (v) => setValue(v) });
     return () => controls.stop();
   }, [inView, to, duration]);
 
@@ -170,25 +155,23 @@ export const CountUp: React.FC<{
 };
 
 /* ------------------------------------------------------------------ */
-/* Marquee — infinite ticker band                                      */
+/* Marquee — ticker tape                                               */
 /* ------------------------------------------------------------------ */
 
-export const Marquee: React.FC<{ items: string[]; className?: string; reverse?: boolean }> = ({
+export const Marquee: React.FC<{ items: string[]; className?: string; reverse?: boolean; separator?: string }> = ({
   items,
   className = "",
-  reverse = false
+  reverse = false,
+  separator = "■"
 }) => (
   <div className={`relative overflow-hidden whitespace-nowrap ${className}`}>
-    <div
-      className="inline-flex animate-marquee"
-      style={reverse ? { animationDirection: "reverse" } : undefined}
-    >
+    <div className="inline-flex animate-marquee" style={reverse ? { animationDirection: "reverse" } : undefined}>
       {[0, 1].map((dup) => (
         <div key={dup} className="flex shrink-0 items-center" aria-hidden={dup === 1}>
           {items.map((item, i) => (
             <span key={i} className="flex items-center">
-              <span className="px-6">{item}</span>
-              <span className="text-[0.6em]">✦</span>
+              <span className="px-5">{item}</span>
+              <span className="text-[0.55em] opacity-70">{separator}</span>
             </span>
           ))}
         </div>
@@ -198,50 +181,9 @@ export const Marquee: React.FC<{ items: string[]; className?: string; reverse?: 
 );
 
 /* ------------------------------------------------------------------ */
-/* TiltCard — 3D tilt toward the cursor with a lime spotlight          */
+/* TiltCard — lifts and prints a hard shadow on hover                  */
 /* ------------------------------------------------------------------ */
 
-export const TiltCard: React.FC<{ children: React.ReactNode; className?: string }> = ({
-  children,
-  className = ""
-}) => {
-  const ref = useRef<HTMLDivElement>(null);
-  const reduce = useReducedMotion();
-  const px = useMotionValue(0.5);
-  const py = useMotionValue(0.5);
-  const rx = useSpring(useTransform(py, [0, 1], [7, -7]), { stiffness: 200, damping: 20 });
-  const ry = useSpring(useTransform(px, [0, 1], [-9, 9]), { stiffness: 200, damping: 20 });
-  const glow = useTransform(
-    [px, py],
-    ([x, y]: number[]) =>
-      `radial-gradient(420px circle at ${x * 100}% ${y * 100}%, rgba(204,255,0,0.14), transparent 45%)`
-  );
-
-  const onMove = (e: React.MouseEvent) => {
-    const r = ref.current?.getBoundingClientRect();
-    if (!r) return;
-    px.set((e.clientX - r.left) / r.width);
-    py.set((e.clientY - r.top) / r.height);
-  };
-  const onLeave = () => {
-    px.set(0.5);
-    py.set(0.5);
-  };
-
-  return (
-    <motion.div
-      ref={ref}
-      onMouseMove={onMove}
-      onMouseLeave={onLeave}
-      style={reduce ? undefined : { rotateX: rx, rotateY: ry, transformPerspective: 900 }}
-      className={`relative group ${className}`}
-    >
-      <motion.div
-        aria-hidden="true"
-        className="absolute inset-0 z-10 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-        style={{ background: glow }}
-      />
-      {children}
-    </motion.div>
-  );
-};
+export const TiltCard: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = "" }) => (
+  <div className={`group relative transition-transform duration-200 hover:-translate-x-1 hover:-translate-y-1 ${className}`}>{children}</div>
+);

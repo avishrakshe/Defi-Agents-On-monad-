@@ -74,9 +74,8 @@ export default function Home() {
   };
 
   return (
-    // Lime frame: dark sheets rise over it as the page scrolls
-    <div className="min-h-screen bg-[#ccff00] overflow-x-clip">
-      <Navbar overlay onOpenTaskModal={() => handleOpenTask()} />
+    <div className="min-h-screen bg-paper text-ink overflow-x-clip">
+      <Navbar onOpenTaskModal={() => handleOpenTask()} />
 
       <main>
         <HeroSection
@@ -85,40 +84,34 @@ export default function Home() {
           onExploreClick={() => scrollToId("registry")}
         />
 
-        {/* Tilted ticker band bridging hero and manifesto */}
-        <div className="relative z-20 -my-6 py-1 -rotate-[1.6deg] scale-[1.03] bg-black border-y-2 border-[#ccff00]">
-          <Marquee
-            items={TICKER}
-            className="py-3 font-display uppercase text-sm sm:text-base tracking-wider text-[#ccff00]"
-          />
+        {/* Ticker tape */}
+        <div className="border-y-[1.5px] border-ink bg-sun">
+          <Marquee items={TICKER} className="py-2.5 font-mono text-[12px] uppercase tracking-[0.16em] text-ink" />
         </div>
-
         <AgentLineup agents={agents} onSelectAgent={handleSelectAgent} />
 
         <Manifesto />
 
         <ProtocolLoop />
 
-        <Sheet id="task-console" tone="raised" className="pt-24 pb-28 sm:pt-32 sm:pb-32">
-          <div aria-hidden="true" className="absolute inset-0 bg-blueprint" />
-          <div aria-hidden="true" className="absolute -right-40 top-10 w-[520px] h-[520px] rounded-full bg-[#6d28d9] opacity-30 blur-[130px]" />
+        <Sheet id="task-console" tone="raised" className="py-20 sm:py-28">
           <div className="relative max-w-7xl mx-auto px-4 sm:px-8">
-            <div className="grid lg:grid-cols-12 gap-8 items-end mb-12">
-              <div className="lg:col-span-8">
-                <SectionLabel index="002">Command deck</SectionLabel>
+            <div className="grid lg:grid-cols-12 gap-8 items-end mb-10">
+              <div className="lg:col-span-7">
+                <SectionLabel index="03">Try it</SectionLabel>
                 <SplitHeading
-                  lines={["Run a task.", { text: "Watch it settle.", className: "text-[#ccff00]" }]}
-                  className="mt-8 font-display uppercase text-[clamp(2.4rem,6vw,5rem)] leading-[0.95]"
+                  lines={["Run a task.", { text: "Watch it settle.", className: "italic text-violet" }]}
+                  className="mt-6 font-display text-[clamp(2.8rem,7vw,5.6rem)] leading-[0.92] tracking-[-0.02em]"
                 />
               </div>
-              <Reveal delay={0.2} className="lg:col-span-4">
-                <p className="font-mono text-sm uppercase leading-relaxed text-white/50">
-                  Ask in plain language. Specialists are verified, paid per call and rated onchain — every hash
-                  links to MonadVision.
+              <Reveal delay={0.2} className="lg:col-span-5">
+                <p className="text-[17px] leading-relaxed text-ink-2 border-l-[1.5px] border-ink pl-5">
+                  Ask in plain language. Each specialist is verified, paid per call in USDC and rated onchain — every line
+                  item links to its transaction on MonadVision.
                 </p>
               </Reveal>
             </div>
-            <Reveal y={40}>
+            <Reveal y={30}>
               <TaskConsole initialPrompt={initialTaskPrompt} />
             </Reveal>
           </div>

@@ -261,135 +261,104 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenTaskModal, onOpenRegisterM
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  const today = new Date().toLocaleDateString("en-GB", { weekday: "short", day: "2-digit", month: "short", year: "numeric" });
+
   return (
-    <header
-      className={`${
-        overlay ? "fixed left-0 right-0 top-4" : "sticky top-4"
-      } z-50 w-full px-4 sm:px-8 max-w-7xl mx-auto`}
-    >
-      {/* Dark glass pill bar */}
+    <header className="sticky top-0 z-50 w-full bg-paper/95 backdrop-blur-[2px]">
+      {/* Dateline strip */}
       <div
-        onMouseLeave={handleMouseLeaveNav}
-        className={`relative rounded-full border px-3 sm:px-5 py-2 flex items-center justify-between gap-4 transition-all duration-300 backdrop-blur-xl ${
-          scrolled || !overlay
-            ? "bg-[#0e0e0f]/90 border-white/10 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.6)]"
-            : "bg-white/[0.04] border-white/10"
+        className={`border-b border-ink/15 overflow-hidden transition-[max-height,opacity] duration-300 ${
+          scrolled ? "max-h-0 opacity-0" : "max-h-10 opacity-100"
         }`}
       >
-        {/* Left: Brand & Nav Links */}
-        <div className="flex items-center space-x-4 xl:space-x-6 shrink-0 min-w-0">
-          <Link href="/" className="flex items-center gap-2.5 group shrink-0">
-            <div className="w-8 h-8 clip-chamfer bg-[#ccff00] flex items-center justify-center font-display text-black text-sm group-hover:rotate-[-8deg] transition-transform">
-              D
-            </div>
-            <span className="font-display text-base text-white tracking-wide">
-              DeFi<span className="text-[#ccff00]">/</span>Agents
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 h-8 flex items-center justify-between font-mono text-[10.5px] uppercase tracking-[0.14em] text-ink-2">
+          <span className="hidden sm:inline">{today}</span>
+          <span>Monad Testnet edition · Chain 10143</span>
+          <span className="hidden md:inline">
+            Operator {orchestratorAddress} · {orchestratorBalances ? `${orchestratorBalances.usdc} USDC / ${orchestratorBalances.mon} MON` : "— USDC"}
+          </span>
+        </div>
+      </div>
+
+      {/* Masthead bar */}
+      <div onMouseLeave={handleMouseLeaveNav} className="relative border-b-[1.5px] border-ink">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 h-16 flex items-center justify-between gap-4">
+          {/* Brand */}
+          <Link href="/" className="flex items-center gap-3 shrink-0 group">
+            <span className="relative w-9 h-9 bg-ink text-paper flex items-center justify-center font-display text-xl italic leading-none transition-transform group-hover:-rotate-6">
+              d
+              <span className="absolute -right-1 -bottom-1 w-3 h-3 bg-flame" />
+            </span>
+            <span className="leading-none">
+              <span className="block font-display text-[1.65rem] tracking-tight">DeFi Agents</span>
+              <span className="block font-mono text-[9px] uppercase tracking-[0.22em] text-ink-2 mt-0.5">Marketplace on Monad</span>
             </span>
           </Link>
 
-          {/* Center: Pill Dropdown Track */}
-          <nav className="hidden lg:flex items-center relative p-1 bg-white/[0.04] border border-white/10 rounded-full shrink-0">
+          {/* Section links */}
+          <nav className="hidden lg:flex items-stretch h-full">
             {NAV_TABS.map((tab) => {
-              const isTabHovered = hoveredPill === tab.id;
               const isTabOpen = activeTab === tab.id;
               const isRouteActive = pathname === tab.href || (tab.href !== "/" && pathname.startsWith(tab.href));
-
-              // Anchor position based on which tab is active so dropdown appears directly below it
-              const dropdownAlignClass =
-                tab.id === "marketplace"
-                  ? "left-0"
-                  : tab.id === "academy"
-                  ? "-left-12 sm:-left-8"
-                  : tab.id === "dashboard"
-                  ? "-left-24 sm:-left-20"
-                  : tab.id === "activity"
-                  ? "right-0"
-                  : "left-1/2 -translate-x-1/2";
+              const dropdownAlignClass = tab.id === "activity" || tab.id === "about" ? "right-0" : "left-0";
 
               return (
-                <div
-                  key={tab.id}
-                  onMouseEnter={() => handleMouseEnterTab(tab.id)}
-                  className="relative"
-                >
+                <div key={tab.id} onMouseEnter={() => handleMouseEnterTab(tab.id)} className="relative flex items-stretch">
                   <Link
                     href={tab.href}
-                    className={`relative z-10 px-2.5 xl:px-3.5 py-1.5 rounded-full font-mono text-[11px] uppercase tracking-wider whitespace-nowrap transition-colors duration-150 flex items-center gap-1 ${
-                      isTabOpen || isRouteActive ? "text-[#ccff00]" : "text-white/65 hover:text-white"
+                    className={`relative flex items-center gap-1.5 px-3.5 font-mono text-[12px] uppercase tracking-[0.12em] transition-colors ${
+                      isTabOpen || isRouteActive ? "text-ink" : "text-ink-2 hover:text-ink"
                     }`}
                   >
-                    <span>{tab.label}</span>
-                    {tab.hasDropdown && (
-                      <span
-                        className={`text-[7px] transition-transform duration-200 inline-block ${
-                          isTabOpen ? "rotate-180 text-[#ccff00]" : "text-white/35"
-                        }`}
-                      >
-                        ▼
-                      </span>
+                    {tab.label}
+                    {tab.hasDropdown && <span className={`text-[9px] transition-transform ${isTabOpen ? "rotate-180" : ""}`}>▾</span>}
+                    {(isRouteActive || isTabOpen) && (
+                      <motion.span
+                        layoutId="navUnderline"
+                        className={`absolute left-3 right-3 -bottom-[1.5px] h-[3px] ${isRouteActive ? "bg-flame" : "bg-ink"}`}
+                        transition={{ type: "spring", bounce: 0.15, duration: 0.35 }}
+                      />
                     )}
                   </Link>
 
-                  {/* Sliding hover pill highlight */}
-                  {isTabHovered && (
-                    <motion.div
-                      layoutId="pillHighlight"
-                      className="absolute inset-0 bg-white/[0.08] rounded-full z-0 border border-white/10"
-                      transition={{ type: "spring", bounce: 0.15, duration: 0.3 }}
-                    />
-                  )}
-
-                  {/* Floating dropdown panel anchored beneath this tab */}
                   <AnimatePresence>
                     {isTabOpen && tab.hasDropdown && tab.subItems && (
                       <motion.div
-                        initial={{ opacity: 0, y: 10, scale: 0.97, filter: "blur(6px)" }}
-                        animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
-                        exit={{ opacity: 0, y: 6, scale: 0.98, filter: "blur(4px)" }}
-                        transition={{ type: "spring", bounce: 0.1, duration: 0.25 }}
+                        initial={{ opacity: 0, y: -6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -4 }}
+                        transition={{ duration: 0.18 }}
                         onMouseEnter={() => {
                           if (timeoutRef.current) clearTimeout(timeoutRef.current);
                         }}
-                        className={`absolute top-full mt-3 w-80 sm:w-96 bg-[#0e0e0f]/95 backdrop-blur-xl border border-white/10 shadow-[0_30px_60px_-12px_rgba(0,0,0,0.8)] rounded-2xl p-2.5 z-[100] ${dropdownAlignClass}`}
+                        className={`absolute top-full mt-[1.5px] w-[22rem] bg-paper-card border-[1.5px] border-ink shadow-hard z-[100] ${dropdownAlignClass}`}
                       >
-                        {/* Invisible hover bridge to prevent cursor gap drop */}
-                        <div className="absolute -top-3 left-0 right-0 h-3" />
-
-                        <div className="space-y-1">
-                          {tab.subItems.map((item, idx) => (
-                            <Link
-                              key={idx}
-                              href={item.href}
-                              target={item.href.startsWith("http") ? "_blank" : undefined}
-                              rel={item.href.startsWith("http") ? "noreferrer" : undefined}
-                              onClick={(e) => {
-                                handleAnchorClick(e, item.href);
-                                setActiveTab(null);
-                                if (item.onClick) item.onClick();
-                              }}
-                              className="group flex items-start gap-3 p-2.5 rounded-xl hover:bg-white/[0.05] transition-colors"
-                            >
-                              <span className="w-8 h-8 clip-chamfer bg-white/[0.06] flex items-center justify-center text-sm shrink-0 group-hover:bg-[#ccff00] transition-colors">
-                                {item.icon}
+                        {tab.subItems.map((item, idx) => (
+                          <Link
+                            key={idx}
+                            href={item.href}
+                            target={item.href.startsWith("http") ? "_blank" : undefined}
+                            rel={item.href.startsWith("http") ? "noreferrer" : undefined}
+                            onClick={(e) => {
+                              handleAnchorClick(e, item.href);
+                              setActiveTab(null);
+                              if (item.onClick) item.onClick();
+                            }}
+                            className="group/item flex items-start gap-3 px-4 py-3 border-b border-ink/10 last:border-b-0 hover:bg-sun-soft transition-colors"
+                          >
+                            <span className="font-mono text-[11px] text-flame pt-0.5">{String(idx + 1).padStart(2, "0")}</span>
+                            <span className="flex-1 min-w-0">
+                              <span className="flex items-center gap-2">
+                                <span className="text-[14px] font-semibold text-ink">{item.title}</span>
+                                {item.badge && (
+                                  <span className="font-mono text-[9px] uppercase tracking-wider px-1.5 py-0.5 border border-ink">{item.badge}</span>
+                                )}
                               </span>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-xs font-semibold text-white leading-none">
-                                    {item.title}
-                                  </span>
-                                  {item.badge && (
-                                    <span className="text-[9px] font-mono px-1.5 py-0.5 rounded-full bg-[#ccff00] text-black font-bold">
-                                      {item.badge}
-                                    </span>
-                                  )}
-                                </div>
-                                <p className="text-[11px] text-white/45 mt-1 line-clamp-1 group-hover:text-white/70">
-                                  {item.desc}
-                                </p>
-                              </div>
-                            </Link>
-                          ))}
-                        </div>
+                              <span className="block text-[12px] text-ink-2 mt-0.5 leading-snug">{item.desc}</span>
+                            </span>
+                            <span className="text-ink-3 group-hover/item:text-ink group-hover/item:translate-x-0.5 transition">→</span>
+                          </Link>
+                        ))}
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -397,133 +366,72 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenTaskModal, onOpenRegisterM
               );
             })}
           </nav>
-        </div>
 
-        {/* Right: Network Status, Orchestrator Info, Connect Button */}
-        <div className="flex items-center gap-2.5 xl:gap-4 shrink-0">
-          {/* Network Pill */}
-          {isWrongNetwork ? (
-            <button
-              onClick={handleSwitchNetwork}
-              className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-400/10 border border-amber-400/40 text-amber-300 font-mono text-[11px] uppercase hover:bg-amber-400/20 transition-all shrink-0 whitespace-nowrap"
-            >
-              <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
-              <span>Switch to Monad</span>
-            </button>
-          ) : (
-            <div className="hidden xl:flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#ccff00]/[0.08] border border-[#ccff00]/25 text-[#ccff00] font-mono text-[11px] uppercase shrink-0 whitespace-nowrap">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#ccff00] animate-pulse"></span>
-              <span>Monad 10143</span>
-            </div>
-          )}
-
-          {/* Orchestrator Wallet Status (Spacious Screens) */}
-          <div className="hidden min-[1720px]:flex flex-col text-right border-l border-white/10 pl-3 font-mono text-[11px] shrink-0">
-            <div className="text-white/40 flex items-center justify-end gap-1">
-              <span>Orchestrator</span>
-              <span className="text-white/70">{orchestratorAddress}</span>
-            </div>
-            <div className="flex items-center justify-end gap-1.5">
-              <span className="text-white/80" title={orchestratorBalances ? `${orchestratorBalances.mon} MON for gas` : undefined}>
-                {orchestratorBalances ? `${orchestratorBalances.usdc} USDC` : "— USDC"}
-              </span>
-              <a
-                href="https://faucet.circle.com"
-                target="_blank"
-                rel="noreferrer"
-                className="text-[#ccff00] hover:underline"
-              >
-                Top up faucet
-              </a>
-            </div>
-          </div>
-
-          {/* Connection Status Indicator (Spacious Screens) */}
-          <div className="hidden min-[1720px]:flex flex-col text-right font-mono text-[11px] shrink-0">
-            {address ? (
-              <>
-                <span className="text-[#ccff00] flex items-center justify-end gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#ccff00]"></span>
-                  <span>Connected</span>
-                </span>
-                <span className="text-white/50">{formattedAddress}</span>
-              </>
+          {/* Network + wallet */}
+          <div className="flex items-center gap-3 shrink-0">
+            {isWrongNetwork ? (
+              <button onClick={handleSwitchNetwork} className="font-mono text-[11px] uppercase tracking-wider px-2.5 py-1.5 border-[1.5px] border-flame text-flame">
+                Switch to Monad
+              </button>
             ) : (
-              <>
-                <span className="text-white/60">Not connected</span>
-                <span className="text-white/35">Connect for Mode B</span>
-              </>
+              <span className="hidden xl:inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-wider text-ink-2">
+                <span className="w-2 h-2 rounded-full bg-moss animate-pulse" />
+                Monad live
+              </span>
             )}
+
+            <button onClick={handleConnect} disabled={connecting} className="btn-neon btn-sm disabled:opacity-50 whitespace-nowrap">
+              <span>{connecting ? "Connecting…" : address ? formattedAddress : "Connect wallet"}</span>
+            </button>
+
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="lg:hidden w-10 h-10 border-[1.5px] border-ink flex flex-col items-center justify-center gap-1.5"
+              aria-label="Toggle navigation menu"
+            >
+              <motion.span animate={mobileMenuOpen ? { rotate: 45, y: 4 } : { rotate: 0, y: 0 }} className="w-4 h-[2px] bg-ink block" />
+              <motion.span animate={mobileMenuOpen ? { rotate: -45, y: -4 } : { rotate: 0, y: 0 }} className="w-4 h-[2px] bg-ink block" />
+            </button>
           </div>
-
-          {/* Connect Wallet Button */}
-          <button
-            onClick={handleConnect}
-            disabled={connecting}
-            className="btn-neon btn-sm !text-[11px] !px-4 sm:!px-5 disabled:opacity-50 shrink-0 whitespace-nowrap"
-          >
-            <span>{connecting ? "Connecting..." : address ? formattedAddress : "Connect Wallet"}</span>
-          </button>
-
-          {/* Mobile Hamburger Button */}
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="lg:hidden w-9 h-9 rounded-full bg-white/[0.06] hover:bg-white/10 border border-white/10 flex flex-col items-center justify-center space-y-1.5 transition-colors p-2"
-            aria-label="Toggle navigation menu"
-          >
-            <motion.span
-              animate={mobileMenuOpen ? { rotate: 45, y: 4 } : { rotate: 0, y: 0 }}
-              className="w-4 h-0.5 bg-white rounded-full block transition-transform"
-            />
-            <motion.span
-              animate={mobileMenuOpen ? { rotate: -45, y: -4 } : { rotate: 0, y: 0 }}
-              className="w-4 h-0.5 bg-white rounded-full block transition-transform"
-            />
-          </button>
         </div>
       </div>
 
-      {/* Mobile Drawer */}
+      {/* Mobile drawer */}
       <AnimatePresence>
         {mobileMenuOpen && (
           <motion.div
-            initial={{ opacity: 0, y: -10, filter: "blur(6px)" }}
-            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            exit={{ opacity: 0, y: -10, filter: "blur(6px)" }}
+            initial={{ height: 0 }}
+            animate={{ height: "auto" }}
+            exit={{ height: 0 }}
             data-lenis-prevent
-            className="lg:hidden mt-2 bg-[#0e0e0f]/95 backdrop-blur-xl border border-white/10 rounded-3xl p-3 shadow-2xl overflow-y-auto max-h-[75vh] z-[100]"
+            className="lg:hidden overflow-hidden bg-paper-card border-b-[1.5px] border-ink"
           >
-            <div className="space-y-2">
+            <div className="max-h-[75vh] overflow-y-auto">
               {NAV_TABS.map((tab) => {
                 const isAccordionOpen = mobileActiveAccordion === tab.id;
-
                 if (!tab.hasDropdown) {
                   return (
                     <Link
                       key={tab.id}
                       href={tab.href}
                       onClick={() => setMobileMenuOpen(false)}
-                      className="block p-3 rounded-2xl bg-white/[0.04] border border-white/10 text-white font-mono uppercase tracking-wider text-sm hover:bg-white/[0.08]"
+                      className="block px-5 py-4 border-b border-ink/10 font-display text-2xl"
                     >
                       {tab.label}
                     </Link>
                   );
                 }
-
                 return (
-                  <div key={tab.id} className="rounded-2xl bg-white/[0.04] border border-white/10 overflow-hidden">
+                  <div key={tab.id} className="border-b border-ink/10">
                     <button
                       onClick={() => setMobileActiveAccordion(isAccordionOpen ? null : tab.id)}
-                      className="w-full p-3 text-left font-mono uppercase tracking-wider text-sm text-white flex items-center justify-between"
+                      className="w-full px-5 py-4 flex items-center justify-between font-display text-2xl"
                     >
-                      <span>{tab.label}</span>
-                      <span className={`text-xs transition-transform ${isAccordionOpen ? "rotate-180 text-[#ccff00]" : "text-white/40"}`}>
-                        ▼
-                      </span>
+                      {tab.label}
+                      <span className={`font-mono text-sm transition-transform ${isAccordionOpen ? "rotate-45 text-flame" : ""}`}>+</span>
                     </button>
-
                     {isAccordionOpen && tab.subItems && (
-                      <div className="px-2 pb-2 space-y-1 border-t border-white/10 pt-2">
+                      <div className="pb-3">
                         {tab.subItems.map((item, idx) => (
                           <Link
                             key={idx}
@@ -532,10 +440,10 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenTaskModal, onOpenRegisterM
                               handleAnchorClick(e, item.href);
                               setMobileMenuOpen(false);
                             }}
-                            className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-white/[0.06] text-xs text-white/80"
+                            className="flex items-center gap-3 px-5 py-2 text-[14px] text-ink-2 hover:text-ink"
                           >
-                            <span>{item.icon}</span>
-                            <span className="font-semibold text-white">{item.title}</span>
+                            <span className="font-mono text-[11px] text-flame">{String(idx + 1).padStart(2, "0")}</span>
+                            {item.title}
                           </Link>
                         ))}
                       </div>

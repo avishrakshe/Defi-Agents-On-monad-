@@ -35,7 +35,7 @@ export const SmoothScroll: React.FC = () => {
     <motion.div
       aria-hidden="true"
       style={{ scaleX }}
-      className="fixed top-0 left-0 right-0 h-[2px] origin-left z-[200] bg-[#ccff00] shadow-[0_0_12px_rgba(204,255,0,0.8)] pointer-events-none"
+      className="fixed top-0 left-0 right-0 h-[3px] origin-left z-[200] bg-flame pointer-events-none"
     />
   );
 };

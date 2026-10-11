@@ -1,406 +1,319 @@
-# DeFi Agent Marketplace on Monad Testnet ⚡
+# DeFi Agent Marketplace — Monad Testnet
 
-[![Monad Testnet](https://img.shields.io/badge/Monad_Testnet-Chain_ID_10143-836EF9?style=for-the-badge&logo=ethereum&logoColor=white)](https://testnet.monadvision.com)
-[![x402 Protocol](https://img.shields.io/badge/x402-Gasless_Micropayments-ccff00?style=for-the-badge&labelColor=black&color=ccff00)](https://x402.org)
-[![ERC-8004](https://img.shields.io/badge/ERC--8004-Agent_Identity_Registry-0b0f19?style=for-the-badge&logoColor=white)](https://testnet.monadvision.com/address/0xD62b32482874E447Beb60E6Df5A21E6ebaFf54ad)
-[![Next.js 14](https://img.shields.io/badge/Next.js_14-App_Router-black?style=for-the-badge&logo=next.js)](https://nextjs.org)
-[![Vercel Deployment](https://img.shields.io/badge/Deployed_on-Vercel-black?style=for-the-badge&logo=vercel)](https://frontend-eight-peach-71.vercel.app)
-[![Monad Social Post](https://img.shields.io/badge/Monad-Social_Post-E4405F?style=for-the-badge&logo=instagram&logoColor=white)](https://www.instagram.com/p/DddzuxNMjkS/)
-[![X Post](https://img.shields.io/badge/X_Post-Community-000000?style=for-the-badge&logo=x&logoColor=white)](https://x.com/ARakshe34041/status/2101283903952798016?s=20)
-[![Hardhat](https://img.shields.io/badge/Hardhat-Tested_%26_Deployed-yellow?style=for-the-badge&logo=solidity)](https://hardhat.org)
+[![Live site](https://img.shields.io/badge/Live-frontend--eight--peach--71.vercel.app-16130F?style=flat-square)](https://frontend-eight-peach-71.vercel.app)
+[![Backend](https://img.shields.io/badge/API-defi--agents--backend.vercel.app-5B3DF5?style=flat-square)](https://defi-agents-backend.vercel.app/api/status)
+[![Monad Testnet](https://img.shields.io/badge/Monad_Testnet-chain_10143-836EF9?style=flat-square)](https://testnet.monadvision.com)
+[![x402](https://img.shields.io/badge/x402-EIP--3009_USDC-FF5A1F?style=flat-square)](https://x402.org)
+[![ERC-8004](https://img.shields.io/badge/ERC--8004-identity_%2B_reputation-1E7A46?style=flat-square)](https://testnet.monadvision.com/address/0xD62b32482874E447Beb60E6Df5A21E6ebaFf54ad)
 
-An autonomous, decentralized DeFi Agent Marketplace built natively for **Monad Testnet (Chain ID 10143)**. Features an ERC-8004 Identity + Reputation + Stake registry, sub-cent x402 HTTP 402 pay-per-call testnet USDC micropayments, deterministic multi-agent orchestration (zero LLM in the critical execution path), an interactive developer academy with soulbound credentials, a full onchain transaction activity explorer, and a high-performance 3D spatial UI.
+**Specialist AI agents that discover each other, check reputation onchain, pay per call in USDC and rate the result — all inside one request, on Monad.**
 
-- 🌐 **Live Production App**: [https://frontend-eight-peach-71.vercel.app](https://frontend-eight-peach-71.vercel.app)
-- 📱 **Monad Social Media Post**: [View on Instagram](https://www.instagram.com/p/DddzuxNMjkS/)
-- 🐦 **X (Twitter) Post**: [View on X](https://x.com/ARakshe34041/status/2101283903952798016?s=20)
-- 🐙 **GitHub Repository**: [https://github.com/avishrakshe/Defi-Agents-On-monad-.git](https://github.com/avishrakshe/Defi-Agents-On-monad-.git)
-
-> **"Monad's thesis is payments, tokenization, and agents at speed — this marketplace needs all three at once, and Monad is the only chain it could have been built on."**
-
----
-
-## 💡 The Problem & The Solution
-
-### ❌ The Problem
-- **AI agents are economically isolated**: Until now, autonomous agents have had no native way to pay each other for specialized data or execution services.
-- **Legacy rails are built for humans**: Traditional payment models (accounts, credit cards, API keys, monthly subscriptions) are designed for humans, not machine-frequency, machine-speed transactions.
-- **No trust layer exists for agent commerce**: Agents have lacked a decentralized trust layer to verify counterparty identity, evaluate past delivery track records, or inspect staked collateral before initiating payments.
-- **LLM hallucinations in financial execution paths**: LLMs can hallucinate security ratings or financial verdicts — an unacceptable risk for high-stakes DeFi transactions.
-
-### ✅ The Solution
-A live DeFi agent marketplace running on Monad Testnet where agents discover, verify, pay, and rate each other — **all onchain, within a single request cycle**:
-- **Discovery + Trust**: Verifiable onchain identity, reputation calculated from real post-execution feedback, and staked collateral via **ERC-8004-style registries**.
-- **Per-Call Micropayments (x402 Protocol)**: HTTP 402-based pay-per-call testnet USDC settlement (`402 Payment Required → Sign EIP-712 / EIP-3009 → Retry → Deliver Resource`), executing inline at wire speed without slow asynchronous escrow steps.
-- **Deterministic, Real-World Answers**: Specialist agents (Contract Auditor, Token Risk Scorer, Gas-Timing Agent) pull live, verified telemetry directly from Monad RPC and onchain bytecode. Zero LLM API keys required for core execution.
-
----
-
-## ⚡ Why Monad Specifically?
-
-| Advantage | Monad Specification | Impact on Machine-to-Machine Commerce |
-| :--- | :--- | :--- |
-| **Throughput** | **10,000 TPS Target** | Handles dense, high-frequency agent-to-agent transactions without network congestion. |
-| **Instant Finality** | **300ms Blocks / ~600ms Finality** | Settlement occurs fast enough for inline, synchronous agent use rather than deferred background batching. |
-| **Near-Zero Fees** | **Sub-cent Monad Gas** | Makes sub-cent ($0.001-level) micropayments economically viable. |
-| **Full EVM Compatibility** | **Standard EVM Bytecode** | Compatible with standard Solidity, Hardhat, viem, and ethers.js tooling with no custom VM friction. |
-| **Two-Token Value Model** | **MON (Gas) + USDC (Value)** | Unlocks real-world stable pricing powered by lightning-fast, predictable settlement. |
-
----
-
-## 🎯 Why It Makes Sense
-
-- **Directly Matches Monad's Stated Thesis**: Monad’s foundational vision is payments, tokenization, and high-performance agent infrastructure at web scale. This marketplace sits at the exact intersection of all three.
-- **Ecosystem Trajectory & Precedent**: Real financial infrastructure is already thriving on Monad — for example, Anchored / Monday Trade launched tokenized Nasdaq stocks on Monad (April 2026) with real USDC settlement. This project extends that exact trajectory into autonomous agent-to-agent commerce.
-- **First Live Integration at Native Monad Speed**: We don't claim to have invented x402 or ERC-8004 (both are open, chain-agnostic standards) — the achievement is being the **first live, end-to-end integration of both, running at Monad's native speed and block cadence**.
-
----
-
-## 📑 Table of Contents
-
-1. [The Problem & The Solution](#-the-problem--the-solution)
-2. [Why Monad Specifically?](#-why-monad-specifically)
-3. [Why It Makes Sense](#-why-it-makes-sense)
-4. [System Architecture](#-system-architecture)
-5. [Monad Testnet Network Parameters](#-monad-testnet-network-parameters)
-6. [Verified Smart Contracts](#-verified-smart-contracts-on-monad-testnet)
-7. [Specialist Agents Suite](#-specialist-agents-suite)
-8. [Deterministic Orchestration & x402 Payments](#-deterministic-orchestration--x402-payments)
-9. [Monad Academy & Soulbound Credentials](#-monad-academy--soulbound-credentials)
-10. [Onchain Activity & Transaction Explorer](#-onchain-activity--transaction-explorer)
-11. [CLI Tools & Inspection Scripts](#-cli-tools--inspection-scripts)
-12. [Local Development & Quickstart](#-local-development--quickstart)
-13. [Environment Configuration](#-environment-configuration)
-14. [Event Recap](#-event-recap)
-15. [Legal & Ecosystem Disclaimer](#-legal--ecosystem-disclaimer)
-
----
-
-## 🏛 System Architecture
-
-```mermaid
-graph TD
-    User["User / Client (Web UI / REST API)"] --> UI["Frontend Next.js 14 (Port 3000)<br/>Framer 3D Grid + Pill Nav"]
-    UI --> Orchestrator["Deterministic Orchestrator (Port 4000)<br/>Regex Routing & Multi-Agent Synthesizer"]
-    
-    subgraph Onchain [Monad Testnet — Chain ID 10143]
-        IdentityRegistry["IdentityRegistry (0xD62b...54ad)<br/>ERC-8004 Agent Registration"]
-        ReputationRegistry["ReputationRegistry (0x7b39...86E0)<br/>Verified Onchain Feedback Scores"]
-        StakeManager["StakeManager (0xca16...a45a)<br/>USDC Staking & Slashing Hooks"]
-        AcademyCredential["AcademyCredential (0xAbAF...9Ce6)<br/>Soulbound NFT Certification"]
-        MonadUSDC["Testnet USDC (0x534b...43A3)<br/>EIP-3009 / EIP-712 Micropayments"]
-    end
-    
-    subgraph AgentsCluster [Autonomous Specialist Agents]
-        Auditor["Smart Contract Auditor (Port 4001)<br/>AST Vulnerability & Bytecode Scan"]
-        RiskScorer["Token Risk Scorer (Port 4002)<br/>Liquidity, Ownership & Honeypot Probes"]
-        GasAgent["Gas & Timing Agent (Port 4003)<br/>Parallel EVM Block TPS & Fee Telemetry"]
-        CustomAgent["Custom Agent: Whale Analyzer (Port 4004)<br/>ERC-8004 Registered Agent"]
-    end
-    
-    Orchestrator -->|x402 Exact TransferWithAuthorization| Auditor
-    Orchestrator -->|x402 Exact TransferWithAuthorization| RiskScorer
-    Orchestrator -->|x402 Exact TransferWithAuthorization| GasAgent
-    Orchestrator -->|x402 Dynamic Registration Call| CustomAgent
-    
-    Auditor -.->|Verify Paid Call & Identity| IdentityRegistry
-    RiskScorer -.->|Verify Paid Call & Identity| IdentityRegistry
-    GasAgent -.->|Verify Paid Call & Identity| IdentityRegistry
-    CustomAgent -.->|Verify Paid Call & Identity| IdentityRegistry
-    
-    Orchestrator -->|Submit Dynamic Verified Feedback| ReputationRegistry
-    UI -->|Mint Soulbound Certificate| AcademyCredential
-```
-
----
-
-## ⚙ Monad Testnet Network Parameters
-
-| Parameter | Value | Reference |
-|---|---|---|
-| **Network Name** | Monad Testnet | Official Monad Ecosystem |
-| **Chain ID** | `10143` | `0x279f` in hex |
-| **CAIP-2 Identifier** | `eip155:10143` | EIP-155 standard |
-| **Native Gas Token** | MON | 18 decimals |
-| **Public RPC Endpoint** | `https://testnet-rpc.monad.xyz` | Primary high-throughput RPC |
-| **RPC Fallback 1** | `https://rpc.ankr.com/monad_testnet` | Ankr public cluster |
-| **RPC Fallback 2** | `https://rpc-testnet.monadinfra.com` | MonadInfra cluster |
-| **WebSocket RPC** | `wss://testnet-rpc.monad.xyz` | Real-time block listener |
-| **MonadVision Explorer** | [https://testnet.monadvision.com](https://testnet.monadvision.com) | Official Block Explorer |
-| **Monadscan Explorer** | [https://testnet.monadscan.com](https://testnet.monadscan.com) | Etherscan-compatible Explorer |
-| **Testnet Faucet** | [https://faucet.monad.xyz](https://faucet.monad.xyz) | Claim testnet MON |
-| **Official Testnet USDC** | `0x534b2f3A21130d7a60830c2Df862319e593943A3` | 6 decimals |
-
----
-
-## 📜 Verified Smart Contracts on Monad Testnet
-
-All smart contracts have been compiled with Solidity `^0.8.24`, verified, and deployed on Monad Testnet:
-
-| Contract Name | Address | Description | MonadVision Explorer | Monadscan Explorer |
-|---|---|---|---|---|
-| **`IdentityRegistry`** | `0xD62b32482874E447Beb60E6Df5A21E6ebaFf54ad` | ERC-8004 agent registration, metadata URI storage, and ownership records. | [View Contract](https://testnet.monadvision.com/address/0xD62b32482874E447Beb60E6Df5A21E6ebaFf54ad) | [View on Monadscan](https://testnet.monadscan.com/address/0xD62b32482874E447Beb60E6Df5A21E6ebaFf54ad) |
-| **`ReputationRegistry`** | `0x7b398a8F83133d5E28b4cce7c3131b4Ba8C486E0` | Enforces that only verified paid callers can submit feedback; stores cumulative onchain scores. | [View Contract](https://testnet.monadvision.com/address/0x7b398a8F83133d5E28b4cce7c3131b4Ba8C486E0) | [View on Monadscan](https://testnet.monadscan.com/address/0x7b398a8F83133d5E28b4cce7c3131b4Ba8C486E0) |
-| **`StakeManager`** | `0xca1624702029E9B76c648f980a673F37758aa45a` | Manages operator USDC staking, security thresholds, and programmatic dispute slashing. | [View Contract](https://testnet.monadvision.com/address/0xca1624702029E9B76c648f980a673F37758aa45a) | [View on Monadscan](https://testnet.monadscan.com/address/0xca1624702029E9B76c648f980a673F37758aa45a) |
-| **`AcademyCredential`** | `0xAbAFE53736e087877561cd0E48C283D6e7e59Ce6` | Non-transferable Soulbound ERC-721 token certifying Monad Academy completion. | [View Contract](https://testnet.monadvision.com/address/0xAbAFE53736e087877561cd0E48C283D6e7e59Ce6) | [View on Monadscan](https://testnet.monadscan.com/address/0xAbAFE53736e087877561cd0E48C283D6e7e59Ce6) |
-| **`Testnet USDC`** | `0x534b2f3A21130d7a60830c2Df862319e593943A3` | EIP-3009 compliant stablecoin contract supporting gasless signed transfer authorizations. | [View Contract](https://testnet.monadvision.com/address/0x534b2f3A21130d7a60830c2Df862319e593943A3) | [View on Monadscan](https://testnet.monadscan.com/address/0x534b2f3A21130d7a60830c2Df862319e593943A3) |
-| **Operator (owner of all contracts)** | `0xE0754641302BB291F23E21766557Ce29c5642960` | Orchestrator settlement wallet and contract owner (rotated; the original deployer `0x39D1…C39B` is retired). | [View Wallet](https://testnet.monadvision.com/address/0xE0754641302BB291F23E21766557Ce29c5642960) | [View on Monadscan](https://testnet.monadscan.com/address/0xE0754641302BB291F23E21766557Ce29c5642960) |
-
----
-
-## 🤖 Specialist Agents Suite
-
-The marketplace ships with three production specialist agents plus a template for deploying custom agents:
-
-### 1. Smart Contract Auditor (`skill: "contract-audit"`) — Port 4001
-- **Data Source**: Monadscan Public API + Static AST Vulnerability Scanner
-- **Capabilities**: Detects reentrancy vectors, unrestricted `delegatecall`, `tx.origin` authentication traps, unchecked low-level calls, and gas optimization patterns.
-- **Price**: `$0.001 USDC` per execution (via x402 exact authorization).
-- **Reputation**: Scored dynamically based on static AST coverage and vulnerability severity findings.
-
-### 2. Token Risk Scorer (`skill: "token-risk-score"`) — Port 4002
-- **Data Source**: Monad Testnet RPC `eth_call` & `eth_getLogs`
-- **Capabilities**: Checks contract ownership (`owner()`), probes for mint, pause, and blacklist selectors, and inspects Transfer log event distribution to identify honeypots.
-- **Price**: `$0.001 USDC` per execution (via x402 exact authorization).
-- **Reputation**: Scored dynamically based on liquidity depth analysis and heuristic risk confidence.
-
-### 3. Gas Price & Transaction Timing Agent (`skill: "gas-timing"`) — Port 4003
-- **Data Source**: Monad Testnet RPC `eth_gasPrice` & `eth_feeHistory`
-- **Capabilities**: Analyzes base fee velocity across recent blocks, computes trend metrics (`stable` / `rising` / `falling`), calculates optimal priority fees, and recommends the best submission timing.
-- **Price**: `$0.001 USDC` per execution (via x402 exact authorization).
-- **Reputation**: Scored dynamically based on real-time Monad parallel execution block TPS and network latency telemetry.
-
-### 4. Custom Registered Agent (`skill: "whale-analyzer"`) — Port 4004
-- **Data Source**: Monad Testnet RPC event filters and DEX pool liquidity
-- **Capabilities**: Monad token holder concentration analyzer, tracking whale wallet accumulation patterns.
-- **Registration**: Implements the full ERC-8004 workflow, allowing users to register new custom agents directly from the UI.
-
----
-
-## ⚡ Deterministic Orchestration & x402 Payments
-
-### Zero LLM in the Critical Execution Path
-Unlike fragile agent frameworks that depend on LLMs for routing, the orchestrator uses **deterministic regex pattern matching and address extraction**:
-1. **Deterministic Decomposition**: Deconstructs user queries (e.g. *"Is token 0x534b...43A3 safe, audit contract 0x534b...43A3, and is gas good?"*) into discrete, typed specialist subtasks.
-2. **Deterministic Synthesis**: Generates mathematically verifiable, structured output summaries without hallucinating numerical metrics.
-3. **Optional LLM Polish**: If `OPENAI_API_KEY` is provided, it polishes the deterministic summary text without modifying any underlying data or statistics. If absent, the orchestrator executes with zero errors.
-
-### Two Execution Modes
-- **Mode A (Autonomous)**: *"Agents pay agents. No wallet required."* The orchestrator settles sub-cent payments autonomously using its internal wallet pool via EIP-3009 signed transfers.
-- **Mode B (Client Signed)**: The client connects MetaMask and signs an EIP-712 `TransferWithAuthorization` message, directly funding specialist calls from their own testnet balance.
-
-### x402 Protocol Specification
-Each specialist agent requires an HTTP 402 Payment Authorization header:
-```http
-POST /api/audit HTTP/1.1
-Host: localhost:4001
-Content-Type: application/json
-X-Payment-Authorization: {
-  "scheme": "exact",
-  "network": "eip155:10143",
-  "from": "0x39D17f02fA4A362902cA760aF830CEBA82bdC39B",
-  "to": "0x39D17f02fA4A362902cA760aF830CEBA82bdC39B",
-  "value": "1000",
-  "validAfter": 1789800000,
-  "validBefore": 1789803600,
-  "nonce": "0x4f3a...",
-  "signature": "0x9a8c..."
-}
-```
-
----
-
-## 🎓 Monad Academy & Soulbound Credentials
-
-Monad Academy is an interactive developer education suite and certification portal integrated into the platform:
-
-1. **Cross-Path Progress Tracking (`/dashboard`)**:
-   Tracks learning progress across three foundational Monad curriculum tracks:
-   - `monad-fundamentals`: 10,000 TPS Parallel Execution, MonadBFT, and MonadDB state storage.
-   - `tokenized-assets`: Institutional RWAs, ERC-4626 yield vaults, and compliance primitives.
-   - `x402-payments`: Sub-cent HTTP 402 micropayment rails for autonomous AI agents.
-2. **Interactive Split-Screen Reader & Quiz Engine (`/learn/[pathId]`)**:
-   Live code snippets, contextual quizzes, instant explanation feedback, and streak mechanics.
-3. **Soulbound Completion Certificate (`/dashboard/certificate`)**:
-   - Unlocked upon completing all 3 developer paths.
-   - Verification via SHA-256 / keccak256 hash.
-   - **Export Options**: Download as high-resolution PNG (`html-to-image`), download as formal PDF (`jspdf`), copy share link.
-   - **Onchain Minting**: Directly mints a non-transferable Soulbound NFT credential via the `AcademyCredential.sol` smart contract on Monad Testnet.
-
-### 📜 Proof of Work: Certified Monad Scholar
-Upon mastering the complete Monad Academy curriculum and testing onchain primitives, learners earn and mint the verified **Monad Scholar Certificate**:
+Ask a question in plain language ("is this token safe, and is gas good right now?"). The orchestrator splits it into subtasks, verifies each specialist against the onchain registries, pays it **$0.001 USDC per call via x402 / EIP-3009**, collects real chain data, writes a review score back onchain, and returns one combined answer. No LLM sits in the money path.
 
 <p align="center">
-  <img src="docs/monad-scholar-certificate.png" alt="Monad Scholar Certificate - Proof of Work" width="750" style="border-radius: 12px; box-shadow: 0 8px 32px rgba(131, 110, 249, 0.15);" />
+  <img src="docs/ui-home.jpg" alt="Homepage — Agents pay agents" width="900" />
 </p>
 
-- **Certification**: Certificate of Monad Scholar
-- **Issued By**: Monad
-- **Credential Type**: Onchain Soulbound ERC-721 NFT (`AcademyCredential.sol` deployed at [`0xAbAFE53736e087877561cd0E48C283D6e7e59Ce6`](https://testnet.monadvision.com/address/0xAbAFE53736e087877561cd0E48C283D6e7e59Ce6))
-- **Verification Hash**: Cryptographically verified onchain on Monad Testnet (Chain ID `10143`).
+- **Live app:** https://frontend-eight-peach-71.vercel.app
+- **Backend (orchestrator + 4 agents):** https://defi-agents-backend.vercel.app — try [`/api/status`](https://defi-agents-backend.vercel.app/api/status)
+- **Social:** [Instagram](https://www.instagram.com/p/DddzuxNMjkS/) · [X thread](https://x.com/ARakshe34041/status/2101283903952798016?s=20)
 
 ---
 
-## 🔍 Onchain Activity & Transaction Explorer
+## Contents
 
-The platform includes a dedicated **Activity & Transaction Explorer (`/activity`)** that records and audits every onchain operation:
-- **x402 Micropayments**: Tracks micropayment hash, payer, agent recipient, and settlement block height.
-- **Reputation Feedbacks**: Audits onchain ratings and assessment notes submitted to `ReputationRegistry`.
-- **Agent Registrations**: Logs ERC-8004 identity deployments with contract addresses and metadata.
-- **Soulbound Certificate Mints**: Records minted credentials with recipient addresses and token IDs.
-- **Real-Time RPC Telemetry**: Displays live Monad Testnet block height, polling frequency, and direct links to MonadVision and Monadscan.
+1. [What happens when you run a task](#what-happens-when-you-run-a-task)
+2. [The four agents](#the-four-agents)
+3. [x402 payments, for real](#x402-payments-for-real)
+4. [Architecture](#architecture)
+5. [Contracts on Monad Testnet](#contracts-on-monad-testnet)
+6. [Run it locally](#run-it-locally)
+7. [Deploy to Vercel](#deploy-to-vercel)
+8. [Environment variables](#environment-variables)
+9. [Repository layout](#repository-layout)
+10. [Monad Academy & soulbound credential](#monad-academy--soulbound-credential)
+11. [Security notes & known limits](#security-notes--known-limits)
+12. [Event recap](#event-recap)
 
 ---
 
-## 🛠 CLI Tools & Inspection Scripts
+## What happens when you run a task
 
-### Check Live Agent Reputation on Monad Testnet
-A dedicated CLI script is provided in `orchestrator/` to inspect live onchain scores:
-```bash
-# Query all specialist agents
-node orchestrator/check-reputation.js
-
-# Query a specific agent by ID
-node orchestrator/check-reputation.js 1
+```
+ "Is token 0x534b… safe, audit it, track whales, is gas good?"
+                         │
+          ┌──────────────▼───────────────┐
+          │ 1. Decompose  (regex + rules) │  no LLM decides where money goes
+          └──────────────┬───────────────┘
+                         │  for each specialist:
+   2. Verify ── IdentityRegistry (active?) + ReputationRegistry (avg score, reviews)
+   3. Quote  ── agent replies HTTP 402 with price + USDC EIP-712 domain
+   4. Settle ── orchestrator signs EIP-3009 → agent verifies → USDC.transferWithAuthorization
+   5. Serve  ── agent reads live Monad data and returns its report
+   6. Record ── ReputationRegistry.recordPaidCall(agentId, client)
+   7. Rate   ── ReputationRegistry.submitFeedbackFor(agentId, score)  (quality score)
+                         │
+          ┌──────────────▼───────────────┐
+          │ 8. Synthesize (template)      │  every number comes from an agent
+          └──────────────────────────────┘
 ```
 
-Example output:
-```text
-=======================================================
-   Monad Testnet Onchain Agent Reputation Inspector
-=======================================================
-RPC:                https://testnet-rpc.monad.xyz
-ReputationRegistry: 0x7b398a8F83133d5E28b4cce7c3131b4Ba8C486E0
--------------------------------------------------------
+Every step that touches the chain links to its transaction on MonadVision in the UI's dispatch log. A full four-agent run costs about **0.12 MON** in gas plus **4 × $0.001 USDC**.
 
-[Agent ID 1] Smart Contract Auditor (contract-audit)
-  * Average Score:  97/100
-  * Feedback Count: 6 verified onchain reviews
-  * Explorer:       https://testnet.monadvision.com/address/0x7b398a8F83133d5E28b4cce7c3131b4Ba8C486E0
-```
+<p align="center">
+  <img src="docs/ui-console.jpg" alt="Work order console with dispatch log" width="900" />
+</p>
 
 ---
 
-## 🚀 Local Development & Quickstart
+## The four agents
 
-### Prerequisites
-- Node.js >= 18.0.0
-- npm >= 9.0.0
-- Git
+| Nº | Agent | Path | What it actually computes | Data source |
+|---|---|---|---|---|
+| 01 | **Smart Contract Auditor** | `/agents/auditor/api/audit` | Resolves proxies (EIP-1967, ZeppelinOS, EIP-1822, EIP-1167), pulls verified source, runs static rules (tx.origin auth, reentrancy, unchecked calls, selfdestruct, weak randomness, unchecked ecrecover, overflow on <0.8), decodes runtime bytecode instruction-by-instruction for dangerous opcodes, lists privileged functions, scores 0–100 | Sourcify (Monad 10143), Monad RPC |
+| 02 | **Token Risk Scorer** | `/agents/risk/api/score` | ABI-decodes name/symbol/supply, follows proxies to the implementation, detects mint / pause / blacklist / fee levers from the real selector table, checks owner (EOA vs contract), live `paused()`, scans 3,000 blocks of Transfer logs for recipient spread & concentration, returns a transparent score breakdown | Monad RPC (`eth_call`, `eth_getLogs`, storage slots) |
+| 03 | **Gas & Timing Oracle** | `/agents/gas/api/gas` | 20-block fee history, real block utilisation from `gasUsedRatio`, base-fee trend, priority-fee percentiles, measured block time over 200 blocks, cost estimates for transfer / ERC-20 / swap, a send-now / wait verdict | Monad RPC (`eth_feeHistory`, blocks) |
+| 04 | **Whale & Liquidity Sentinel** | `/agents/whale/api/whale` | Scans recent blocks for large native MON moves, or a token's Transfer logs for the top-5% transfers; classifies flow into contracts vs wallets; activity score | Monad RPC |
 
-### 1. Clone the Repository
+Agent 04 is a "community" agent: it is discovered from `IdentityRegistry` at runtime rather than hard-wired into the router.
+
+<p align="center">
+  <img src="docs/ui-agents.jpg" alt="The four specialist agents" width="900" />
+</p>
+
+---
+
+## x402 payments, for real
+
+The marketplace uses Circle's testnet USDC on Monad (`0x534b…43A3`, a `FiatTokenV2_2` proxy), which supports **EIP-3009 `transferWithAuthorization`**.
+
+1. A call without payment gets **HTTP 402** and the payment requirements, including the token's real EIP-712 domain (read from chain: name **`USDC`**, version **`2`**).
+2. The client (orchestrator in Mode A, your MetaMask in Mode B) signs a `TransferWithAuthorization` with a fresh random nonce.
+3. The agent's middleware ([`agents/shared/x402Middleware.ts`](agents/shared/x402Middleware.ts)) checks the signature, payee, amount, validity window and nonce replay, then **submits the transfer onchain** and attaches the receipt.
+4. If the payer can't cover the amount, the call is still served but the receipt says `settled: false, status: "unfunded"` — nothing is faked. Set `X402_REQUIRE_SETTLEMENT=true` to refuse unpaid calls instead.
+
+> The EIP-712 domain name matters: signing with `"USD Coin"` produces `FiatTokenV2: invalid signature`. The code reads the name from the token so it can't drift.
+
+**Modes:** Mode A — the orchestrator wallet pays, no wallet needed. Mode B — toggle "Pay with my wallet" and MetaMask signs one authorization per agent (unique nonces, never reused).
+
+---
+
+## Architecture
+
+```
+            Browser (Next.js 14, Vercel)
+   ┌──────────────────────────────────────────┐
+   │  pages: / · /about · /learn · /dashboard │
+   │  /activity · /wallet · /marketplace      │──── reads registries & events directly via Monad RPC
+   └───────────────┬──────────────────────────┘
+                   │ HTTPS  (NEXT_PUBLIC_ORCHESTRATOR_URL)
+   ┌───────────────▼──────────────────────────┐
+   │ server.ts  — one Express app on Vercel    │
+   │   /              orchestrator API         │── signs EIP-3009, records & rates onchain
+   │   /agents/*      4 specialist agents      │── verify x402, settle USDC, read chain
+   └───────────────┬──────────────────────────┘
+                   │ JSON-RPC
+            Monad Testnet (chain 10143)
+   IdentityRegistry · ReputationRegistry · StakeManager · AcademyCredential · USDC
+```
+
+- **Frontend** (`frontend/`): Next.js App Router, Tailwind, Framer Motion, Lenis smooth scrolling. Design system: "Riso Ledger" — warm paper, ink, two risograph spot colours (violet `#5B3DF5`, flame `#FF5A1F`), Instrument Serif / Schibsted Grotesk / IBM Plex Mono, SVG risograph agent portraits.
+- **Backend** (`server.ts`, `orchestrator/`, `agents/`): Express + ethers v6. Locally each service runs on its own port; on Vercel `server.ts` mounts them all on path prefixes, and the orchestrator reaches the agents over HTTP using the `*_URL` env vars.
+- **Contracts** (`contracts/`): Solidity 0.8.24, Hardhat, OpenZeppelin.
+
+### Orchestrator API
+
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/api/status` | Operator address, live MON/USDC balances, agent health |
+| POST | `/api/decompose` | Task → subtasks, annotated with registry status and reputation |
+| POST | `/api/execute-step` | Pay + run one subtask, record the paid call onchain |
+| POST | `/api/orchestrate` | Decompose + execute all + synthesize in one call |
+| POST | `/api/synthesize` | Combine agent results into the final answer |
+| POST | `/api/feedback` | Write a review score to ReputationRegistry |
+| POST | `/api/register-agent` | Register a new agent in IdentityRegistry |
+| POST | `/api/issue-credential` | Mint the soulbound Monad Scholar credential (owner-only, server-side) |
+
+Write endpoints are rate-limited per IP on the public deployment.
+
+---
+
+## Contracts on Monad Testnet
+
+| Contract | Address | Role |
+|---|---|---|
+| `IdentityRegistry` | [`0xD62b32482874E447Beb60E6Df5A21E6ebaFf54ad`](https://testnet.monadvision.com/address/0xD62b32482874E447Beb60E6Df5A21E6ebaFf54ad) | ERC-8004-style agent identity: name, skill, endpoint, price, metadata |
+| `ReputationRegistry` | [`0x7b398a8F83133d5E28b4cce7c3131b4Ba8C486E0`](https://testnet.monadvision.com/address/0x7b398a8F83133d5E28b4cce7c3131b4Ba8C486E0) | Paid-call records and review scores per agent |
+| `StakeManager` | [`0xca1624702029E9B76c648f980a673F37758aa45a`](https://testnet.monadvision.com/address/0xca1624702029E9B76c648f980a673F37758aa45a) | Operator USDC stake and slashing |
+| `AcademyCredential` | [`0xAbAFE53736e087877561cd0E48C283D6e7e59Ce6`](https://testnet.monadvision.com/address/0xAbAFE53736e087877561cd0E48C283D6e7e59Ce6) | Soulbound ERC-721 Monad Scholar credential |
+| USDC (Circle, testnet) | [`0x534b2f3A21130d7a60830c2Df862319e593943A3`](https://testnet.monadvision.com/address/0x534b2f3A21130d7a60830c2Df862319e593943A3) | EIP-3009 payment token |
+| **Operator** (owner of all four contracts) | [`0xE0754641302BB291F23E21766557Ce29c5642960`](https://testnet.monadvision.com/address/0xE0754641302BB291F23E21766557Ce29c5642960) | Pays specialists in Mode A, records calls and reviews |
+
+---
+
+## Run it locally
+
+**Requirements:** Node.js 20+, npm, a Monad Testnet wallet with a little MON for gas (and optionally testnet USDC from [faucet.circle.com](https://faucet.circle.com)).
+
 ```bash
 git clone https://github.com/avishrakshe/Defi-Agents-On-monad-.git
 cd Defi-Agents-On-monad-
+cp .env.example .env          # then fill in ORCHESTRATOR_PRIVATE_KEY and PAY_TO_ADDRESS
 ```
 
-### 2. Configure Environment Variables
-Copy `.env.example` to `.env` in the root directory:
+**Option A — everything in one process (same as production):**
+
 ```bash
-cp .env.example .env
+npm install                    # root: backend deps
+npx ts-node server.ts          # http://localhost:8080
 ```
 
-### 3. Smart Contracts (Optional: Run Tests or Redeploy)
+Set `CONTRACT_AUDITOR_URL=http://localhost:8080/agents/auditor`, `TOKEN_RISK_URL=…/agents/risk`, `GAS_TIMING_URL=…/agents/gas`, `WHALE_AGENT_URL=…/agents/whale` and point the frontend at port 8080 with `NEXT_PUBLIC_ORCHESTRATOR_URL=http://localhost:8080`.
+
+**Option B — separate services (ports 4000–4004):**
+
 ```bash
-cd contracts
+cd agents && npm install && npm start          # 4 agents on 4001–4004
+cd orchestrator && npm install && npm start    # orchestrator on 4000
+```
+
+**Frontend:**
+
+```bash
+cd frontend
 npm install
-npx hardhat test # Runs 7 comprehensive contract test suites
+npm run dev                    # http://localhost:3000
 ```
 
-### 4. Start Specialist Agents (Ports 4001, 4002, 4003)
+On `localhost` the frontend talks to `http://localhost:4000` automatically; on any other host it uses the deployed backend unless `NEXT_PUBLIC_ORCHESTRATOR_URL` is set.
+
+**Contracts (optional):**
+
 ```bash
-cd ../agents
-npm install
-npm start
+cd contracts && npm install
+npx hardhat test
+npx hardhat run scripts/deploy-and-seed.ts --network monadTestnet
 ```
 
-### 5. Start the Deterministic Orchestrator (Port 4000)
+**Inspect live reputation from the CLI:**
+
 ```bash
-cd ../orchestrator
-npm install
-npm start
-```
-
-### 6. Start Custom Agent (Port 4004, Optional)
-```bash
-cd ../agents
-npx ts-node sample-custom-agent.ts
-```
-
-### 7. Start the Frontend Application (Port 3000)
-```bash
-cd ../frontend
-npm install
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) in your browser.
-
----
-
-## 📁 Repository Structure
-
-```text
-Defi-Agents-On-monad-/
-├── contracts/                        # Hardhat project with Solidity contracts
-│   ├── contracts/
-│   │   ├── IdentityRegistry.sol      # ERC-8004 agent registry
-│   │   ├── ReputationRegistry.sol    # Onchain verified feedback registry
-│   │   ├── StakeManager.sol          # USDC staking & slash hooks
-│   │   └── AcademyCredential.sol     # Soulbound ERC-721 credential
-│   ├── scripts/                      # Deployment & testnet seeding scripts
-│   └── test/                         # Full Hardhat unit test suites
-│
-├── agents/                           # Specialist & custom autonomous agents
-│   ├── contract-auditor/             # Static AST & bytecode scanner (Port 4001)
-│   ├── token-risk-scorer/            # Liquidity & honeypot detector (Port 4002)
-│   ├── gas-timing-agent/             # Parallel EVM telemetry agent (Port 4003)
-│   ├── sample-custom-agent.ts        # Custom ERC-8004 whale analyzer (Port 4004)
-│   ├── run-all-agents.ts             # Concurrent multi-agent launcher
-│   └── shared/                       # x402 middleware & EIP-712 verification
-│
-├── orchestrator/                     # Deterministic multi-agent orchestrator
-│   ├── src/
-│   │   ├── server.ts                 # Express orchestration server (Port 4000)
-│   │   ├── router.ts                 # Regex task decomposition (Zero LLM)
-│   │   ├── synthesizer.ts            # Deterministic summary synthesizer
-│   │   └── modeA.ts                  # Autonomous agent-pays-agent executor
-│   └── check-reputation.js           # CLI onchain reputation inspector
-│
-└── frontend/                         # Next.js 14 App Router client
-    ├── src/
-    │   ├── app/                      # Routes: /, /learn, /dashboard, /activity, /about
-    │   ├── components/
-    │   │   ├── GridPattern3D.tsx     # Framer 3D animated grid component
-    │   │   ├── Navbar.tsx            # Framer floating pill dropdown navigation
-    │   │   ├── TaskConsole.tsx       # Real-time multi-agent execution console
-    │   │   ├── AgentRegistry.tsx     # Live onchain agent registry explorer
-    │   │   └── RegisterAgentModal.tsx # ERC-8004 custom agent registration modal
-    │   └── lib/                      # Zustand activity/progress stores & Wagmi wallet config
+node orchestrator/check-reputation.js
 ```
 
 ---
 
-## 🎥 Event Recap
+## Deploy to Vercel
 
-Highlights and live moments from the **Monad Community Event & Ecosystem Showcase**, celebrating the builder community, Monad Scholar achievements, and demonstrating autonomous agent-to-agent DeFi infrastructure on Monad:
+Two Vercel projects from the same repo:
+
+| Project | Root | How it builds |
+|---|---|---|
+| Frontend | `frontend/` | Next.js (auto-detected) |
+| Backend | repo root | `vercel.json` routes every request to `server.ts` (`@vercel/node`); `.vercelignore` keeps `frontend/` and `contracts/` out |
+
+```bash
+# backend
+vercel link --project defi-agents-backend
+vercel env add ORCHESTRATOR_PRIVATE_KEY production --sensitive
+vercel deploy --prod
+
+# frontend
+cd frontend
+vercel env add NEXT_PUBLIC_ORCHESTRATOR_URL production   # https://<backend>.vercel.app
+vercel deploy --prod
+```
+
+---
+
+## Environment variables
+
+**Backend** (`.env` locally, Vercel project settings in production)
+
+| Variable | Required | Notes |
+|---|---|---|
+| `ORCHESTRATOR_PRIVATE_KEY` | yes | Operator key — signs payments, records calls, writes reviews. Store as a secret; never commit. |
+| `PAY_TO_ADDRESS` | yes | Address the agents require payments to be made out to |
+| `NEXT_PUBLIC_MONAD_RPC_URL` | yes | `https://testnet-rpc.monad.xyz` |
+| `NEXT_PUBLIC_MONAD_USDC_ADDRESS` | yes | `0x534b2f3A21130d7a60830c2Df862319e593943A3` |
+| `NEXT_PUBLIC_IDENTITY_REGISTRY_ADDRESS` etc. | yes | Contract addresses from the table above |
+| `CONTRACT_AUDITOR_URL`, `TOKEN_RISK_URL`, `GAS_TIMING_URL`, `WHALE_AGENT_URL` | yes | Where the orchestrator reaches each agent |
+| `X402_REQUIRE_SETTLEMENT` | no | `true` = refuse calls whose USDC payment can't settle |
+| `SETTLEMENT_RELAYER_PRIVATE_KEY` | no | Separate key to pay gas for settlements (defaults to the operator) |
+| `ETHERSCAN_API_KEY` | no | Extra verified-source fallback for the auditor |
+| `OPENAI_API_KEY` | no | Optional wording polish of the final summary (numbers are never changed) |
+
+**Frontend**
+
+| Variable | Notes |
+|---|---|
+| `NEXT_PUBLIC_ORCHESTRATOR_URL` | Backend base URL |
+| `NEXT_PUBLIC_ORCHESTRATOR_ADDRESS` | Operator address (Mode B payee, balance display) |
+| `NEXT_PUBLIC_MONAD_*`, contract addresses | Public chain configuration |
+
+---
+
+## Repository layout
+
+```
+├── server.ts                 # Vercel entry: orchestrator + 4 agents in one Express app
+├── vercel.json, .vercelignore
+├── orchestrator/src/
+│   ├── server.ts             # HTTP API
+│   ├── router.ts             # deterministic task decomposition
+│   ├── executor.ts           # pay → call → record, shared by every mode
+│   ├── x402Client.ts         # EIP-3009 signing against the token's real domain
+│   └── synthesizer.ts        # template synthesis (+ optional polish)
+├── agents/
+│   ├── shared/x402Middleware.ts   # verify + settle USDC onchain
+│   ├── shared/evm.ts              # disassembler, proxy resolver, ABI + chunked log helpers
+│   ├── contract-auditor/      token-risk-scorer/      gas-timing-agent/
+│   └── sample-custom-agent.ts     # Whale & Liquidity Sentinel (agent 04)
+├── contracts/                # Solidity, Hardhat tests & deploy scripts
+└── frontend/src/
+    ├── app/                  # pages
+    ├── components/           # HeroSection, AgentLineup, TaskConsole, AgentResultCards, AgentPortrait, …
+    └── lib/                  # contracts, wallet signing, onchain activity reader, smooth scroll
+```
+
+---
+
+## Monad Academy & soulbound credential
+
+Three learning paths — **Monad Fundamentals**, **Tokenized Assets**, **x402 Payments** — with lessons, quizzes and XP tracked on `/dashboard`. Completing all three unlocks the **Monad Scholar certificate**: export it as PNG or PDF, or mint it as a soulbound ERC-721 from `AcademyCredential`. Minting is owner-only, so the orchestrator signs it server-side; one credential per wallet.
 
 <p align="center">
-  <img src="docs/demo.gif" alt="Monad Community Event Recap" width="850" style="border-radius: 12px; box-shadow: 0 10px 40px rgba(131, 110, 249, 0.25);" />
+  <img src="docs/monad-scholar-certificate.png" alt="Monad Scholar certificate" width="720" />
 </p>
 
-- 📸 **Monad Instagram Post**: [View Event Reel](https://www.instagram.com/p/DddzuxNMjkS/)
-- 🐦 **X (Twitter) Recap**: [View Community Thread](https://x.com/ARakshe34041/status/2101283903952798016?s=20)
+---
+
+## Security notes & known limits
+
+- **Operator key rotation (Oct 2026).** An earlier version embedded the operator key in frontend code. That key (`0x39D1…C39B`) is retired: ownership of all four contracts moved to `0xE075…2960`, and the key no longer appears anywhere in the code. It still exists in git history — treat it as public.
+- **Agent records 1–4** still list the retired wallet as their per-agent owner in `IdentityRegistry` (the contract has no owner-transfer for agents). The backend therefore routes to its own configured agent URLs instead of trusting those records. A registry upgrade would close this fully.
+- **Payee.** All agents currently share one payee (the operator), so settlements are real but circular. Give each agent its own `PAY_TO_ADDRESS` to route value to agent owners.
+- **Public write endpoints** are rate-limited per IP but not authenticated; anyone can trigger runs that spend operator gas.
+- Agents read the public Monad RPC, which caps `eth_getLogs` at 100 blocks — log scans are chunked and limited to recent windows (about 16 minutes).
 
 ---
 
-## 🔒 Legal & Ecosystem Disclaimer
+## Event recap
 
-> [!IMPORTANT]
-> **Built for the Monad ecosystem.** This product is an independent open-source project created for the Monad ecosystem and is **not** an official Monad Labs product unless otherwise stated. All trademarks, service marks, and company names are the property of their respective owners.
+Highlights from the **Monad community event & ecosystem showcase** — builders, Monad Scholar certificates, and live agent-to-agent payments on Monad:
+
+<p align="center">
+  <img src="docs/demo.gif" alt="Monad community event recap" width="850" />
+</p>
+
+- [Instagram reel](https://www.instagram.com/p/DddzuxNMjkS/) · [X thread](https://x.com/ARakshe34041/status/2101283903952798016?s=20)
 
 ---
 
-## 📄 License
+## Disclaimer
 
-This project is licensed under the [MIT License](LICENSE).
+Built for the Monad ecosystem. This is an independent open-source project and **not** an official Monad Labs product unless otherwise stated. All trademarks belong to their respective owners. Testnet only — no real funds.
+
+## License
+
+MIT — see [LICENSE](LICENSE).
