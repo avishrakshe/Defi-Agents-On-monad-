@@ -81,6 +81,51 @@ export async function switchToMonadNetwork(): Promise<void> {
   }
 }
 
+export interface X402Quote {
+  payTo: string;
+  maxAmountRequired: string;
+  asset: string;
+  network: string;
+  agentId?: number;
+  eip712?: { name: string; version: string; chainId: number; verifyingContract: string };
+}
+
+/**
+ * Step 1 of x402: call the agent with no payment header and read the payee and price from its HTTP 402.
+ */
+export async function quoteX402(targetUrl: string, body: unknown): Promise<X402Quote> {
+  const res = await fetch(targetUrl, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body ?? {}) });
+  const json: any = await res.json().catch(() => ({}));
+  if (res.status !== 402) throw new Error(`Expected HTTP 402 from the agent, got ${res.status}`);
+  const req = json?.x402?.accepts?.[0];
+  if (!req?.payTo || !req?.maxAmountRequired) throw new Error("Agent's 402 response has no payment requirements");
+  return {
+    payTo: ethers.getAddress(req.payTo),
+    maxAmountRequired: String(req.maxAmountRequired),
+    asset: req.asset,
+    network: req.network,
+    agentId: req.extra?.agentId,
+    eip712: req.extra?.eip712
+  };
+}
+
+/**
+ * Independent review from the wallet that paid for `callId` — ReputationRegistryV2.submitFeedback.
+ */
+export async function submitClientFeedback(reputationRegistry: string, agentId: number, callId: string, score: number, note: string) {
+  if (typeof window === "undefined" || !(window as any).ethereum) throw new Error("MetaMask not found");
+  await switchToMonadNetwork();
+  const signer = await new ethers.BrowserProvider((window as any).ethereum).getSigner();
+  const rep = new ethers.Contract(
+    reputationRegistry,
+    ["function submitFeedback(uint256 agentId, bytes32 callId, uint8 score, string note) external"],
+    signer
+  );
+  const tx = await rep.submitFeedback(agentId, callId, score, note.slice(0, 280));
+  const receipt = await tx.wait();
+  return { txHash: tx.hash as string, blockNumber: receipt?.blockNumber as number | undefined, from: await signer.getAddress() };
+}
+
 /**
  * Sign REAL EIP-712 Typed Data for x402 / EIP-3009 USDC Micropayment
  */

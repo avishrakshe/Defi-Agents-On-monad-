@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { ORCHESTRATOR_ADDRESS } from "../lib/useBalances";
 import { ethers } from "ethers";
-import { MONAD_CONTRACTS } from "../lib/contracts";
+import { IDENTITY_V2_ABI, MONAD_CONTRACTS } from "../lib/contracts";
 import { useActivityStore } from "../lib/activity-store";
 import { getOrchestratorUrl } from "../lib/orchestrator";
 
@@ -20,13 +20,14 @@ export const RegisterAgentModal: React.FC<RegisterAgentModalProps> = ({
 }) => {
   const [name, setName] = useState("");
   const [skill, setSkill] = useState("");
-  const [endpoint, setEndpoint] = useState("http://localhost:4004/api/whale");
+  const [endpoint, setEndpoint] = useState("");
   const [priceUSDC, setPriceUSDC] = useState("0.001");
   const [description, setDescription] = useState(
     "Autonomous onchain sentinel analyzing live Monad Testnet DEX liquidity and large whale transfers."
   );
   const [dataSource, setDataSource] = useState("Monad Testnet RPC Block Scanner");
   const [useWalletGas, setUseWalletGas] = useState(false);
+  const [ownerAddress, setOwnerAddress] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successData, setSuccessData] = useState<{
@@ -55,31 +56,28 @@ export const RegisterAgentModal: React.FC<RegisterAgentModalProps> = ({
         const browserProvider = new ethers.BrowserProvider((window as any).ethereum);
         const signer = await browserProvider.getSigner();
 
-        const identityAbi = [
-          "function registerAgent(string name, string skill, string endpoint, uint256 priceUSDC, string metadataURI) external returns (uint256)",
-          "event AgentRegistered(uint256 indexed agentId, address indexed owner, string skill, string name, uint256 priceUSDC, string endpoint, string metadataURI)"
-        ];
-
-        const identityContract = new ethers.Contract(MONAD_CONTRACTS.identityRegistry, identityAbi, signer);
+        const identityContract = new ethers.Contract(MONAD_CONTRACTS.identityRegistry, IDENTITY_V2_ABI, signer);
+        const me = await signer.getAddress();
 
         const metadataJSON = JSON.stringify({
           description,
           dataSource,
-          author: await signer.getAddress(),
           registeredVia: "DeFi Agent Marketplace Monad"
         });
 
+        // The connecting wallet becomes the agent's owner and its payee
         const tx = await identityContract.registerAgent(
           name.trim(),
           skill.trim().toLowerCase(),
           endpoint.trim(),
           priceUnits,
-          metadataJSON
+          metadataJSON,
+          me
         );
 
         const receipt = await tx.wait();
 
-        let registeredId = 4;
+        let registeredId: number | null = null;
         if (receipt && receipt.logs) {
           for (const log of receipt.logs) {
             try {
@@ -92,13 +90,15 @@ export const RegisterAgentModal: React.FC<RegisterAgentModalProps> = ({
           }
         }
 
+        if (registeredId === null) throw new Error("Registered, but no AgentRegistered event was found in the receipt");
         setSuccessData({
           agentId: registeredId,
           txHash: tx.hash,
           explorerUrl: `https://testnet.monadvision.com/tx/${tx.hash}`
         });
       } else {
-        // Mode A: Orchestrator relays registration
+        // Relayed: the operator pays gas, then hands ownership (and payments) to ownerAddress
+        if (!ethers.isAddress(ownerAddress.trim())) throw new Error("Enter the wallet address that should own the agent and receive its payments.");
         const orchestratorUrl = getOrchestratorUrl();
         const res = await fetch(`${orchestratorUrl}/api/register-agent`, {
           method: "POST",
@@ -109,7 +109,8 @@ export const RegisterAgentModal: React.FC<RegisterAgentModalProps> = ({
             endpoint: endpoint.trim(),
             priceUSDC: priceUnits,
             description: description.trim(),
-            dataSource: dataSource.trim()
+            dataSource: dataSource.trim(),
+            ownerAddress: ownerAddress.trim()
           })
         });
 
@@ -119,7 +120,7 @@ export const RegisterAgentModal: React.FC<RegisterAgentModalProps> = ({
         }
 
         setSuccessData({
-          agentId: data.agentId || 4,
+          agentId: data.agentId,
           txHash: data.txHash,
           explorerUrl: data.explorerUrl
         });
@@ -128,21 +129,22 @@ export const RegisterAgentModal: React.FC<RegisterAgentModalProps> = ({
         try {
           useActivityStore.getState().addActivity({
             type: "agent_registration",
-            title: `Registered Agent #${data.agentId || 4}: ${name.trim()}`,
-            description: `Onchain registration on IdentityRegistry with endpoint ${endpoint.trim()} ($${priceUSDC} tUSDC).`,
+            title: `Registered Agent #${data.agentId}: ${name.trim()}`,
+            description: `Registered on IdentityRegistryV2 at ${endpoint.trim()} ($${priceUSDC} USDC per call); ownership transferred to ${data.agent?.owner}.`,
             txHash: data.txHash,
             timestamp: new Date().toISOString(),
             status: "confirmed",
             from: ORCHESTRATOR_ADDRESS,
             to: MONAD_CONTRACTS.identityRegistry,
-            contractName: "IdentityRegistry",
-            agentId: data.agentId || 4,
+            contractName: "IdentityRegistryV2",
+            agentId: data.agentId,
             agentName: name.trim(),
             skill: skill.trim().toLowerCase(),
-            amount: `$${priceUSDC} tUSDC`,
-            gasFee: "0.00065 MON",
+            amount: `$${priceUSDC} USDC`,
             metadata: {
               endpoint: endpoint.trim(),
+              owner: data.agent?.owner,
+              transferTxHash: data.transferTxHash,
               description: description.trim(),
               dataSource: dataSource.trim()
             }
@@ -282,7 +284,7 @@ export const RegisterAgentModal: React.FC<RegisterAgentModalProps> = ({
                 className="w-full bg-paper text-ink placeholder:text-ink-3 rounded-none border border-ink/20 px-3.5 py-2.5 text-xs sm:text-sm font-mono focus:outline-none focus:ring-2 focus:ring-violet focus:border-transparent"
               />
               <span className="text-[10px] text-ink-3 mt-0.5 block">
-                The agent must implement the x402 payment verification header.
+                The agent must answer unpaid requests with HTTP 402 naming its registered payee, and verify the X-Payment-Authorization header.
               </span>
             </div>
 
@@ -322,11 +324,28 @@ export const RegisterAgentModal: React.FC<RegisterAgentModalProps> = ({
                   className="w-4 h-4 rounded border-ink/25 text-violet focus:ring-violet"
                 />
                 <span className="text-xs text-ink-2">
-                  Pay transaction gas with my connected MetaMask wallet{" "}
-                  <span className="text-ink-3">(uncheck for free orchestrator subsidy)</span>
+                  Register from my connected MetaMask wallet{" "}
+                  <span className="text-ink-3">(it becomes the owner and payee; uncheck to let the operator pay the gas)</span>
                 </span>
               </label>
             </div>
+
+            {!useWalletGas && (
+              <div>
+                <label className="block text-xs font-bold text-ink mb-1">Owner & payee address *</label>
+                <input
+                  type="text"
+                  required
+                  value={ownerAddress}
+                  onChange={(e) => setOwnerAddress(e.target.value)}
+                  placeholder="0x… — owns the agent record and receives its x402 payments"
+                  className="w-full bg-paper text-ink placeholder:text-ink-3 rounded-none border border-ink/20 px-3.5 py-2.5 text-xs sm:text-sm font-mono focus:outline-none focus:ring-2 focus:ring-violet focus:border-transparent"
+                />
+                <span className="text-[10px] text-ink-3 mt-0.5 block">
+                  The operator registers the agent, then transfers ownership to this address in a second transaction.
+                </span>
+              </div>
+            )}
 
             <div className="pt-4 flex items-center justify-end space-x-3 border-t border-ink/20">
               <button

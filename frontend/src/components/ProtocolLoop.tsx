@@ -14,10 +14,10 @@ interface Step {
 
 const STEPS: Step[] = [
   { n: "1", title: "Decompose", body: "Your plain-language request is split into specialist subtasks by deterministic rules. No LLM decides where money goes.", code: "POST /api/decompose", tint: "bg-sun-soft" },
-  { n: "2", title: "Verify", body: "Each agent's identity and live reputation are read from the ERC-8004 registries before anything is paid.", code: "IdentityRegistry.getAllAgents()", tint: "bg-violet-soft" },
-  { n: "3", title: "Quote", body: "The specialist answers HTTP 402 Payment Required with its price — a tenth of a cent in USDC.", code: "402 → maxAmountRequired: 1000", tint: "bg-flame-soft" },
-  { n: "4", title: "Settle", body: "An EIP-3009 authorization is signed and settled on Monad in under a second; the request is retried and served.", code: "USDC.transferWithAuthorization()", tint: "bg-moss-soft" },
-  { n: "5", title: "Rate", body: "A service-quality score is written to the ReputationRegistry, so trust compounds with every paid call.", code: "submitFeedbackFor(agentId, score)", tint: "bg-paper-shade" }
+  { n: "2", title: "Verify", body: "Each agent's identity, owner, payee, stake and split reputation are read from the ERC-8004 registries before anything is paid.", code: "IdentityRegistryV2.getAllAgents()", tint: "bg-violet-soft" },
+  { n: "3", title: "Quote", body: "The specialist answers HTTP 402 Payment Required with its price and its own payee address — a tenth of a cent in USDC.", code: "402 → payTo: <agent payee>", tint: "bg-flame-soft" },
+  { n: "4", title: "Settle", body: "An EIP-3009 authorization to that payee is signed and settled on Monad; the paid call is recorded under a unique callId.", code: "recordPaidCall(agentId, client, callId)", tint: "bg-moss-soft" },
+  { n: "5", title: "Rate", body: "The paying wallet rates that one call. Your reviews count as independent; the operator's reviews of its own calls are shown apart.", code: "submitFeedback(agentId, callId, score)", tint: "bg-paper-shade" }
 ];
 
 /** Pinned horizontal track: vertical scroll turns the pages of the protocol. */
