@@ -39,5 +39,5 @@ export function useChainMetrics(refreshMs = 30_000): ChainMetrics | null {
   return metrics;
 }
 
-/** "0.30s" style label, or "—" when there's no measurement */
-export const formatBlockTime = (m: ChainMetrics | null) => (m ? `${m.avgBlockTimeSec.toFixed(2)}s` : "—");
+/** "305 ms" — the API's own avgBlockTimeMs, unrounded further — or "—" when there's no measurement */
+export const formatBlockTime = (m: ChainMetrics | null) => (m ? `${m.avgBlockTimeMs} ms` : "—");

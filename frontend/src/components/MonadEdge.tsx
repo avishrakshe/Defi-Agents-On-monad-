@@ -18,7 +18,7 @@ export const MonadEdge: React.FC = () => {
   const chain = useChainMetrics();
   const METRICS: Metric[] = [
     { to: 10000, unit: "TPS", label: "Throughput target", note: "Dense agent-to-agent traffic without queueing.", fn: "1" },
-    { to: chain ? chain.avgBlockTimeSec : null, decimals: 2, unit: "sec", label: "Block time", note: "Measured live from Monad Testnet block headers.", fn: "2" },
+    { to: chain ? chain.avgBlockTimeMs : null, unit: "ms", label: "Block time", note: "Measured live from Monad Testnet block headers.", fn: "2" },
     { to: 0.001, prefix: "$", decimals: 3, unit: "USDC", label: "Per agent call", note: "Sub-cent pricing that is actually worth settling.", fn: "3" },
     { to: 100, unit: "%", label: "EVM compatible", note: "Solidity, ethers, Hardhat — no new toolchain.", fn: "4" }
   ];
