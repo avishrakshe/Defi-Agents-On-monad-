@@ -20,6 +20,9 @@ rm -rf ./magicblock-test-storage
 RUST_LOG=info mb-stack --reset \
   --account mAGicPQYBMvcYveUZA5F5UNNwyHvfYh5xkLS2Fr1mev "$VALIDATOR_ACCT" \
   --upgradeable-program target/deploy/agent_market-keypair.json target/deploy/agent_market.so "$WALLET" \
+  --url https://api.devnet.solana.com \
+  --clone-upgradeable-program ComtrB2KEaWgXsW1dhr1xYL4Ht4Bjj3gXnnL6KMdABq \
+  --clone noopb9bkMVfRPU8AsbpTUg8AQkHtKwMYZiFUjNRtMmV \
   > ./mb-stack.log 2>&1 < /dev/null &
 STACK=$!
 trap 'kill -TERM $STACK 2>/dev/null; sleep 1; pkill -f mb-stack; pkill -f solana-test-validator; pkill -f ephemeral-validator; pkill -f query-filtering' EXIT
@@ -35,5 +38,9 @@ solana airdrop 100 "$WALLET" --url http://127.0.0.1:8899 >/dev/null
 npx ts-mocha -p ./tsconfig.json -t 1000000 tests/agent-market.ts 2>&1
 CODE=$?
 cp -f test-results-localnet.json "$SRC/test-results-localnet.json" 2>/dev/null
-echo "--- mb-stack WARN/ERROR (last 30)"; grep -iE "error|warn" ./mb-stack.log | tail -30
+echo "--- mb-stack WARN/ERROR (last 30)"; perl -pe 's/\e\[[0-9;]*m//g' ./mb-stack.log | grep -iE "error|warn" | tail -30 | cut -c1-600
+# Explain any failed committor transactions while the base validator is still up
+for sig in $(perl -pe 's/\e\[[0-9;]*m//g' ./mb-stack.log | grep -oE "(SentTransactionError\([A-Za-z]+, |Some\()[1-9A-HJ-NP-Za-km-z]{80,90}" | grep -oE "[1-9A-HJ-NP-Za-km-z]{80,90}" | sort -u | head -3); do
+  echo "--- base tx $sig"; solana confirm -v "$sig" --url http://127.0.0.1:8899 2>&1 | grep -E "Program (log|AZox|DELeG|Tokenkeg)|Error|failed|Status" | grep -v "^\s*Account" | head -60
+done
 exit $CODE

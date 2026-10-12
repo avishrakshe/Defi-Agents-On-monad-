@@ -795,6 +795,9 @@ pub struct Payout<'info> {
     #[account(mut, address = agent_profile.payee @ MarketError::BadPayee)]
     pub payee: Account<'info, TokenAccount>,
     pub token_program: Program<'info, Token>,
+    /// CHECK: the program that scheduled the action (appended by the delegation program) — must be this program
+    #[account(address = crate::ID @ MarketError::Unauthorized)]
+    pub source_program: UncheckedAccount<'info>,
     /// CHECK: the Ledger PDA — the only escrow authority this program schedules payouts with
     #[account(seeds = [LEDGER_SEED], bump)]
     pub escrow_auth: UncheckedAccount<'info>,

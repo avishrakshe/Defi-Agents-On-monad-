@@ -1502,6 +1502,10 @@ export type AgentMarket = {
           "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
         },
         {
+          "name": "sourceProgram",
+          "address": "AZox8uQ1sjG5KdorG4Y72w3tDT7eowJtxHdQRqMjUXVu"
+        },
+        {
           "name": "escrowAuth",
           "pda": {
             "seeds": [

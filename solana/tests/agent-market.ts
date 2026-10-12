@@ -7,7 +7,7 @@
  */
 import * as anchor from "@coral-xyz/anchor";
 import { BN } from "@coral-xyz/anchor";
-import { Keypair, LAMPORTS_PER_SOL, PublicKey, Transaction } from "@solana/web3.js";
+import { Keypair, LAMPORTS_PER_SOL, PublicKey, Transaction, TransactionMessage, VersionedTransaction } from "@solana/web3.js";
 import { getAccount, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { GetCommitmentSignature } from "@magicblock-labs/ephemeral-rollups-sdk";
 import { expect } from "chai";
@@ -115,14 +115,19 @@ describe(`agent_market on ${NETWORK}`, () => {
   });
 
   it("rejects update_agent from a non-owner", async () => {
-    const err = await expectErFailure(
-      programFor(base, stranger)
-        .methods.updateAgent("https://evil.invalid", new BN(0), "")
-        .accountsPartial({ owner: stranger.publicKey, agentProfile: seeds.agent(agentId) })
-        .rpc(),
-      /Unauthorized|ConstraintHasOne|0x1771|custom program error/
-    );
-    results.negative.nonOwnerUpdate = err;
+    const ix = await programFor(base, stranger)
+      .methods.updateAgent("https://evil.invalid", new BN(0), "")
+      .accountsPartial({ owner: stranger.publicKey, agentProfile: seeds.agent(agentId) })
+      .instruction();
+    const msg = new TransactionMessage({ payerKey: stranger.publicKey, recentBlockhash: (await base.getLatestBlockhash()).blockhash, instructions: [ix] }).compileToV0Message();
+    const vtx = new VersionedTransaction(msg);
+    vtx.sign([stranger]);
+    const sim = await base.simulateTransaction(vtx);
+    const logs = (sim.value.logs || []).join("\n");
+    expect(sim.value.err, logs).to.not.eq(null);
+    expect(logs).to.match(/Unauthorized|ConstraintHasOne/);
+    results.negative.nonOwnerUpdate = (logs.match(/Error Code: \w+/) || [logs.slice(-200)])[0];
+    expect((await p().account.agentProfile.fetch(seeds.agent(agentId))).endpoint).to.eq("https://example.invalid/api");
   });
 
   it("opens and delegates the client's Tab; delegates AgentStats", async () => {
@@ -251,6 +256,7 @@ describe(`agent_market on ${NETWORK}`, () => {
           agentPayout: seeds.payout(agentId),
           payee,
           tokenProgram: TOKEN_PROGRAM_ID,
+          sourceProgram: PROGRAM_ID,
           escrowAuth: ledger,
           escrow: escrowPdaFromEscrowAuthority(ledger)
         })
