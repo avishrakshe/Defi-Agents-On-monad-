@@ -3,7 +3,7 @@
 import React from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { ArrowRight, Plus } from "lucide-react";
-import { AgentData } from "../lib/contracts";
+import { AgentData, MIN_INDEPENDENT_REVIEWS, rankedScore, shortAddr, sortByIndependentScore, splitLabel } from "../lib/contracts";
 import { Sheet, SectionLabel, SplitHeading, Reveal } from "./fx";
 import { AgentPortrait, variantForSkill } from "./AgentPortrait";
 
@@ -53,8 +53,8 @@ export const AgentRegistry: React.FC<AgentRegistryProps> = ({ agents, onSelectAg
             <span className="text-right">Action</span>
           </div>
 
-          {agents.map((agent, idx) => {
-            const rated = agent.feedbackCount > 0;
+          {sortByIndependentScore(agents).map((agent, idx) => {
+            const ranked = rankedScore(agent);
             const isCustom = agent.id > 3;
             return (
               <motion.div
@@ -76,8 +76,8 @@ export const AgentRegistry: React.FC<AgentRegistryProps> = ({ agents, onSelectAg
                       <span className="text-[16px] font-semibold leading-tight truncate">{agent.name}</span>
                       {isCustom && <span className="font-mono text-[9px] uppercase px-1 border border-violet text-violet shrink-0">community</span>}
                     </div>
-                    <div className="font-mono text-[11px] text-ink-2 truncate" title={agent.owner}>
-                      {agent.skill} · {agent.owner.slice(0, 6)}…{agent.owner.slice(-4)}
+                    <div className="font-mono text-[11px] text-ink-2 truncate" title={agent.owner ? `owner ${agent.owner} · payee ${agent.payee}` : undefined}>
+                      {agent.skill} · owner {shortAddr(agent.owner)}
                     </div>
                   </div>
                 </div>
@@ -89,23 +89,30 @@ export const AgentRegistry: React.FC<AgentRegistryProps> = ({ agents, onSelectAg
                 </span>
                 <span className="font-mono text-[13px] col-start-2 md:col-start-auto">
                   <span className="md:hidden text-ink-3 mr-2">stake</span>
-                  {agent.stakedUSDC} USDC
+                  {agent.stakedUSDC === null ? "—" : `${agent.stakedUSDC} USDC`}
                 </span>
 
                 <div className="col-start-2 md:col-start-auto md:pr-4">
                   <div className="flex items-baseline justify-between font-mono text-[12px]">
-                    <span>{rated ? `${agent.avgScore}/100` : "unrated"}</span>
-                    <span className="text-ink-3">{agent.feedbackCount} rev</span>
+                    <span>Independent</span>
+                    <span>{splitLabel(agent.independent)}</span>
                   </div>
                   <div className="mt-1 h-2.5 border border-ink bg-paper overflow-hidden">
                     <motion.div
                       initial={{ width: 0 }}
-                      whileInView={{ width: rated ? `${agent.avgScore}%` : "0%" }}
+                      whileInView={{ width: agent.independent.count ? `${agent.independent.avg}%` : "0%" }}
                       viewport={{ once: true }}
                       transition={{ duration: 1.2, delay: 0.2 + idx * 0.05, ease: [0.22, 1, 0.36, 1] }}
                       className="h-full halftone-violet"
                     />
                   </div>
+                  <div className="mt-1 flex items-baseline justify-between font-mono text-[11px] text-ink-3">
+                    <span>Operator</span>
+                    <span>{splitLabel(agent.operator)}</span>
+                  </div>
+                  {ranked === null && (
+                    <div className="mt-0.5 font-mono text-[10px] text-ink-3">not enough independent reviews yet</div>
+                  )}
                 </div>
 
                 <div className="col-start-2 md:col-start-auto md:text-right">
@@ -122,7 +129,9 @@ export const AgentRegistry: React.FC<AgentRegistryProps> = ({ agents, onSelectAg
         </div>
 
         <p className="mt-4 font-mono text-[11px] text-ink-3">
-          Reputation = average of onchain review scores in ReputationRegistry. Stake from StakeManager. Updated on every page load.
+          Independent = reviews from the wallet that paid for the call (Mode B). Operator = reviews the orchestrator writes for
+          Mode A calls it paid for. Each review is tied to one paid call in ReputationRegistryV2. Ranked by independent score once
+          an agent has {MIN_INDEPENDENT_REVIEWS}+ independent reviews. Stake from StakeManagerV2. Read live on every page load.
         </p>
       </div>
     </Sheet>

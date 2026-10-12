@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Navbar } from "../../../components/Navbar";
 import { PageBackdrop, SiteFooter } from "../../../components/PageChrome";
 import { useAcademyStore, AcademyProgress } from "../../../lib/progress-store";
+import { MONAD_CONTRACTS } from "../../../lib/contracts";
 
 interface LessonData {
   id: string;
@@ -162,12 +163,12 @@ const COURSES_DATA: Record<string, { title: string; storeKey: keyof AcademyProgr
                 You can inspect our deployed contract transactions live on MonadVision:
               </p>
               <a
-                href="https://testnet.monadvision.com/address/0xD62b32482874E447Beb60E6Df5A21E6ebaFf54ad"
+                href={`https://testnet.monadvision.com/address/${MONAD_CONTRACTS.identityRegistry}`}
                 target="_blank"
                 rel="noreferrer"
                 className="text-xs font-mono font-bold text-moss hover:underline block mt-1"
               >
-                0xD62b32482874E447Beb60E6Df5A21E6ebaFf54ad ↗
+                {MONAD_CONTRACTS.identityRegistry} ↗
               </a>
             </div>
           </div>

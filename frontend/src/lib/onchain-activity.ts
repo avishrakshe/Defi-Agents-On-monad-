@@ -11,9 +11,9 @@ const AGENT_NAMES: Record<number, string> = {
 };
 
 const iface = new ethers.Interface([
-  "event FeedbackSubmitted(uint256 indexed agentId, address indexed reviewer, uint8 score, string note, uint256 timestamp)",
-  "event PaidCallRecorded(uint256 indexed agentId, address indexed client, uint256 count)",
-  "event AgentRegistered(uint256 indexed agentId, address indexed owner, string skill, string name, uint256 priceUSDC, string endpoint, string metadataURI)",
+  "event FeedbackSubmitted(uint256 indexed agentId, address indexed reviewer, bytes32 indexed callId, uint8 kind, uint8 score, string note)",
+  "event PaidCallRecorded(uint256 indexed agentId, address indexed client, bytes32 indexed callId)",
+  "event AgentRegistered(uint256 indexed agentId, address indexed owner, address indexed payee, string skill, string name, uint256 priceUSDC, string endpoint, string metadataURI)",
   "event CredentialIssued(uint256 indexed tokenId, address indexed learner, string learnerName, uint256 completedAt, string tokenURI)"
 ]);
 
@@ -71,16 +71,17 @@ export async function fetchOnchainActivity(blocks = 3000): Promise<{ items: Tran
 
     if (parsed.name === "FeedbackSubmitted") {
       const id = Number(a.agentId);
+      const kind = Number(a.kind) === 0 ? "Independent" : "Operator";
       items.push({
         ...base,
         type: "reputation_feedback",
-        title: `Reputation feedback · ${AGENT_NAMES[id] || `Agent #${id}`}`,
-        description: `Scored ${a.score}/100 — ${a.note}`,
+        title: `${kind} review · ${AGENT_NAMES[id] || `Agent #${id}`}`,
+        description: `Scored ${a.score}/100${a.note ? ` — ${a.note}` : ""} (call ${String(a.callId).slice(0, 10)}…)`,
         from: a.reviewer,
-        contractName: "ReputationRegistry",
+        contractName: "ReputationRegistryV2",
         agentId: id,
         agentName: AGENT_NAMES[id],
-        metadata: { scoreGiven: Number(a.score), note: a.note, source: "onchain event" }
+        metadata: { scoreGiven: Number(a.score), note: a.note, reviewerKind: kind, callId: a.callId, source: "onchain event" }
       });
     } else if (parsed.name === "PaidCallRecorded") {
       const id = Number(a.agentId);
@@ -88,21 +89,21 @@ export async function fetchOnchainActivity(blocks = 3000): Promise<{ items: Tran
         ...base,
         type: "x402_payment",
         title: `x402 paid call recorded · ${AGENT_NAMES[id] || `Agent #${id}`}`,
-        description: `Paid call #${a.count} recorded for client ${a.client}.`,
+        description: `Paid call ${String(a.callId).slice(0, 10)}… recorded for client ${a.client}.`,
         from: a.client,
-        contractName: "ReputationRegistry",
+        contractName: "ReputationRegistryV2",
         agentId: id,
         agentName: AGENT_NAMES[id],
-        metadata: { callCount: Number(a.count), source: "onchain event" }
+        metadata: { callId: a.callId, source: "onchain event" }
       });
     } else if (parsed.name === "AgentRegistered") {
       items.push({
         ...base,
         type: "agent_registration",
         title: `Agent registered · ${a.name}`,
-        description: `${a.skill} at ${a.endpoint}, ${(Number(a.priceUSDC) / 1e6).toFixed(3)} USDC per call.`,
+        description: `${a.skill} at ${a.endpoint}, ${(Number(a.priceUSDC) / 1e6).toFixed(3)} USDC per call, paid to ${a.payee}.`,
         from: a.owner,
-        contractName: "IdentityRegistry",
+        contractName: "IdentityRegistryV2",
         agentId: Number(a.agentId),
         agentName: a.name,
         skill: a.skill,

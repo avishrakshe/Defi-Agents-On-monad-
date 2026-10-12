@@ -61,7 +61,7 @@ const DEFAULT_PATHS: AcademyProgress["paths"] = {
 export const useAcademyStore = create<AcademyProgress>()(
   persist(
     (set, get) => ({
-      userId: "0x39D1...C39B",
+      userId: "",
       userName: "Monad Scholar",
       paths: { ...DEFAULT_PATHS },
       totalXp: 0,

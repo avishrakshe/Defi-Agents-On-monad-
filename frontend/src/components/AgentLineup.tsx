@@ -3,7 +3,7 @@
 import React from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
-import { AgentData } from "../lib/contracts";
+import { AgentData, rankedScore, splitLabel } from "../lib/contracts";
 import { AgentPortrait, PortraitVariant } from "./AgentPortrait";
 import { Sheet, SectionLabel, SplitHeading, Reveal } from "./fx";
 
@@ -35,7 +35,8 @@ export const AgentLineup: React.FC<AgentLineupProps> = ({ agents, onSelectAgent 
           </div>
           <Reveal delay={0.15} className="lg:col-span-5">
             <p className="text-[17px] leading-relaxed text-ink-2 border-l-[1.5px] border-ink pl-5">
-              Every specialist has an onchain identity, a public reputation score earned from real reviews, and a price per call. Pick one to run it.
+              Every specialist has an onchain identity, its own owner and payee, a USDC stake and a price per call. Reviews from paying
+              wallets and from the operator are counted separately. Pick one to run it.
             </p>
           </Reveal>
         </div>
@@ -43,7 +44,7 @@ export const AgentLineup: React.FC<AgentLineupProps> = ({ agents, onSelectAgent 
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
           {CREW.map((c, i) => {
             const agent = agents.find((a) => a.skill === c.skill);
-            const rated = agent && agent.feedbackCount > 0;
+            const ranked = agent ? rankedScore(agent) : null;
             return (
               <motion.div
                 key={c.skill}
@@ -73,9 +74,9 @@ export const AgentLineup: React.FC<AgentLineupProps> = ({ agents, onSelectAgent 
                     <div className="absolute inset-x-0 bottom-0 top-6 flex items-end justify-center transition-transform duration-500 ease-out group-hover:scale-[1.04]">
                       <AgentPortrait variant={c.variant} className="w-[92%] h-full" />
                     </div>
-                    {rated && (
+                    {ranked !== null && (
                       <span className="absolute top-3 right-3 stamp border-ink bg-paper-card animate-stamp">
-                        {agent!.avgScore}/100
+                        {ranked}/100
                       </span>
                     )}
                   </div>
@@ -90,14 +91,17 @@ export const AgentLineup: React.FC<AgentLineupProps> = ({ agents, onSelectAgent 
                         <dd className="text-ink mt-0.5">{agent?.priceUSDC ?? "$0.001"}</dd>
                       </div>
                       <div>
-                        <dt className="text-ink-3 uppercase">Rep</dt>
-                        <dd className="text-ink mt-0.5">{rated ? agent!.avgScore : "—"}</dd>
+                        <dt className="text-ink-3 uppercase">Indep.</dt>
+                        <dd className="text-ink mt-0.5">{agent ? splitLabel(agent.independent) : "—"}</dd>
                       </div>
                       <div>
-                        <dt className="text-ink-3 uppercase">Reviews</dt>
-                        <dd className="text-ink mt-0.5">{agent?.feedbackCount ?? 0}</dd>
+                        <dt className="text-ink-3 uppercase">Operator</dt>
+                        <dd className="text-ink mt-0.5">{agent ? splitLabel(agent.operator) : "—"}</dd>
                       </div>
                     </dl>
+                    {agent && ranked === null && (
+                      <p className="mt-2 font-mono text-[10px] text-ink-3">not enough independent reviews yet</p>
+                    )}
                   </div>
                 </button>
               </motion.div>

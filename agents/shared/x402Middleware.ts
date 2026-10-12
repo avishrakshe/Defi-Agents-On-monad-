@@ -1,5 +1,8 @@
 import { Request, Response, NextFunction } from "express";
 import { ethers } from "ethers";
+import { RegistryAgent, agentForSkill, identityAddress } from "./registry";
+
+const priceLabel = (units: bigint) => `$${(Number(units) / 1e6).toFixed(3)}`;
 
 /**
  * x402 "exact" scheme middleware for Monad Testnet, settling with EIP-3009.
@@ -26,6 +29,7 @@ export interface SettlementReceipt {
   reason?: string;
   from: string;
   payTo: string;
+  agentId: number;
   amount: string;
   amountUnits: string;
   timestamp: string;
@@ -55,7 +59,6 @@ const env = () => ({
   chainId: Number(process.env.NEXT_PUBLIC_MONAD_CHAIN_ID || 10143),
   rpcUrl: process.env.NEXT_PUBLIC_MONAD_RPC_URL || "https://testnet-rpc.monad.xyz",
   asset: process.env.NEXT_PUBLIC_MONAD_USDC_ADDRESS || "0x534b2f3A21130d7a60830c2Df862319e593943A3",
-  payTo: process.env.PAY_TO_ADDRESS || "0xE0754641302BB291F23E21766557Ce29c5642960",
   explorer: process.env.NEXT_PUBLIC_MONAD_EXPLORER_URL || "https://testnet.monadvision.com",
   relayerKey: process.env.SETTLEMENT_RELAYER_PRIVATE_KEY || process.env.ORCHESTRATOR_PRIVATE_KEY || process.env.DEPLOYER_PRIVATE_KEY,
   requireSettlement: process.env.X402_REQUIRE_SETTLEMENT === "true"
@@ -94,37 +97,50 @@ export function getUsdcDomain(): Promise<ethers.TypedDataDomain> {
   return domainCache;
 }
 
-export function createX402Middleware(agentSkill: string, resourceUrl: string, priceUnits = "1000") {
-  const price = `$${(Number(priceUnits) / 1e6).toFixed(3)}`;
-
-  const requirements = async () => {
+/**
+ * @param agentSkill skill slug this agent is registered under in IdentityRegistryV2; payee and price are read from
+ *                   that registry record (cached 60s), so every agent is paid at its own address.
+ */
+export function createX402Middleware(agentSkill: string, resourceUrl: string) {
+  const requirements = async (agent: RegistryAgent) => {
     const e = env();
     return {
       scheme: "exact",
       network: e.network,
-      payTo: e.payTo,
-      price,
-      maxAmountRequired: priceUnits,
+      payTo: agent.payee,
+      price: priceLabel(agent.priceUnits),
+      maxAmountRequired: agent.priceUnits.toString(),
       asset: e.asset,
       assetDecimals: 6,
       symbol: "USDC",
       resource: resourceUrl,
       description: `Pay-per-call access to the ${agentSkill} agent`,
       maxTimeoutSeconds: 3600,
-      extra: { eip712: await getUsdcDomain() }
+      extra: { eip712: await getUsdcDomain(), agentId: agent.id, identityRegistry: identityAddress() }
     };
   };
 
-  const reject = async (res: Response, reason: string) =>
-    res.status(402).json({ status: 402, error: "Payment Required", reason, x402: { version: "2", accepts: [await requirements()] } });
+  const reject = async (res: Response, agent: RegistryAgent, reason: string) =>
+    res.status(402).json({ status: 402, error: "Payment Required", reason, x402: { version: "2", accepts: [await requirements(agent)] } });
 
   return async function x402Middleware(req: Request, res: Response, next: NextFunction) {
     const e = env();
     const header = (req.headers["x-payment-authorization"] || req.headers["x-payment"]) as string | undefined;
 
+    // Fail closed: without a registry record there is no payee to pay
+    let agent: RegistryAgent | undefined;
+    try {
+      agent = await agentForSkill(agentSkill);
+    } catch (err: any) {
+      return res.status(503).json({ error: "IdentityRegistryV2 unreachable", details: err.shortMessage || err.message });
+    }
+    if (!agent) return res.status(503).json({ error: `No active agent registered for skill "${agentSkill}"` });
+    const price = priceLabel(agent.priceUnits);
+    const priceUnits = agent.priceUnits;
+
     if (!header) {
-      res.set("WWW-Authenticate", `x402 scheme="exact", network="${e.network}", payTo="${e.payTo}", asset="${e.asset}", price="${price}"`);
-      return reject(res, "Missing X-Payment-Authorization header");
+      res.set("WWW-Authenticate", `x402 scheme="exact", network="${e.network}", payTo="${agent.payee}", asset="${e.asset}", price="${price}"`);
+      return reject(res, agent, "Missing X-Payment-Authorization header");
     }
 
     // Accept raw JSON, base64 JSON, or the x402 v2 { payload: { authorization, signature } } envelope
@@ -138,11 +154,11 @@ export function createX402Middleware(agentSkill: string, resourceUrl: string, pr
       }
       if (p?.payload?.authorization) p = { ...p.payload.authorization, signature: p.payload.signature };
     } catch {
-      return reject(res, "Malformed payment payload");
+      return reject(res, agent, "Malformed payment payload");
     }
 
     const missing = ["from", "to", "value", "validAfter", "validBefore", "nonce", "signature"].filter((k) => p?.[k] === undefined || p?.[k] === "");
-    if (missing.length) return reject(res, `Payment payload missing: ${missing.join(", ")}`);
+    if (missing.length) return reject(res, agent, `Payment payload missing: ${missing.join(", ")}`);
 
     // ---- Verify ----
     let from: string;
@@ -157,16 +173,16 @@ export function createX402Middleware(agentSkill: string, resourceUrl: string, pr
         nonce: p.nonce
       };
       const recovered = ethers.verifyTypedData(domain, TYPES, message, p.signature);
-      if (recovered.toLowerCase() !== message.from.toLowerCase()) return reject(res, "Signature does not match payer");
-      if (message.to.toLowerCase() !== e.payTo.toLowerCase()) return reject(res, `Payment must be addressed to ${e.payTo}`);
-      if (message.value < BigInt(priceUnits)) return reject(res, `Insufficient amount: ${price} required`);
+      if (recovered.toLowerCase() !== message.from.toLowerCase()) return reject(res, agent, "Signature does not match payer");
+      if (message.to.toLowerCase() !== agent.payee.toLowerCase()) return reject(res, agent, `Payment must be addressed to this agent's payee ${agent.payee}`);
+      if (message.value < priceUnits) return reject(res, agent, `Insufficient amount: ${price} required`);
       const now = BigInt(Math.floor(Date.now() / 1000));
-      if (now <= message.validAfter || now >= message.validBefore) return reject(res, "Authorization outside its validity window");
+      if (now <= message.validAfter || now >= message.validBefore) return reject(res, agent, "Authorization outside its validity window");
       const used = await chain().usdc.authorizationState(message.from, message.nonce).catch(() => false);
-      if (used) return reject(res, "Authorization nonce already used (replay)");
+      if (used) return reject(res, agent, "Authorization nonce already used (replay)");
       from = message.from;
     } catch (err: any) {
-      return reject(res, `Invalid payment authorization: ${err.shortMessage || err.message}`);
+      return reject(res, agent, `Invalid payment authorization: ${err.shortMessage || err.message}`);
     }
 
     // ---- Settle ----
@@ -177,7 +193,8 @@ export function createX402Middleware(agentSkill: string, resourceUrl: string, pr
       status: "failed",
       signatureVerified: true,
       from,
-      payTo: e.payTo,
+      payTo: agent.payee,
+      agentId: agent.id,
       amount: `${price} USDC`,
       amountUnits: String(p.value),
       timestamp: new Date().toISOString()
@@ -215,7 +232,7 @@ export function createX402Middleware(agentSkill: string, resourceUrl: string, pr
     }
 
     if (!receipt.settled && e.requireSettlement) {
-      return reject(res, `Settlement ${receipt.status}: ${receipt.reason}`);
+      return reject(res, agent, `Settlement ${receipt.status}: ${receipt.reason}`);
     }
 
     (req as any).x402Settlement = receipt;

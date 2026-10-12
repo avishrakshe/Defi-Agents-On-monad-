@@ -6,25 +6,25 @@ import * as path from "path";
 dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 
 import { ethers } from "ethers";
-import { decomposeTask, Subtask } from "./router";
+import { decomposeTask, Subtask, toSubtask } from "./router";
 import { executeAll } from "./modeA";
 import { executeSubtask } from "./executor";
 import { buildSummary, polishSummary } from "./synthesizer";
 import { getBalances, getOrchestratorWallet, getProvider } from "./x402Client";
 import { measureBlockTime } from "../../agents/gas-timing-agent/gasAnalyzer";
+import {
+  IDENTITY_V2_ABI,
+  REPUTATION_V2_ABI,
+  identityAddress,
+  listRegistryAgents,
+  reputationAddress,
+  stakeManagerAddress
+} from "../../agents/shared/registry";
 
 const app = express();
 const PORT = process.env.ORCHESTRATOR_PORT || 4000;
-
-const IDENTITY = () => process.env.NEXT_PUBLIC_IDENTITY_REGISTRY_ADDRESS || "0xD62b32482874E447Beb60E6Df5A21E6ebaFf54ad";
-const REPUTATION = () => process.env.NEXT_PUBLIC_REPUTATION_REGISTRY_ADDRESS || "0x7b398a8F83133d5E28b4cce7c3131b4Ba8C486E0";
 const EXPLORER = () => process.env.NEXT_PUBLIC_MONAD_EXPLORER_URL || "https://testnet.monadvision.com";
-
-const IDENTITY_ABI = [
-  "function registerAgent(string name, string skill, string endpoint, uint256 priceUSDC, string metadataURI) external returns (uint256)",
-  "function getAllAgents() external view returns (tuple(uint256 id, address owner, string name, string skill, string endpoint, uint256 priceUSDC, string metadataURI, uint256 registeredAt, bool active)[])",
-  "event AgentRegistered(uint256 indexed agentId, address indexed owner, string skill, string name, uint256 priceUSDC, string endpoint, string metadataURI)"
-];
+const isBytes32 = (v: unknown): v is string => typeof v === "string" && /^0x[0-9a-fA-F]{64}$/.test(v);
 
 app.use(cors());
 app.use(express.json());
@@ -63,26 +63,29 @@ app.get("/api/chain-metrics", async (req, res) => {
   }
 });
 
-// Live orchestrator status: real balances + reachability of each specialist
+const AGENT_URL_ENV: Record<string, string> = {
+  "contract-audit": "CONTRACT_AUDITOR_URL",
+  "token-risk-score": "TOKEN_RISK_URL",
+  "gas-timing": "GAS_TIMING_URL",
+  "whale-tracker": "WHALE_AGENT_URL"
+};
+
+// Live orchestrator status: real balances + reachability of each registered specialist
 app.get("/api/status", async (req, res) => {
   const wallet = getOrchestratorWallet();
   const address = wallet?.address || process.env.ORCHESTRATOR_WALLET_ADDRESS || null;
-  const agents = [
-    { id: 1, name: "Smart Contract Auditor", skill: "contract-audit", url: process.env.CONTRACT_AUDITOR_URL || "http://localhost:4001" },
-    { id: 2, name: "Token Risk Scorer", skill: "token-risk-score", url: process.env.TOKEN_RISK_URL || "http://localhost:4002" },
-    { id: 3, name: "Gas Price & Timing Agent", skill: "gas-timing", url: process.env.GAS_TIMING_URL || "http://localhost:4003" },
-    { id: 4, name: "Whale & Liquidity Sentinel", skill: "whale-tracker", url: process.env.WHALE_AGENT_URL || "http://localhost:4004" }
-  ];
+  const registry = await listRegistryAgents().catch(() => []);
   const [balances, health] = await Promise.all([
     address ? getBalances(address).catch(() => null) : Promise.resolve(null),
     Promise.all(
-      agents.map(async (a) => {
+      registry.map(async (a) => {
+        const envBase = AGENT_URL_ENV[a.skill] && process.env[AGENT_URL_ENV[a.skill]];
+        const healthUrl = envBase ? `${envBase.replace(/\/$/, "")}/health` : a.endpoint.replace(/\/api\/[^/]+$/, "/health");
+        let online = false;
         try {
-          const r = await fetch(`${a.url}/health`, { signal: AbortSignal.timeout(2500) });
-          return { ...a, online: r.ok };
-        } catch {
-          return { ...a, online: false };
-        }
+          online = (await fetch(healthUrl, { signal: AbortSignal.timeout(2500) })).ok;
+        } catch {}
+        return { id: a.id, name: a.name, skill: a.skill, owner: a.owner, payee: a.payee, active: a.active, online };
       })
     )
   ]);
@@ -94,35 +97,39 @@ app.get("/api/status", async (req, res) => {
     canSettlePayments: balances ? Number(balances.usdc) >= 0.001 : false,
     network: "Monad Testnet",
     chainId: 10143,
+    contracts: { identityRegistry: identityAddress(), reputationRegistry: reputationAddress(), stakeManager: stakeManagerAddress() },
     llmPolishAvailable: !!process.env.OPENAI_API_KEY,
     agents: health
   });
 });
 
-// Broadcast verified onchain feedback to Monad Testnet
+/**
+ * Operator review for a Mode A call the orchestrator itself paid for. Stored as Operator in ReputationRegistryV2;
+ * the contract refuses calls a client paid for, so this endpoint can't pre-empt a user's own review.
+ */
 app.post("/api/feedback", async (req, res) => {
   try {
-    const { agentId = 1, score = 95, note = "Verified onchain agent feedback", reviewer } = req.body;
+    const { agentId, callId, score, note = "" } = req.body || {};
+    if (!Number.isInteger(agentId) || !isBytes32(callId) || typeof score !== "number") {
+      return res.status(400).json({ error: "agentId (int), callId (bytes32) and score (0-100) are required" });
+    }
     const wallet = requireWallet();
-    const rep = new ethers.Contract(
-      REPUTATION(),
-      [
-        "function submitFeedbackFor(uint256 agentId, address reviewer, uint8 score, string note) external",
-        "function getReputation(uint256 agentId) external view returns (uint256 avgScore, uint256 feedbackCount)"
-      ],
-      wallet
-    );
-
-    const tx = await rep.submitFeedbackFor(agentId, reviewer || wallet.address, Math.min(100, Math.max(0, Math.round(score))), String(note).slice(0, 280));
+    const rep = new ethers.Contract(reputationAddress(), REPUTATION_V2_ABI, wallet);
+    const tx = await rep.submitFeedbackFor(agentId, callId, Math.min(100, Math.max(0, Math.round(score))), String(note).slice(0, 280));
     const receipt = await tx.wait();
-    const [avg, count] = await rep.getReputation(agentId);
+    const [[, , avgInd, countInd], [avgOp, countOp]] = await Promise.all([rep.getReputation(agentId), rep.getOperatorReputation(agentId)]);
 
     return res.json({
       success: true,
+      kind: "Operator",
       txHash: tx.hash,
       blockNumber: receipt.blockNumber,
       explorerUrl: `${EXPLORER()}/tx/${tx.hash}`,
-      reputation: { agentId, avgScore: Number(avg), feedbackCount: Number(count) }
+      reputation: {
+        agentId,
+        independent: { avg: Number(avgInd), count: Number(countInd) },
+        operator: { avg: Number(avgOp), count: Number(countOp) }
+      }
     });
   } catch (err: any) {
     console.error("[Feedback Broadcast Error]:", err.shortMessage || err.message);
@@ -130,31 +137,33 @@ app.post("/api/feedback", async (req, res) => {
   }
 });
 
-// One-shot orchestration (decompose → execute all → synthesize)
+// One-shot orchestration (decompose → execute all → synthesize). Mode A only: Mode B needs a 402 round trip per
+// agent in the browser, which the step-by-step /api/execute-step flow provides.
 app.post("/api/orchestrate", async (req, res) => {
   try {
-    const { taskText, mode = "A", authorizations } = req.body;
+    const { taskText } = req.body;
     if (!taskText || typeof taskText !== "string") {
       return res.status(400).json({ error: "taskText string is required" });
     }
 
-    const subtasks = decomposeTask(taskText);
+    const subtasks = await decomposeTask(taskText);
     if (subtasks.length === 0) {
       return res.status(400).json({
         error: "Task Unroutable",
         message: "Unable to decompose task into specialized subtasks. Please include a token or contract address (0x...) and/or specify what you'd like analyzed (e.g., 'gas', 'risk', 'audit')."
       });
     }
-
-    const useB = mode === "B" && Array.isArray(authorizations);
-    return res.json(await executeAll(taskText, subtasks, useB ? "B" : "A", useB ? authorizations : undefined));
+    return res.json(await executeAll(taskText, subtasks, "A"));
   } catch (err: any) {
     console.error("[Orchestrator Error]:", err);
     return res.status(500).json({ error: "Internal Orchestrator Error", details: err.message });
   }
 });
 
-// Onchain agent registration
+/**
+ * Relayed registration: the operator pays the gas, registers with payee = ownerAddress and immediately transfers
+ * ownership to ownerAddress, so the operator never ends up owning a community agent.
+ */
 app.post("/api/register-agent", async (req, res) => {
   try {
     const {
@@ -167,42 +176,43 @@ app.post("/api/register-agent", async (req, res) => {
       ownerAddress
     } = req.body;
 
-    if (!name || !skill || !endpoint) {
-      return res.status(400).json({ error: "name, skill, and endpoint are required" });
+    if (!name || !skill || !endpoint) return res.status(400).json({ error: "name, skill, and endpoint are required" });
+    if (!ownerAddress || !ethers.isAddress(ownerAddress)) {
+      return res.status(400).json({ error: "ownerAddress (the wallet that will own the agent and receive its payments) is required" });
     }
+    const owner = ethers.getAddress(ownerAddress);
 
     const wallet = requireWallet();
-    const identity = new ethers.Contract(IDENTITY(), IDENTITY_ABI, wallet);
-    const metadata = { description, dataSource, author: ownerAddress || wallet.address, registeredVia: "DeFi Agent Marketplace Monad" };
+    const identity = new ethers.Contract(identityAddress(), IDENTITY_V2_ABI, wallet);
+    const metadata = { description, dataSource, registeredVia: "DeFi Agent Marketplace (operator-relayed)" };
 
-    const tx = await identity.registerAgent(name, skill, endpoint, priceUSDC, JSON.stringify(metadata));
+    const tx = await identity.registerAgent(name, skill, endpoint, priceUSDC, JSON.stringify(metadata), owner);
     const receipt = await tx.wait();
 
-    let registeredAgentId: number | null = null;
+    let agentId: number | null = null;
     for (const log of receipt?.logs || []) {
       try {
         const parsed = identity.interface.parseLog(log);
         if (parsed?.name === "AgentRegistered") {
-          registeredAgentId = Number(parsed.args.agentId);
+          agentId = Number(parsed.args.agentId);
           break;
         }
       } catch {}
     }
+    if (agentId === null) throw new Error("AgentRegistered event not found");
+
+    const transferTx = await identity.transferAgentOwnership(agentId, owner);
+    await transferTx.wait();
+    await listRegistryAgents(true).catch(() => undefined);
 
     return res.json({
       success: true,
-      agentId: registeredAgentId,
+      agentId,
       txHash: tx.hash,
+      transferTxHash: transferTx.hash,
       blockNumber: receipt.blockNumber,
       explorerUrl: `${EXPLORER()}/tx/${tx.hash}`,
-      agent: {
-        id: registeredAgentId,
-        name,
-        skill,
-        endpoint,
-        priceUSDC: `$${(Number(priceUSDC) / 1_000_000).toFixed(3)}`,
-        owner: ownerAddress || wallet.address
-      }
+      agent: { id: agentId, name, skill, endpoint, priceUSDC: `$${(Number(priceUSDC) / 1_000_000).toFixed(3)}`, owner, payee: owner }
     });
   } catch (err: any) {
     console.error("[Agent Registration Error]:", err.shortMessage || err.message);
@@ -210,67 +220,55 @@ app.post("/api/register-agent", async (req, res) => {
   }
 });
 
-// Decompose with dynamic onchain discovery of community agents
+// Decompose and annotate every subtask with its live registry status, stake and split reputation
 app.post("/api/decompose", async (req, res) => {
   const { taskText } = req.body;
   if (!taskText) return res.status(400).json({ error: "taskText required" });
 
-  const subtasks: Subtask[] = decomposeTask(taskText);
-  const addresses: string[] = taskText.match(/0x[a-fA-F0-9]{40}/g) || [];
-
   try {
-    const identity = new ethers.Contract(IDENTITY(), IDENTITY_ABI, getProvider());
-    const onchainAgents = await identity.getAllAgents();
-    const lower = taskText.toLowerCase();
-
-    for (const a of onchainAgents) {
-      const id = Number(a.id);
-      if (id <= 3 || !a.active) continue;
-      const skill = String(a.skill).toLowerCase();
-      const name = String(a.name).toLowerCase();
-      const keywords = skill.split(/[-_\s]/).concat(name.split(/[\s&]+/)).filter((k: string) => k.length > 3);
-
-      if (lower.includes(skill) || lower.includes(name) || keywords.some((k: string) => lower.includes(k))) {
-        // Deployment-provided URLs win over the onchain endpoint (agent #4 is registered at localhost:4004, and its
-        // registry record is still controlled by the retired operator key, so it must not be trusted blindly)
-        const override = id === 4 && process.env.WHALE_AGENT_URL ? `${process.env.WHALE_AGENT_URL}/api/whale` : undefined;
-        subtasks.push({
-          agentId: id,
-          skill: a.skill,
-          targetUrl: override || a.endpoint,
-          priceUSDC: `$${(Number(a.priceUSDC) / 1_000_000).toFixed(3)}`,
-          agentName: a.name,
-          tokenAddress: addresses[0]
-        });
-      }
-    }
-    // Trust check: annotate every subtask with its live registry status and onchain reputation
-    const rep = new ethers.Contract(
-      REPUTATION(),
-      ["function getReputation(uint256 agentId) external view returns (uint256 avgScore, uint256 feedbackCount)"],
-      getProvider()
-    );
+    const subtasks: (Subtask & { trust?: any })[] = await decomposeTask(taskText);
+    const registry = await listRegistryAgents();
+    const rep = new ethers.Contract(reputationAddress(), REPUTATION_V2_ABI, getProvider());
+    const stake = new ethers.Contract(stakeManagerAddress(), ["function getStake(uint256) view returns (uint256)"], getProvider());
     await Promise.all(
-      subtasks.map(async (s: any) => {
-        const reg = onchainAgents.find((a: any) => Number(a.id) === s.agentId);
-        const [avg, count] = await rep.getReputation(s.agentId).catch(() => [0n, 0n]);
-        s.trust = { registered: !!reg, active: !!reg?.active, owner: reg?.owner, avgScore: Number(avg), feedbackCount: Number(count) };
+      subtasks.map(async (s) => {
+        const reg = registry.find((a) => a.id === s.agentId);
+        const [r, op, st] = await Promise.all([
+          rep.getReputation(s.agentId).catch(() => null),
+          rep.getOperatorReputation(s.agentId).catch(() => null),
+          stake.getStake(s.agentId).catch(() => null)
+        ]);
+        s.trust = {
+          registered: !!reg,
+          active: !!reg?.active,
+          owner: reg?.owner,
+          payee: reg?.payee,
+          stakeUSDC: st === null ? null : Number(st) / 1e6,
+          independent: r ? { avg: Number(r[2]), count: Number(r[3]) } : null,
+          operator: op ? { avg: Number(op[0]), count: Number(op[1]) } : null
+        };
       })
     );
+    return res.json({ subtasks });
   } catch (err: any) {
-    console.warn("Could not query dynamic onchain agents:", err.shortMessage || err.message);
+    console.warn("Decompose failed:", err.shortMessage || err.message);
+    return res.status(502).json({ error: "Could not read IdentityRegistryV2", details: err.shortMessage || err.message });
   }
-
-  return res.json({ subtasks });
 });
 
 // Execute a single subtask (used by the frontend for step-by-step streaming)
 app.post("/api/execute-step", async (req, res) => {
   try {
-    const { subtask, mode = "A", authorization, clientAddress } = req.body;
-    if (!subtask?.targetUrl) return res.status(400).json({ error: "subtask with targetUrl required" });
+    const { subtask: requested, mode = "A", authorization } = req.body;
+    if (!Number.isInteger(requested?.agentId)) return res.status(400).json({ error: "subtask with agentId required" });
 
-    const step = await executeSubtask({ subtask, mode, authorization, clientAddress });
+    // The target URL, skill and price come from the registry record, never from the request
+    const reg = (await listRegistryAgents()).find((a) => a.id === requested.agentId);
+    if (!reg || !reg.active) return res.status(400).json({ error: `Agent #${requested.agentId} is not an active IdentityRegistryV2 agent` });
+    const pick = (v: unknown) => (typeof v === "string" && /^0x[a-fA-F0-9]{40}$/.test(v) ? v : undefined);
+    const subtask = toSubtask(reg, { tokenAddress: pick(requested.tokenAddress), contractAddress: pick(requested.contractAddress) });
+
+    const step = await executeSubtask({ subtask, mode: mode === "B" ? "B" : "A", authorization });
     return res.json({ success: true, subtask, settlement: step.settlement, result: step.result, durationMs: step.durationMs });
   } catch (err: any) {
     console.error("[execute-step Error]:", err.message);
