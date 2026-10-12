@@ -342,6 +342,8 @@ export const TaskConsole: React.FC<TaskConsoleProps> = ({ initialPrompt }) => {
       }
 
       if (Object.keys(accumulated).length === 0) throw new Error("No specialist returned data.");
+      // Start watching for the checkpoint as soon as the payments are in, not after the answer has typed out
+      if (mb) watchSettlement(baselineMetrics, runStarted);
 
       // 4. Synthesize
       setStatusMessage("Synthesizing multi-agent intelligence...");
@@ -363,8 +365,7 @@ export const TaskConsole: React.FC<TaskConsoleProps> = ({ initialPrompt }) => {
       }
 
       if (mb) {
-        setStatusMessage("Completed — payments settled on the MagicBlock ER; waiting for the next checkpoint to commit them to Solana.");
-        watchSettlement(baselineMetrics, runStarted);
+        setStatusMessage("Completed — payments settled on the MagicBlock ER; the next checkpoint commits them to Solana (see below).");
       } else {
         setStatusMessage("Completed — every hash below is a real Monad Testnet transaction.");
       }
