@@ -4,6 +4,14 @@
   "private": true,
   "description": "Orchestrator + specialist agents for the DeFi Agent Marketplace on Monad Testnet (Vercel deployment)",
   "main": "server.ts",
+  "engines": {
+    "node": "24.x"
+  },
+  "overrides": {
+    "rpc-websockets": {
+      "uuid": "11.1.0"
+    }
+  },
   "scripts": {
     "start": "ts-node server.ts",
     "typecheck": "tsc --noEmit"
