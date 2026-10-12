@@ -1,9 +1,12 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { ExternalLink } from "lucide-react";
 import { AgentPortrait, variantForSkill } from "./AgentPortrait";
+import { submitClientFeedback } from "../lib/wallet";
+import { MONAD_CONTRACTS } from "../lib/contracts";
+import { useActivityStore } from "../lib/activity-store";
 
 export interface AgentRun {
   agentId: number;
@@ -11,7 +14,106 @@ export interface AgentRun {
   skill: string;
   result: any;
   durationMs?: number;
+  /** Present when the call was paid and recorded in ReputationRegistryV2 */
+  review?: {
+    mode: "A" | "B";
+    callId: string;
+    /** Mode A: the operator review written automatically */
+    operatorScore?: number;
+    operatorTx?: string;
+  };
 }
+
+/** 1–5 stars → 0–100 */
+const starsToScore = (stars: number) => stars * 20;
+
+const ReviewBar: React.FC<{ run: AgentRun }> = ({ run }) => {
+  const [stars, setStars] = useState(0);
+  const [hover, setHover] = useState(0);
+  const [state, setState] = useState<"idle" | "signing" | "done" | "error">("idle");
+  const [tx, setTx] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const r = run.review!;
+
+  if (r.mode === "A") {
+    return (
+      <div className="px-4 py-2.5 border-t border-ink/20 font-mono text-[11px] text-ink-2 flex flex-wrap items-center justify-between gap-2">
+        <span>Operator review {r.operatorScore !== undefined ? `${r.operatorScore}/100` : "not recorded"} · not independent</span>
+        {r.operatorTx && (
+          <a href={`${EXPLORER}/tx/${r.operatorTx}`} target="_blank" rel="noreferrer" className="text-violet hover:underline">
+            {short(r.operatorTx)} ↗
+          </a>
+        )}
+      </div>
+    );
+  }
+
+  const submit = async () => {
+    if (!stars) return;
+    setState("signing");
+    setErr(null);
+    try {
+      const res = await submitClientFeedback(MONAD_CONTRACTS.reputationRegistry, run.agentId, r.callId, starsToScore(stars), `${stars}/5 stars`);
+      setTx(res.txHash);
+      setState("done");
+      useActivityStore.getState().addActivity({
+        type: "reputation_feedback",
+        title: `Independent review · ${run.agentName}`,
+        description: `${stars}/5 stars (${starsToScore(stars)}/100) from the paying wallet, tied to call ${r.callId.slice(0, 10)}…`,
+        txHash: res.txHash,
+        blockNumber: res.blockNumber,
+        timestamp: new Date().toISOString(),
+        status: "confirmed",
+        from: res.from,
+        to: MONAD_CONTRACTS.reputationRegistry,
+        contractName: "ReputationRegistryV2",
+        agentId: run.agentId,
+        agentName: run.agentName,
+        skill: run.skill,
+        metadata: { scoreGiven: starsToScore(stars), callId: r.callId, reviewerKind: "Independent" }
+      });
+    } catch (e: any) {
+      setErr(e?.shortMessage || e?.reason || e?.message || "Review failed");
+      setState("error");
+    }
+  };
+
+  return (
+    <div className="px-4 py-3 border-t border-ink/20 font-mono text-[11px]">
+      {state === "done" && tx ? (
+        <div className="flex flex-wrap items-center justify-between gap-2 text-moss">
+          <span>Independent review {stars}/5 recorded</span>
+          <a href={`${EXPLORER}/tx/${tx}`} target="_blank" rel="noreferrer" className="hover:underline">
+            {short(tx)} ↗
+          </a>
+        </div>
+      ) : (
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="text-ink-2">Rate this call</span>
+          <span className="flex" onMouseLeave={() => setHover(0)}>
+            {[1, 2, 3, 4, 5].map((n) => (
+              <button
+                key={n}
+                type="button"
+                aria-label={`${n} star${n > 1 ? "s" : ""}`}
+                onMouseEnter={() => setHover(n)}
+                onClick={() => setStars(n)}
+                disabled={state === "signing"}
+                className={`text-[18px] leading-none px-0.5 ${(hover || stars) >= n ? "text-flame" : "text-ink-3"}`}
+              >
+                ★
+              </button>
+            ))}
+          </span>
+          <button onClick={submit} disabled={!stars || state === "signing"} className="btn-ghost btn-sm disabled:opacity-50">
+            {state === "signing" ? "Confirm in wallet…" : "Submit review"}
+          </button>
+          {err && <span className="text-flame basis-full">{err}</span>}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const EXPLORER = "https://testnet.monadvision.com";
 const short = (a?: string) => (a ? `${a.slice(0, 6)}…${a.slice(-4)}` : "—");
@@ -78,6 +180,7 @@ const Sheet: React.FC<{ run: AgentRun; title: string; children: React.ReactNode;
       </span>
     </header>
     <div className="p-4">{children}</div>
+    {run.review && <ReviewBar run={run} />}
   </motion.article>
 );
 

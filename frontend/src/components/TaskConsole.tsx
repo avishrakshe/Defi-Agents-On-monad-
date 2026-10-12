@@ -1,12 +1,22 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { connectBrowserWallet, signRealX402Payment } from "../lib/wallet";
+import { connectBrowserWallet, quoteX402, signRealX402Payment } from "../lib/wallet";
 import { ORCHESTRATOR_ADDRESS } from "../lib/useBalances";
 import { useActivityStore } from "../lib/activity-store";
-import { MONAD_CONTRACTS } from "../lib/contracts";
+import { MONAD_CONTRACTS, ReviewSplit, splitLabel } from "../lib/contracts";
 import { AgentResultCards, AgentRun } from "./AgentResultCards";
 import { getOrchestratorUrl } from "../lib/orchestrator";
+
+interface Trust {
+  registered: boolean;
+  active: boolean;
+  owner?: string;
+  payee?: string;
+  stakeUSDC: number | null;
+  independent: ReviewSplit | null;
+  operator: ReviewSplit | null;
+}
 
 interface StepLog {
   agentId: number;
@@ -14,13 +24,25 @@ interface StepLog {
   skill: string;
   state: "signing" | "running" | "recording" | "done" | "failed";
   payment?: { status: string; txHash?: string; reason?: string };
+  payee?: string;
+  callId?: string;
   recordTx?: string;
   feedbackTx?: string;
   score?: number;
   durationMs?: number;
   error?: string;
-  trust?: { active: boolean; avgScore: number; feedbackCount: number };
+  trust?: Trust;
 }
+
+/** Same request body the orchestrator sends, so the 402 probe hits the same resource */
+const requestBodyFor = (s: any) =>
+  s.skill === "token-risk-score"
+    ? { tokenAddress: s.tokenAddress }
+    : s.skill === "contract-audit"
+    ? { contractAddress: s.contractAddress }
+    : s.skill === "gas-timing"
+    ? { network: "monad-testnet" }
+    : { tokenAddress: s.tokenAddress, contractAddress: s.contractAddress, network: "monad-testnet" };
 
 const EXPLORER = "https://testnet.monadvision.com";
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -141,11 +163,21 @@ export const TaskConsole: React.FC<TaskConsoleProps> = ({ initialPrompt }) => {
         const t0 = Date.now();
 
         try {
-          // Mode B: one fresh EIP-3009 authorization per call (unique nonce — never reused)
+          // Mode B: real x402 round trip from the browser — read the agent's 402, then sign to *its* payee
           let authorization: any;
           if (useUserWallet) {
-            setStatusMessage(`[${i + 1}/${subtasks.length}] Sign ${subtask.priceUSDC} USDC for ${subtask.agentName} in your wallet...`);
-            authorization = await signRealX402Payment(payer, orchestratorAddress, "1000");
+            setStatusMessage(`[${i + 1}/${subtasks.length}] Reading ${subtask.agentName}'s payment requirements (HTTP 402)...`);
+            const quote = await quoteX402(subtask.targetUrl, requestBodyFor(subtask));
+            if (quote.agentId !== undefined && quote.agentId !== subtask.agentId) {
+              throw new Error(`402 is for agent #${quote.agentId}, expected #${subtask.agentId}`);
+            }
+            if (subtask.trust?.payee && quote.payTo.toLowerCase() !== subtask.trust.payee.toLowerCase()) {
+              throw new Error(`402 payTo ${quote.payTo} is not the registered payee ${subtask.trust.payee}`);
+            }
+            setStatusMessage(
+              `[${i + 1}/${subtasks.length}] Sign ${(Number(quote.maxAmountRequired) / 1e6).toFixed(3)} USDC to ${quote.payTo.slice(0, 6)}…${quote.payTo.slice(-4)} in your wallet...`
+            );
+            authorization = await signRealX402Payment(payer, quote.payTo, quote.maxAmountRequired);
           }
 
           patchStep(i, { state: "running" });
@@ -154,77 +186,98 @@ export const TaskConsole: React.FC<TaskConsoleProps> = ({ initialPrompt }) => {
           const stepRes = await fetch(`${orchestratorUrl}/api/execute-step`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ subtask, mode: useUserWallet ? "B" : "A", authorization, clientAddress: payer })
+            body: JSON.stringify({ subtask, mode: useUserWallet ? "B" : "A", authorization })
           });
           const stepData = await stepRes.json();
           if (!stepRes.ok) throw new Error(stepData.details || stepData.error || "Subtask execution failed");
 
           const durationMs = Date.now() - t0;
-          const pay = stepData.settlement?.payment;
-          const recordTx: string | undefined = stepData.settlement?.recordTxHash;
+          const st = stepData.settlement || {};
+          const pay = st.payment;
+          const recordTx: string | undefined = st.recordTxHash;
+          const callId: string | undefined = st.callId;
           const slot =
             subtask.skill === "token-risk-score" ? "riskScore" : subtask.skill === "contract-audit" ? "audit" : subtask.skill === "gas-timing" ? "gasTiming" : subtask.skill;
           accumulated[slot] = stepData.result;
-          setRuns((prev) => [...prev, { agentId: subtask.agentId, agentName: subtask.agentName, skill: subtask.skill, result: stepData.result, durationMs }]);
-          patchStep(i, { state: "recording", payment: pay && { status: pay.status, txHash: pay.txHash, reason: pay.reason }, recordTx, durationMs });
+          patchStep(i, {
+            state: "recording",
+            payment: pay && { status: pay.status, txHash: pay.txHash, reason: pay.reason },
+            payee: st.payee,
+            callId,
+            recordTx,
+            durationMs
+          });
 
-          if (recordTx) {
+          if (pay?.settled) {
             useActivityStore.getState().addActivity({
               type: "x402_payment",
               title: `x402 call · ${subtask.agentName}`,
-              description: pay?.settled
-                ? `Settled ${pay.amount} via EIP-3009 and recorded the paid call onchain.`
-                : `Paid-call recorded onchain. USDC settlement: ${pay?.status ?? "n/a"}${pay?.reason ? ` — ${pay.reason}` : ""}`,
-              txHash: recordTx,
-              blockNumber: stepData.settlement?.recordBlockNumber,
+              description: `Settled ${pay.amount} to the agent's payee ${pay.payTo} via EIP-3009${callId ? ` and recorded paid call ${callId.slice(0, 10)}…` : ""}.`,
+              txHash: pay.txHash,
+              blockNumber: pay.blockNumber,
               timestamp: new Date().toISOString(),
-              status: pay?.settled ? "settled" : "confirmed",
+              status: "settled",
               from: payer,
-              to: MONAD_CONTRACTS.reputationRegistry,
-              contractName: "ReputationRegistry",
+              to: pay.payTo,
+              contractName: "USDC (EIP-3009)",
               agentId: subtask.agentId,
               agentName: subtask.agentName,
               skill: subtask.skill,
-              amount: pay?.settled ? pay.amount : "0 USDC (unsettled)",
-              metadata: { paymentTxHash: pay?.txHash, mode: useUserWallet ? "Mode B (Client Signed)" : "Mode A (Autonomous)" }
+              amount: pay.amount,
+              metadata: { recordTxHash: recordTx, callId, mode: useUserWallet ? "Mode B (Client Signed)" : "Mode A (Autonomous)" }
             });
           }
 
-          // 3. Rate the specialist onchain
-          const { score, note } = qualityScore(subtask.skill, stepData.result, durationMs);
-          setStatusMessage(`[${i + 1}/${subtasks.length}] Recording onchain feedback for ${subtask.agentName} (${score}/100)...`);
+          // 3. Mode A: the orchestrator rates the call it paid for — stored as an Operator review.
+          //    Mode B: no automatic review; the user rates from their own wallet on the result card (independent).
           let feedbackTx: string | undefined;
-          try {
-            const fbRes = await fetch(`${orchestratorUrl}/api/feedback`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ agentId: subtask.agentId, score, note, reviewer: payer })
-            });
-            const fb = await fbRes.json();
-            if (fbRes.ok && fb.txHash) {
-              feedbackTx = fb.txHash;
-              useActivityStore.getState().addActivity({
-                type: "reputation_feedback",
-                title: `Reputation feedback · ${subtask.agentName}`,
-                description: `Submitted ${score}/100 to ReputationRegistry. New average ${fb.reputation?.avgScore}/100 over ${fb.reputation?.feedbackCount} reviews.`,
-                txHash: fb.txHash,
-                blockNumber: fb.blockNumber,
-                timestamp: new Date().toISOString(),
-                status: "confirmed",
-                from: payer,
-                to: MONAD_CONTRACTS.reputationRegistry,
-                contractName: "ReputationRegistry",
-                agentId: subtask.agentId,
-                agentName: subtask.agentName,
-                skill: subtask.skill,
-                amount: "0 MON",
-                metadata: { scoreGiven: score, note }
+          let score: number | undefined;
+          if (!useUserWallet && callId) {
+            const q = qualityScore(subtask.skill, stepData.result, durationMs);
+            score = q.score;
+            setStatusMessage(`[${i + 1}/${subtasks.length}] Recording operator review for ${subtask.agentName} (${score}/100)...`);
+            try {
+              const fbRes = await fetch(`${orchestratorUrl}/api/feedback`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ agentId: subtask.agentId, callId, score, note: q.note })
               });
+              const fb = await fbRes.json();
+              if (fbRes.ok && fb.txHash) {
+                feedbackTx = fb.txHash;
+                useActivityStore.getState().addActivity({
+                  type: "reputation_feedback",
+                  title: `Operator review · ${subtask.agentName}`,
+                  description: `Orchestrator scored its own Mode A call ${score}/100. Operator ${splitLabel(fb.reputation.operator)}, independent ${splitLabel(fb.reputation.independent)}.`,
+                  txHash: fb.txHash,
+                  blockNumber: fb.blockNumber,
+                  timestamp: new Date().toISOString(),
+                  status: "confirmed",
+                  from: orchestratorAddress,
+                  to: MONAD_CONTRACTS.reputationRegistry,
+                  contractName: "ReputationRegistryV2",
+                  agentId: subtask.agentId,
+                  agentName: subtask.agentName,
+                  skill: subtask.skill,
+                  metadata: { scoreGiven: score, note: q.note, callId, reviewerKind: "Operator" }
+                });
+              }
+            } catch {
+              // Feedback is best-effort; the step itself already succeeded
             }
-          } catch {
-            // Feedback is best-effort; the step itself already succeeded
           }
 
+          setRuns((prev) => [
+            ...prev,
+            {
+              agentId: subtask.agentId,
+              agentName: subtask.agentName,
+              skill: subtask.skill,
+              result: stepData.result,
+              durationMs,
+              review: callId ? { mode: useUserWallet ? "B" : "A", callId, operatorScore: score, operatorTx: feedbackTx } : undefined
+            }
+          ]);
           patchStep(i, { state: "done", feedbackTx, score });
         } catch (stepErr: any) {
           patchStep(i, { state: "failed", error: stepErr.message, durationMs: Date.now() - t0 });
@@ -304,7 +357,7 @@ export const TaskConsole: React.FC<TaskConsoleProps> = ({ initialPrompt }) => {
         <div className="mt-3 flex flex-wrap gap-2">
           {[
             ["Full scan", "Is token 0x534b2f3A21130d7a60830c2Df862319e593943A3 safe, audit contract 0x534b2f3A21130d7a60830c2Df862319e593943A3, track whale liquidity, and tell me if gas is good right now on Monad."],
-            ["Audit registry", "Audit contract 0x7b398a8F83133d5E28b4cce7c3131b4Ba8C486E0 for vulnerabilities"],
+            ["Audit registry", `Audit contract ${MONAD_CONTRACTS.reputationRegistry} for vulnerabilities`],
             ["Gas now", "What is the current gas timing and congestion on Monad?"],
             ["Whale watch", "Track whale and liquidity moves for 0x534b2f3A21130d7a60830c2Df862319e593943A3"]
           ].map(([label, prompt]) => (
@@ -392,8 +445,18 @@ export const TaskConsole: React.FC<TaskConsoleProps> = ({ initialPrompt }) => {
                       </div>
                       {s.trust && (
                         <div className="text-ink-2">
-                          {s.trust.active ? "✓ registered" : "✗ unregistered"} · rep{" "}
-                          {s.trust.feedbackCount > 0 ? `${s.trust.avgScore}/100 (${s.trust.feedbackCount})` : "none yet"}
+                          {s.trust.active ? "✓ registered" : "✗ unregistered"} · stake{" "}
+                          {s.trust.stakeUSDC === null ? "—" : `${s.trust.stakeUSDC} USDC`} · indep{" "}
+                          {s.trust.independent ? splitLabel(s.trust.independent) : "—"} · operator{" "}
+                          {s.trust.operator ? splitLabel(s.trust.operator) : "—"}
+                        </div>
+                      )}
+                      {s.payee && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-ink-3 w-20 shrink-0">payee</span>
+                          <a href={`${EXPLORER}/address/${s.payee}`} target="_blank" rel="noreferrer" className="text-ink hover:underline truncate">
+                            {s.payee.slice(0, 6)}…{s.payee.slice(-4)} ↗
+                          </a>
                         </div>
                       )}
                       {s.payment && (
@@ -411,12 +474,18 @@ export const TaskConsole: React.FC<TaskConsoleProps> = ({ initialPrompt }) => {
                         </div>
                       )}
                       <TxLink label="recorded" hash={s.recordTx} />
-                      <TxLink label="review" hash={s.feedbackTx} />
+                      {s.state === "done" && s.payment && !s.callId && (
+                        <div className="text-ink-3">no paid call recorded (payment not settled) — not reviewable</div>
+                      )}
+                      <TxLink label="op. review" hash={s.feedbackTx} />
                       {s.score !== undefined && (
                         <div className="flex items-center gap-2">
                           <span className="text-ink-3 w-20 shrink-0">score</span>
-                          <span className="px-1.5 bg-sun text-ink font-semibold">{s.score}/100</span>
+                          <span className="px-1.5 bg-sun text-ink font-semibold">{s.score}/100 operator</span>
                         </div>
+                      )}
+                      {useUserWallet && s.callId && s.state === "done" && (
+                        <div className="text-violet">rate this call on its field report below ↓</div>
                       )}
                       {s.error && <div className="text-flame">{s.error}</div>}
                     </div>

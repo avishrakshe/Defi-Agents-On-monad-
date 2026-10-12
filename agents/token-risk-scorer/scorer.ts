@@ -43,7 +43,7 @@ const KNOWN_ASSETS: Record<string, string> = {
   "0x534b2f3a21130d7a60830c2df862319e593943a3": "Circle USDC (testnet) — centrally issued stablecoin; mint/pause/blacklist are issuer compliance controls."
 };
 
-const SCAN_BLOCKS = 3000; // ≈ 16 minutes of Monad blocks at ~0.33s
+const SCAN_BLOCKS = 3000; // ≈ 15 minutes of Monad blocks at the documented 300 ms
 
 export async function scoreTokenRisk(tokenAddress: string): Promise<TokenRiskResult> {
   const address = ethers.getAddress(tokenAddress);
@@ -166,7 +166,7 @@ export async function scoreTokenRisk(tokenAddress: string): Promise<TokenRiskRes
     }
 
     if (transfersScanned === 0) {
-      deduct("No recent activity", 5, `No transfers in the last ${blocksScanned.toLocaleString()} blocks (~${Math.round(blocksScanned * 0.33 / 60)} min).`);
+      deduct("No recent activity", 5, `No transfers in the last ${blocksScanned.toLocaleString()} blocks (~${Math.round(blocksScanned * 0.3 / 60)} min).`);
     } else if (topHolderSharePct !== undefined && topHolderSharePct > 50 && holderCountEstimate > 1) {
       deduct("Flow concentration", 10, `${topHolderSharePct}% of recent transfer volume went to a single address.`);
     } else {

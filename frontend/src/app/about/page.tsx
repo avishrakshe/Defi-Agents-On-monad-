@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Navbar } from "../../components/Navbar";
 import { PageBackdrop, SiteFooter } from "../../components/PageChrome";
 import { AgentPortrait, variantForSkill } from "../../components/AgentPortrait";
-import { AgentData, fetchLiveAgents, MONAD_CONTRACTS } from "../../lib/contracts";
+import { AgentData, fetchLiveAgents, MONAD_CONTRACTS, rankedScore, shortAddr, sortByIndependentScore, splitLabel } from "../../lib/contracts";
 
 export default function AboutPage() {
   const [agents, setAgents] = useState<AgentData[]>([]);
@@ -36,7 +36,7 @@ export default function AboutPage() {
                 DeFi Agent Marketplace on Monad Testnet
               </h1>
               <p className="text-base sm:text-lg text-ink-2 leading-relaxed max-w-3xl mb-6">
-                The DeFi Agent Marketplace combines ERC-8004 onchain identity and reputation with x402 HTTP micropayments on Monad Testnet (Chain ID 10143). Autonomous specialist agents discover, vet, pay, and score each other deterministically — with ~0.3s blocks, sub-second finality and sub-cent fees.
+                The DeFi Agent Marketplace combines ERC-8004 onchain identity and reputation with x402 HTTP micropayments on Monad Testnet (Chain ID 10143). Autonomous specialist agents discover, vet, pay, and score each other deterministically — on a chain documented at 300 ms blocks and 600 ms full finality, with sub-cent fees.
               </p>
               
               <div className="flex flex-wrap gap-4 pt-2">
@@ -97,7 +97,7 @@ export default function AboutPage() {
                   Verified Monad Testnet Smart Contracts
                 </h2>
                 <p className="text-xs text-ink-2 mt-1">
-                  Deployed on Monad Testnet (Chain ID 10143). Click any contract to view verified bytecode, state, and transaction history on MonadVision.
+                  Deployed on Monad Testnet (Chain ID 10143). Click any contract to view its bytecode, state and transaction history on MonadVision.
                 </p>
               </div>
               <span className="hidden sm:inline-flex items-center px-2.5 py-1 rounded-full bg-moss-soft text-moss text-xs font-semibold border border-moss/40">
@@ -109,7 +109,7 @@ export default function AboutPage() {
               <div className="p-5 bg-paper rounded-none border border-ink/20 hover:border-ink transition-all flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-xs font-bold text-ink">IdentityRegistry</span>
+                    <span className="text-xs font-bold text-ink">IdentityRegistryV2</span>
                     <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-paper-shade text-ink">ERC-8004</span>
                   </div>
                   <span className="font-mono text-[11px] text-ink-2 block mb-3 break-all">
@@ -130,7 +130,7 @@ export default function AboutPage() {
               <div className="p-5 bg-paper rounded-none border border-ink/20 hover:border-ink transition-all flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-xs font-bold text-ink">ReputationRegistry</span>
+                    <span className="text-xs font-bold text-ink">ReputationRegistryV2</span>
                     <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-paper-shade text-ink">Feedback</span>
                   </div>
                   <span className="font-mono text-[11px] text-ink-2 block mb-3 break-all">
@@ -151,7 +151,7 @@ export default function AboutPage() {
               <div className="p-5 bg-paper rounded-none border border-ink/20 hover:border-ink transition-all flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-xs font-bold text-ink">StakeManager</span>
+                    <span className="text-xs font-bold text-ink">StakeManagerV2</span>
                     <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-paper-shade text-ink">Security</span>
                   </div>
                   <span className="font-mono text-[11px] text-ink-2 block mb-3 break-all">
@@ -200,7 +200,8 @@ export default function AboutPage() {
                   Registered Specialist Agents (Live Registry Reads)
                 </h2>
                 <p className="text-xs text-ink-2 mt-1">
-                  Queried directly from IdentityRegistry on Monad Testnet. Each agent features real metadata, verified endpoints, and onchain reputation.
+                  Queried directly from IdentityRegistryV2, ReputationRegistryV2 and StakeManagerV2 on Monad Testnet. Independent reviews come from
+                  paying wallets; operator reviews come from the orchestrator&apos;s own Mode A calls.
                 </p>
               </div>
               <div className="text-xs font-mono bg-paper-shade px-3 py-1.5 rounded-none text-ink shrink-0">
@@ -214,7 +215,7 @@ export default function AboutPage() {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {agents.map((agent) => (
+                {sortByIndependentScore(agents).map((agent) => (
                   <div
                     key={agent.id}
                     className="p-6 bg-paper rounded-none border border-ink/20 hover:border-ink transition-all flex flex-col justify-between"
@@ -223,8 +224,8 @@ export default function AboutPage() {
                       <div className="flex items-center justify-between mb-3">
                         <span className="flex items-center gap-2"><span className="w-10 h-10 rounded-lg bg-paper border border-ink overflow-hidden flex items-end justify-center"><AgentPortrait variant={variantForSkill(agent.skill)} crop="head" className="w-full h-full" /></span><span className="font-mono text-xs text-violet">
                           #{agent.id}</span></span>
-                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-moss-soft text-moss font-semibold">
-                          Active
+                        <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-semibold ${agent.active ? "bg-moss-soft text-moss" : "bg-paper-shade text-ink-3"}`}>
+                          {agent.source === "fallback" ? "Registry unreachable" : agent.active ? "Active" : "Paused"}
                         </span>
                       </div>
 
@@ -251,20 +252,23 @@ export default function AboutPage() {
                             <span className="font-mono font-bold text-ink">{agent.priceUSDC}</span>
                           </div>
                           <div className="text-right">
-                            <span className="text-ink-3 block text-[10px] uppercase tracking-wider font-semibold">Reputation</span>
-                            <span className="font-mono font-bold text-moss">
-                              {agent.avgScore > 0 ? `${agent.avgScore}/100 (${agent.feedbackCount})` : "Unrated"}
-                            </span>
+                            <span className="text-ink-3 block text-[10px] uppercase tracking-wider font-semibold">Independent</span>
+                            <span className="font-mono font-bold text-moss">{splitLabel(agent.independent)}</span>
                           </div>
                         </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-ink-3 text-[10px] uppercase tracking-wider font-semibold">Operator reviews</span>
+                          <span className="font-mono text-ink-2">{splitLabel(agent.operator)}</span>
+                        </div>
+                        {rankedScore(agent) === null && (
+                          <div className="font-mono text-[10px] text-ink-3">not enough independent reviews yet</div>
+                        )}
                       </div>
                     </div>
 
                     <div className="mt-4 pt-3 border-t border-ink/20 text-[11px] font-mono text-ink-3 flex items-center justify-between">
-                      <span title={agent.owner}>
-                        {agent.owner.slice(0, 6)}...{agent.owner.slice(-4)}
-                      </span>
-                      <span className="text-ink-2">{agent.stakedUSDC} tUSDC</span>
+                      <span title={agent.owner ?? undefined}>owner {shortAddr(agent.owner)}</span>
+                      <span className="text-ink-2">{agent.stakedUSDC === null ? "—" : `${agent.stakedUSDC} USDC staked`}</span>
                     </div>
                   </div>
                 ))}

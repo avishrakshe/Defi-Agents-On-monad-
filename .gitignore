@@ -41,3 +41,8 @@ Thumbs.db
 .vercel
 .vercel
 .env*
+
+# Agent owner wallets / Solana keypairs (never commit)
+contracts/.agent-wallets.json
+solana/.keys/
+*.keypair.json

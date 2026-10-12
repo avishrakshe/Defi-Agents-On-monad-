@@ -4,8 +4,9 @@ import React, { useEffect, useRef, useState } from "react";
 import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
 import { ArrowRight, ArrowDownRight } from "lucide-react";
 import { ethers } from "ethers";
-import { AgentData, MONAD_CONTRACTS } from "../lib/contracts";
+import { AgentData, MIN_INDEPENDENT_REVIEWS, MONAD_CONTRACTS, rankedScore, sortByIndependentScore } from "../lib/contracts";
 import { AgentPortrait, variantForSkill } from "./AgentPortrait";
+import { useChainMetrics, formatBlockTime } from "../lib/useChainMetrics";
 
 interface HeroSectionProps {
   agents: AgentData[];
@@ -36,6 +37,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ agents, onRunClick, on
   const ref = useRef<HTMLElement>(null);
   const reduce = useReducedMotion();
   const block = useBlockHeight();
+  const chain = useChainMetrics();
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
   const headY = useTransform(scrollYProgress, [0, 1], [0, -80]);
   const boardY = useTransform(scrollYProgress, [0, 1], [0, 40]);
@@ -111,11 +113,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ agents, onRunClick, on
             <motion.div {...rise(0.35)} className="border-[1.5px] border-ink bg-paper-card shadow-hard">
               <div className="flex items-center justify-between px-4 py-2.5 border-b-[1.5px] border-ink bg-sun">
                 <span className="font-mono text-[11px] uppercase tracking-[0.16em]">Agent board · live</span>
-                <span className="font-mono text-[11px]">rep / reviews / price</span>
+                <span className="font-mono text-[11px]">independent rep / reviews / price</span>
               </div>
               <ul>
-                {(agents.length ? agents : []).slice(0, 4).map((a, i) => {
-                  const rated = a.feedbackCount > 0;
+                {sortByIndependentScore(agents).slice(0, 4).map((a, i) => {
+                  const ranked = rankedScore(a);
                   return (
                     <motion.li
                       key={a.id}
@@ -132,9 +134,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ agents, onRunClick, on
                         <span className="block font-mono text-[11px] text-ink-2">#{String(a.id).padStart(2, "0")} · {a.skill}</span>
                       </span>
                       <span className="text-right shrink-0">
-                        <span className="block font-display text-3xl leading-none">{rated ? a.avgScore : "—"}</span>
+                        <span className="block font-display text-3xl leading-none">{ranked ?? "—"}</span>
                         <span className="block font-mono text-[10px] text-ink-2 mt-1">
-                          {rated ? `${a.feedbackCount} rev` : "new"} · {a.priceUSDC}
+                          ind {a.independent.count} · op {a.operator.count} · {a.priceUSDC}
                         </span>
                       </span>
                     </motion.li>
@@ -143,7 +145,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ agents, onRunClick, on
                 {!agents.length && <li className="px-4 py-10 text-center font-mono text-xs text-ink-2">Reading IdentityRegistry…</li>}
               </ul>
               <div className="px-4 py-2.5 border-t-[1.5px] border-ink font-mono text-[10.5px] uppercase tracking-wider text-ink-2 flex justify-between">
-                <span>Source: ReputationRegistry</span>
+                <span>Score shown after {MIN_INDEPENDENT_REVIEWS} independent reviews</span>
                 <span>Monad 10143</span>
               </div>
             </motion.div>
@@ -153,7 +155,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ agents, onRunClick, on
         {/* Figures strip — broadsheet columns */}
         <motion.dl {...rise(0.9)} className="mt-14 grid grid-cols-2 md:grid-cols-4 border-y-[1.5px] border-ink">
           {[
-            ["~0.3s", "Block time"],
+            [formatBlockTime(chain), "Block time · live"],
             ["$0.001", "Per agent call"],
             ["0", "LLMs in the money path"],
             ["ERC-8004", "Identity standard"]

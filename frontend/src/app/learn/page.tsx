@@ -15,7 +15,7 @@ export default function LearnCatalogPage() {
       title: "Monad Fundamentals",
       category: "Layer-1 EVM Architecture",
       badge: "Core Track",
-      description: "Master Monad's high-performance parallel execution, 10,000 TPS, 300ms block times, 600ms finality, and deploy your first Solidity contract.",
+      description: "Master Monad's high-performance parallel execution, 10,000 TPS target, 300 ms blocks, 600 ms full finality, and deploy your first Solidity contract.",
       modules: 5,
       xp: 250,
       topics: ["What is Monad?", "Why Monad is Fast", "Monad for EVM Devs", "First Testnet Tx", "Solidity Contract Lab"],

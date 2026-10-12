@@ -1,10 +1,84 @@
 {
   "network": "monadTestnet",
   "chainId": "10143",
-  "identityRegistry": "0xD62b32482874E447Beb60E6Df5A21E6ebaFf54ad",
-  "reputationRegistry": "0x7b398a8F83133d5E28b4cce7c3131b4Ba8C486E0",
-  "stakeManager": "0xca1624702029E9B76c648f980a673F37758aa45a",
+  "version": "v2",
+  "identityRegistry": "0xfdeEE314eb3235a91e00a4EFFb76982F6F96e0C6",
+  "reputationRegistry": "0x3A330F950E830f9e2DE8Dde90742D3459db6C54A",
+  "stakeManager": "0x498da2D83e2eC5b3D6FE2499B1dB17719E719da1",
   "usdc": "0x534b2f3A21130d7a60830c2Df862319e593943A3",
-  "timestamp": "2026-09-19T07:25:01.227Z",
-  "academyCredential": "0xAbAFE53736e087877561cd0E48C283D6e7e59Ce6"
+  "academyCredential": "0xAbAFE53736e087877561cd0E48C283D6e7e59Ce6",
+  "orchestrator": "0xE0754641302BB291F23E21766557Ce29c5642960",
+  "agents": [
+    {
+      "id": 1,
+      "skill": "contract-audit",
+      "name": "Smart Contract Auditor",
+      "owner": "0xf7D58A474c3056B7719241fA2E52030ff680AdFE",
+      "payee": "0xf7D58A474c3056B7719241fA2E52030ff680AdFE",
+      "endpoint": "https://defi-agents-backend.vercel.app/agents/auditor/api/audit",
+      "stakeUSDC": "5"
+    },
+    {
+      "id": 2,
+      "skill": "token-risk-score",
+      "name": "Token Risk Scorer",
+      "owner": "0xe5d9a3805aa1fb63A9f44d6D90068Ec6a50a6425",
+      "payee": "0xe5d9a3805aa1fb63A9f44d6D90068Ec6a50a6425",
+      "endpoint": "https://defi-agents-backend.vercel.app/agents/risk/api/score",
+      "stakeUSDC": "5"
+    },
+    {
+      "id": 3,
+      "skill": "gas-timing",
+      "name": "Gas Price & Transaction Timing Agent",
+      "owner": "0xFF8dE713385675ED6eA9A3f0c8dc65b22D980fBF",
+      "payee": "0xFF8dE713385675ED6eA9A3f0c8dc65b22D980fBF",
+      "endpoint": "https://defi-agents-backend.vercel.app/agents/gas/api/gas",
+      "stakeUSDC": "5"
+    },
+    {
+      "id": 4,
+      "skill": "whale-tracker",
+      "name": "Whale & Liquidity Sentinel",
+      "owner": "0xa611CAFAAAfC58C5151D03b98148aCF52ab2A5E7",
+      "payee": "0xa611CAFAAAfC58C5151D03b98148aCF52ab2A5E7",
+      "endpoint": "https://defi-agents-backend.vercel.app/agents/whale/api/whale",
+      "stakeUSDC": "5"
+    }
+  ],
+  "stakeFundingNote": "Each owner wallet received 5 testnet USDC from the operator's faucet.circle.com balance and staked it itself.",
+  "transactions": {
+    "identityDeploy": "0xeb3f1e1dd49424b2e7630d6cae0210e02e2f9af7b126f09aacfdd3cde95532ce",
+    "reputationDeploy": "0x6f9dbcfdc3cf108e1210ab6e0c43b8dacf94b14f589362f4b2c3fe1ce22583c2",
+    "stakeDeploy": "0xad9b96e9828f237754315f71dc3dac90417138ba66bf217ea77e16c4fd39fc60",
+    "authorizeRecorder": "0x142e8fdef6d111006b1aefa18c39f51fae55321bd9e3bb87b4445a87d37e60f5",
+    "fundMON:contract-audit": "0x30e32eed9f7a236e81f11122473515d32c7a01b842304a68eefa39d8010c4448",
+    "fundUSDC:contract-audit": "0x3f8fc8f89070725192aab324be738e82b5581b2b258348120c2598afd8805382",
+    "fundMON:token-risk-score": "0xe35b667b8e8f60963b34ad82617997cd9d7637e655988a61aeab77398b429610",
+    "fundUSDC:token-risk-score": "0x9c8f928875593b093073972f66db92c4a0fe8936cc83f56b03e044f792650d56",
+    "fundMON:gas-timing": "0xafd6ee5640d0021ef98f84d3d502a6f2eace3e5099123c94224dbebeee035509",
+    "fundUSDC:gas-timing": "0x79e2ab9681438b2b83e44688461d4caab795de34eae26be3b1d30fcadcae7d91",
+    "fundMON:whale-tracker": "0xbbcfe6227761f3fe8608de09b6e63d923a33354d1293a5dbe388cad81b8dd722",
+    "fundUSDC:whale-tracker": "0x392c2e4d9e7dcadd11f3759ec068b0a5f752e671c98f7d57d9d9686ad01721b0",
+    "register:contract-audit": "0xa9ac23756be10e502c65e835fd921e6cfcd093ad139815eb91d35ec8bc0d22d7",
+    "approve:contract-audit": "0x06590e511e7d291b370c0c93a657b372ffdc7934035caaa00793e7973173b8b8",
+    "stake:contract-audit": "0x6f0906b870d18ed946a72d3c06bd2e2e4b3236433fe4218cf86eddb15b5db759",
+    "register:token-risk-score": "0xa069f2d56dad9687e300b31207b377e253c71d433bfe6b92f7172469056147fa",
+    "approve:token-risk-score": "0x2146f388da74bbe325c0125b7e2758e8119541112407dca538086a7fbe8702b8",
+    "stake:token-risk-score": "0x8946a849b81f720fadd62f81ef835c0b864078039b229e8011331e9cb0ad72f8",
+    "register:gas-timing": "0x63ac9a2fdfccca3c0db68f40bc37ef8ee9608ca9b8bee06c8d67e643e931f1c1",
+    "approve:gas-timing": "0x470e2ecf0a4cdc86b4b6e1c66169e5394efba7c166ea68629ca7e2378484e492",
+    "stake:gas-timing": "0x9ac48dec116f3ae51e72a6a73ebd3805d8db020b2c88043bb94ef10effad87e4",
+    "register:whale-tracker": "0x68e18248d15a81125802a2682af0ac2d27afef9da9d4215212fd3ab84123811d",
+    "approve:whale-tracker": "0x308c52bc55a4ebf748adccb695dc0bc524855586778616cca7cae02eb470ee9d",
+    "stake:whale-tracker": "0x21e8ae3314bf5a54ab27a78e8b41a34a317f18a560e60b22f9de89b39a749b60"
+  },
+  "timestamp": "2026-10-12T03:24:12.645Z",
+  "legacyV1": {
+    "identityRegistry": "0xD62b32482874E447Beb60E6Df5A21E6ebaFf54ad",
+    "reputationRegistry": "0x7b398a8F83133d5E28b4cce7c3131b4Ba8C486E0",
+    "stakeManager": "0xca1624702029E9B76c648f980a673F37758aa45a",
+    "deployedAt": "2026-09-19T07:25:01.227Z",
+    "retiredBecause": "v1 agents #1-4 are owned by the leaked, retired operator key and v1 has no ownership transfer (see README Security notes)"
+  }
 }

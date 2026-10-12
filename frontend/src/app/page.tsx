@@ -21,7 +21,7 @@ const TICKER = [
   "Agents pay agents",
   "x402 · HTTP 402 micropayments",
   "ERC-8004 identity + reputation",
-  "300ms blocks",
+  "sub-second blocks",
   "$0.001 per call",
   "Zero LLM in the execution path",
   "Monad Testnet 10143"
