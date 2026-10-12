@@ -5,6 +5,8 @@ import { motion } from "framer-motion";
 import { ExternalLink } from "lucide-react";
 import { AgentPortrait, variantForSkill } from "./AgentPortrait";
 import { submitClientFeedback } from "../lib/wallet";
+import { submitMagicblockFeedback } from "../lib/magicblock";
+import { useWallet } from "@solana/wallet-adapter-react";
 import { MONAD_CONTRACTS } from "../lib/contracts";
 import { useActivityStore } from "../lib/activity-store";
 
@@ -17,10 +19,12 @@ export interface AgentRun {
   /** Present when the call was paid and recorded in ReputationRegistryV2 */
   review?: {
     mode: "A" | "B";
+    chain?: "monad" | "magicblock";
     callId: string;
     /** Mode A: the operator review written automatically */
     operatorScore?: number;
     operatorTx?: string;
+    operatorTxUrl?: string;
   };
 }
 
@@ -32,7 +36,9 @@ const ReviewBar: React.FC<{ run: AgentRun }> = ({ run }) => {
   const [hover, setHover] = useState(0);
   const [state, setState] = useState<"idle" | "signing" | "done" | "error">("idle");
   const [tx, setTx] = useState<string | null>(null);
+  const [txUrl, setTxUrl] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const solana = useWallet();
   const r = run.review!;
 
   if (r.mode === "A") {
@@ -40,7 +46,7 @@ const ReviewBar: React.FC<{ run: AgentRun }> = ({ run }) => {
       <div className="px-4 py-2.5 border-t border-ink/20 font-mono text-[11px] text-ink-2 flex flex-wrap items-center justify-between gap-2">
         <span>Operator review {r.operatorScore !== undefined ? `${r.operatorScore}/100` : "not recorded"} · not independent</span>
         {r.operatorTx && (
-          <a href={`${EXPLORER}/tx/${r.operatorTx}`} target="_blank" rel="noreferrer" className="text-violet hover:underline">
+          <a href={r.operatorTxUrl || `${EXPLORER}/tx/${r.operatorTx}`} target="_blank" rel="noreferrer" className="text-violet hover:underline">
             {short(r.operatorTx)} ↗
           </a>
         )}
@@ -53,6 +59,14 @@ const ReviewBar: React.FC<{ run: AgentRun }> = ({ run }) => {
     setState("signing");
     setErr(null);
     try {
+      if (r.chain === "magicblock") {
+        if (!solana.publicKey || !solana.signTransaction) throw new Error("Connect the Solana wallet that paid for this call");
+        const res = await submitMagicblockFeedback(solana.publicKey.toBase58(), run.agentId, r.callId, starsToScore(stars), solana.signTransaction);
+        setTx(res.signature);
+        setTxUrl(res.explorerUrl);
+        setState("done");
+        return;
+      }
       const res = await submitClientFeedback(MONAD_CONTRACTS.reputationRegistry, run.agentId, r.callId, starsToScore(stars), `${stars}/5 stars`);
       setTx(res.txHash);
       setState("done");
@@ -83,7 +97,7 @@ const ReviewBar: React.FC<{ run: AgentRun }> = ({ run }) => {
       {state === "done" && tx ? (
         <div className="flex flex-wrap items-center justify-between gap-2 text-moss">
           <span>Independent review {stars}/5 recorded</span>
-          <a href={`${EXPLORER}/tx/${tx}`} target="_blank" rel="noreferrer" className="hover:underline">
+          <a href={txUrl || `${EXPLORER}/tx/${tx}`} target="_blank" rel="noreferrer" className="hover:underline">
             {short(tx)} ↗
           </a>
         </div>

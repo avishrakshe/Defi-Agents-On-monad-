@@ -1,7 +1,18 @@
-# Backend deployment only needs server.ts, orchestrator/ and agents/
+# Backend deployment only needs server.ts, orchestrator/, agents/ and the agent_market IDL
 frontend
 contracts
 docs
 **/node_modules
 .env
 .env.*
+# Solana: ship only the IDL — never keypairs (.keys/), build output or sources
+solana/.keys
+solana/target
+solana/programs
+solana/tests
+solana/scripts
+solana/*.json
+!solana/idl
+.agents
+.claude
+skills-lock.json

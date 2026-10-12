@@ -6,6 +6,7 @@
  *   /agents/risk           Token Risk Scorer           (/api/score)
  *   /agents/gas            Gas & Timing Agent          (/api/gas)
  *   /agents/whale          Whale & Liquidity Sentinel  (/api/whale)
+ *   /mb/agents/*           the same four agents on the MagicBlock rail (x402 "er-tab", paid on the Ephemeral Rollup)
  *
  * The orchestrator reaches the agents over HTTP via CONTRACT_AUDITOR_URL / TOKEN_RISK_URL / GAS_TIMING_URL /
  * WHALE_AGENT_URL, so the same code runs locally (separate ports) and here (path prefixes).
@@ -24,7 +25,16 @@ app.set("trust proxy", true);
 
 // Routes that make the operator wallet send transactions. Throttle them per IP so a public deployment
 // can't be used to burn the operator's gas (best-effort: counters live per serverless instance).
-const WRITE_ROUTES = new Set(["/api/feedback", "/api/register-agent", "/api/issue-credential", "/api/execute-step", "/api/orchestrate"]);
+const WRITE_ROUTES = new Set([
+  "/api/feedback",
+  "/api/register-agent",
+  "/api/issue-credential",
+  "/api/execute-step",
+  "/api/orchestrate",
+  "/api/checkpoint",
+  "/api/magicblock/faucet",
+  "/api/magicblock/relay"
+]);
 const WINDOW_MS = 10 * 60 * 1000;
 const MAX_WRITES = Number(process.env.WRITE_RATE_LIMIT || 40);
 const hits = new Map<string, { count: number; reset: number }>();
@@ -48,6 +58,16 @@ app.use("/agents/auditor", auditorApp);
 app.use("/agents/risk", riskApp);
 app.use("/agents/gas", gasApp);
 app.use("/agents/whale", whaleApp);
+
+// MagicBlock rail: the same agents, paid with a pay_for_call settled on the Ephemeral Rollup (x402 "er-tab")
+const magicblockRail = (req: Request, _res: Response, next: NextFunction) => {
+  (req as any).paymentRail = "magicblock";
+  next();
+};
+app.use("/mb/agents/auditor", magicblockRail, auditorApp);
+app.use("/mb/agents/risk", magicblockRail, riskApp);
+app.use("/mb/agents/gas", magicblockRail, gasApp);
+app.use("/mb/agents/whale", magicblockRail, whaleApp);
 app.use("/", orchestratorApp);
 
 export default app;

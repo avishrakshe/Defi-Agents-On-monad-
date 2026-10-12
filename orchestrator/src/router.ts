@@ -38,13 +38,8 @@ export function toSubtask(agent: RegistryAgent, extra: Partial<Subtask>): Subtas
   };
 }
 
-/**
- * Deterministic task decomposition: regex address extraction + keyword matching, zero LLM in the critical path.
- * Skills resolve to their active agent in IdentityRegistryV2 (60s cache).
- */
-export async function decomposeTask(taskText: string): Promise<Subtask[]> {
-  if (!taskText || typeof taskText !== "string") return [];
-
+/** Which skills a task asks for (deterministic regex + keywords, zero LLM in the critical path) */
+export function wantedSkills(taskText: string): [string, Partial<Subtask>][] {
   const addresses = taskText.match(/0x[a-fA-F0-9]{40}/g) || [];
   const wanted: [string, Partial<Subtask>][] = [];
 
@@ -60,6 +55,16 @@ export async function decomposeTask(taskText: string): Promise<Subtask[]> {
   if (/whale|liquidity/i.test(taskText)) {
     wanted.push(["whale-tracker", { tokenAddress: addresses[0] }]);
   }
+  return wanted;
+}
+
+/**
+ * Deterministic task decomposition on Monad: skills resolve to their active agent in IdentityRegistryV2 (60s cache).
+ */
+export async function decomposeTask(taskText: string): Promise<Subtask[]> {
+  if (!taskText || typeof taskText !== "string") return [];
+  const addresses = taskText.match(/0x[a-fA-F0-9]{40}/g) || [];
+  const wanted = wantedSkills(taskText);
 
   const subtasks: Subtask[] = [];
   for (const [skill, extra] of wanted) {

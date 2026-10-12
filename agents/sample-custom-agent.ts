@@ -5,7 +5,7 @@ import * as dotenv from "dotenv";
 import * as path from "path";
 import { callMonadRpc } from "./shared/monadRpc";
 import { getLogsChunked, TRANSFER_TOPIC, decodeAbiString, ethCall } from "./shared/evm";
-import { createX402Middleware } from "./shared/x402Middleware";
+import { createPaywall } from "./shared/paywall";
 
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
@@ -24,7 +24,7 @@ const MIN_MON = Number(process.env.WHALE_MIN_MON || 5);
 app.use(cors());
 app.use(express.json());
 
-const x402 = createX402Middleware("whale-tracker", `http://localhost:${PORT}/api/whale`);
+const x402 = createPaywall("whale-tracker", `http://localhost:${PORT}/api/whale`);
 
 interface Move {
   txHash: string;

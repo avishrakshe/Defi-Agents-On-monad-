@@ -5,16 +5,20 @@ import { Navbar } from "../../components/Navbar";
 import { PageBackdrop, SiteFooter } from "../../components/PageChrome";
 import { AgentRegistry } from "../../components/AgentRegistry";
 import { TaskModal } from "../../components/TaskModal";
-import { AgentData, fetchLiveAgents } from "../../lib/contracts";
+import { AgentData } from "../../lib/contracts";
+import { fetchAgentsFor } from "../../lib/agents";
+import { useNetwork } from "../../lib/network";
 
 export default function MarketplacePage() {
   const [agents, setAgents] = useState<AgentData[]>([]);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [initialTaskPrompt, setInitialTaskPrompt] = useState("");
+  const { network } = useNetwork();
 
   useEffect(() => {
-    fetchLiveAgents().then(setAgents);
-  }, []);
+    setAgents([]);
+    fetchAgentsFor(network).then(setAgents);
+  }, [network]);
 
   const handleSelectAgent = (agent: AgentData) => {
     setInitialTaskPrompt(`Execute analysis with ${agent.name} on contract 0x534b2f3A21130d7a60830c2Df862319e593943A3`);

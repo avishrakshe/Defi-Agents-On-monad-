@@ -1,0 +1,5 @@
+# Pinned to the MagicBlock dev skill / docs known-good snapshot: Solana 3.1.x, Rust 1.89.0, Anchor 1.0.2, Node 24
+[toolchain]
+channel = "1.89.0"
+components = ["rustfmt", "clippy"]
+profile = "minimal"

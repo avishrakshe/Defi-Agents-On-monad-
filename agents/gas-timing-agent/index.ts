@@ -3,7 +3,7 @@ import cors from "cors";
 import * as dotenv from "dotenv";
 import * as path from "path";
 import { analyzeGasTiming } from "./gasAnalyzer";
-import { createX402Middleware } from "../shared/x402Middleware";
+import { createPaywall } from "../shared/paywall";
 
 dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 
@@ -13,7 +13,7 @@ const PORT = process.env.GAS_TIMING_PORT || 4003;
 app.use(cors());
 app.use(express.json());
 
-const x402 = createX402Middleware(
+const x402 = createPaywall(
   "gas-timing",
   `http://localhost:${PORT}/api/gas`
 );
