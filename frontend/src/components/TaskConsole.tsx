@@ -123,9 +123,11 @@ export const TaskConsole: React.FC<TaskConsoleProps> = ({ initialPrompt }) => {
       await sleep(5000);
       const m = await getMetrics().catch(() => null);
       if (!m?.lastCommit || m.lastCommit.signature === baseline?.lastCommit?.signature) continue;
+      // An agent was paid by this settlement iff its paid_total rose above the value before the run
+      const before = (id: number) => baseline?.payouts.find((b) => b.agentId === id)?.paidTotalUnits ?? 0;
       const payouts = m.payouts
-        .filter((p) => p.lastPayoutSignature && p.lastPayoutAt && Date.parse(p.lastPayoutAt) >= startedAt - 5000)
-        .map((p) => ({ agentId: p.agentId, skill: p.skill, signature: p.lastPayoutSignature!, url: p.lastPayoutExplorerUrl!, paidTotalUnits: p.paidTotalUnits }));
+        .filter((p) => p.lastPayoutSignature && p.paidTotalUnits > before(p.agentId))
+        .map((p) => ({ agentId: p.agentId, skill: p.skill, signature: p.lastPayoutSignature!, url: p.lastPayoutExplorerUrl!, paidTotalUnits: p.paidTotalUnits - before(p.agentId) }));
       setSettlement({ state: "landed", commit: { signature: m.lastCommit.signature, explorerUrl: m.lastCommit.explorerUrl }, payouts });
       if (payouts.length) return;
     }
@@ -589,7 +591,7 @@ export const TaskConsole: React.FC<TaskConsoleProps> = ({ initialPrompt }) => {
                       {settlement.state === "timeout" && <div className="text-flame">no new checkpoint observed within 150 s — check /api/magicblock/metrics</div>}
                       {settlement.commit && <TxLink label="commit" hash={settlement.commit.signature} url={settlement.commit.explorerUrl} />}
                       {settlement.payouts?.map((p) => (
-                        <TxLink key={p.agentId} label={`payout #${p.agentId}`} hash={p.signature} url={p.url} suffix={`Σ ${(p.paidTotalUnits / 1e6).toFixed(3)} tUSDC`} />
+                        <TxLink key={p.agentId} label={`payout #${p.agentId}`} hash={p.signature} url={p.url} suffix={`+${(p.paidTotalUnits / 1e6).toFixed(3)} tUSDC since this run started`} />
                       ))}
                       {settlement.state === "landed" && !settlement.payouts?.length && <div className="text-ink-2">commit landed; payout actions pending…</div>}
                     </div>
