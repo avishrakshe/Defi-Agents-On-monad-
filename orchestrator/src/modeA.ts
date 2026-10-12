@@ -1,6 +1,7 @@
 import { Subtask } from "./router";
 import { OrchestratorResults, buildSummary, polishSummary } from "./synthesizer";
-import { executeSubtask, slotFor } from "./executor";
+import { slotFor } from "./executor";
+import { ChainId, getChain } from "./chains";
 
 export interface ExecutionStep {
   subtask: Subtask;
@@ -31,16 +32,18 @@ export async function executeAll(
   taskText: string,
   subtasks: Subtask[],
   mode: "A" | "B" = "A",
-  authorizations?: any[]
+  authorizations?: any[],
+  chain: ChainId = "monad"
 ): Promise<OrchestrationResult> {
   const steps: ExecutionStep[] = [];
   const results: OrchestratorResults = {};
+  const adapter = getChain(chain);
 
   for (let i = 0; i < subtasks.length; i++) {
     const subtask = subtasks[i];
     const started = Date.now();
     try {
-      const step = await executeSubtask({ subtask, mode, authorization: authorizations?.[i] });
+      const step = await adapter.payForCall(subtask, { mode, authorization: authorizations?.[i] });
       steps.push({ subtask, status: "completed", settlement: step.settlement, result: step.result, durationMs: step.durationMs });
       (results as any)[slotFor(subtask.skill)] = step.result;
     } catch (err: any) {
@@ -63,4 +66,4 @@ export async function executeAll(
   };
 }
 
-export const executeModeA = (taskText: string, subtasks: Subtask[]) => executeAll(taskText, subtasks, "A");
+export const executeModeA = (taskText: string, subtasks: Subtask[], chain: ChainId = "monad") => executeAll(taskText, subtasks, "A", undefined, chain);

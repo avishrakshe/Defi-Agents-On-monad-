@@ -20,14 +20,20 @@ import {
   reputationAddress,
   stakeManagerAddress
 } from "../../agents/shared/registry";
+import { chainFromRequest, getChain } from "./chains";
+import { subtaskFor } from "./chains/magicblock";
+import { magicblockRouter } from "./magicblockRoutes";
+import { listSolanaAgents, mbConnections, mbEnv, mbPdas, num, operatorKeypair, readLive } from "../../agents/shared/solanaMarket";
+import { PublicKey } from "@solana/web3.js";
 
 const app = express();
 const PORT = process.env.ORCHESTRATOR_PORT || 4000;
 const EXPLORER = () => process.env.NEXT_PUBLIC_MONAD_EXPLORER_URL || "https://testnet.monadvision.com";
 const isBytes32 = (v: unknown): v is string => typeof v === "string" && /^0x[0-9a-fA-F]{64}$/.test(v);
 
-app.use(cors());
+app.use(cors({ exposedHeaders: ["X-Payment-Response"] }));
 app.use(express.json());
+app.use(magicblockRouter);
 
 const requireWallet = () => {
   const w = getOrchestratorWallet();
@@ -70,8 +76,48 @@ const AGENT_URL_ENV: Record<string, string> = {
   "whale-tracker": "WHALE_AGENT_URL"
 };
 
+// Agents with owner, payee, stake and split reputation, for either network
+app.get("/api/agents", async (req, res) => {
+  const chain = chainFromRequest(req);
+  try {
+    return res.json({ chain, agents: await getChain(chain).listAgents() });
+  } catch (err: any) {
+    return res.status(502).json({ error: `Could not read ${chain} registry`, details: err.shortMessage || err.message });
+  }
+});
+
 // Live orchestrator status: real balances + reachability of each registered specialist
 app.get("/api/status", async (req, res) => {
+  if (chainFromRequest(req) === "magicblock") {
+    try {
+      const op = operatorKeypair();
+      const { base } = mbConnections();
+      const cfg = await readLive(mbPdas.config(), "Config");
+      const mint = mbEnv().usdcMint || (cfg ? String((cfg.data as any).usdc_mint ?? (cfg.data as any).usdcMint) : "");
+      const [sol, tab, tokenAccounts, agents] = await Promise.all([
+        op ? base.getBalance(op.publicKey) : Promise.resolve(null),
+        op ? readLive(mbPdas.tab(op.publicKey), "Tab") : Promise.resolve(null),
+        op && mint ? base.getParsedTokenAccountsByOwner(op.publicKey, { mint: new PublicKey(mint) }) : Promise.resolve(null),
+        listSolanaAgents().catch(() => [])
+      ]);
+      const usdcUnits = tokenAccounts ? tokenAccounts.value.reduce((s: number, a: any) => s + Number(a.account.data.parsed.info.tokenAmount.amount), 0) : null;
+      return res.json({
+        chain: "magicblock",
+        network: "Solana devnet + MagicBlock ER",
+        operatorAddress: op?.publicKey.toBase58() ?? null,
+        balanceSOL: sol === null ? null : sol / 1e9,
+        balanceTUSDCBase: usdcUnits === null ? null : usdcUnits / 1e6,
+        tab: tab ? { delegated: tab.delegated, availableTUSDC: (num(tab.data.deposited) - num(tab.data.spent)) / 1e6 } : null,
+        validator: mbEnv().validator,
+        erRpc: mbEnv().erRpc,
+        programId: mbEnv().programId,
+        usdcMint: mint,
+        agents: agents.map((a) => ({ id: a.id, name: a.name, skill: a.skill, owner: a.owner, payee: a.payee, active: a.active }))
+      });
+    } catch (err: any) {
+      return res.status(502).json({ error: "Could not read MagicBlock status", details: err.message });
+    }
+  }
   const wallet = getOrchestratorWallet();
   const address = wallet?.address || process.env.ORCHESTRATOR_WALLET_ADDRESS || null;
   const registry = await listRegistryAgents().catch(() => []);
@@ -108,6 +154,17 @@ app.get("/api/status", async (req, res) => {
  * the contract refuses calls a client paid for, so this endpoint can't pre-empt a user's own review.
  */
 app.post("/api/feedback", async (req, res) => {
+  if (chainFromRequest(req) === "magicblock") {
+    const { agentId, callId, score, note = "" } = req.body || {};
+    if (!Number.isInteger(agentId) || !/^[0-9a-f]{32}$/i.test(String(callId)) || typeof score !== "number") {
+      return res.status(400).json({ error: "agentId (int), callId (32 hex chars) and score (0-100) are required" });
+    }
+    try {
+      return res.json({ success: true, ...(await getChain("magicblock").submitFeedback({ agentId, callId }, score, note)) });
+    } catch (err: any) {
+      return res.status(500).json({ error: "Failed to submit operator review on the ER", details: err.message });
+    }
+  }
   try {
     const { agentId, callId, score, note = "" } = req.body || {};
     if (!Number.isInteger(agentId) || !isBytes32(callId) || typeof score !== "number") {
@@ -146,14 +203,15 @@ app.post("/api/orchestrate", async (req, res) => {
       return res.status(400).json({ error: "taskText string is required" });
     }
 
-    const subtasks = await decomposeTask(taskText);
+    const chain = chainFromRequest(req);
+    const subtasks = await getChain(chain).decompose(taskText);
     if (subtasks.length === 0) {
       return res.status(400).json({
         error: "Task Unroutable",
         message: "Unable to decompose task into specialized subtasks. Please include a token or contract address (0x...) and/or specify what you'd like analyzed (e.g., 'gas', 'risk', 'audit')."
       });
     }
-    return res.json(await executeAll(taskText, subtasks, "A"));
+    return res.json({ chain, ...(await executeAll(taskText, subtasks, "A", undefined, chain)) });
   } catch (err: any) {
     console.error("[Orchestrator Error]:", err);
     return res.status(500).json({ error: "Internal Orchestrator Error", details: err.message });
@@ -225,6 +283,31 @@ app.post("/api/decompose", async (req, res) => {
   const { taskText } = req.body;
   if (!taskText) return res.status(400).json({ error: "taskText required" });
 
+  if (chainFromRequest(req) === "magicblock") {
+    try {
+      const adapter = getChain("magicblock");
+      const [subtasks, agents] = await Promise.all([adapter.decompose(taskText), adapter.listAgents()]);
+      const withTrust = subtasks.map((s) => {
+        const a = agents.find((x) => x.id === s.agentId);
+        return {
+          ...s,
+          trust: a && {
+            registered: true,
+            active: a.active,
+            owner: a.owner,
+            payee: a.payee,
+            stakeUSDC: a.stakeUnits === null ? null : Number(a.stakeUnits) / 1e6,
+            independent: a.independent,
+            operator: a.operator
+          }
+        };
+      });
+      return res.json({ chain: "magicblock", subtasks: withTrust });
+    } catch (err: any) {
+      return res.status(502).json({ error: "Could not read agent_market registry", details: err.message });
+    }
+  }
+
   try {
     const subtasks: (Subtask & { trust?: any })[] = await decomposeTask(taskText);
     const registry = await listRegistryAgents();
@@ -261,6 +344,15 @@ app.post("/api/execute-step", async (req, res) => {
   try {
     const { subtask: requested, mode = "A", authorization } = req.body;
     if (!Number.isInteger(requested?.agentId)) return res.status(400).json({ error: "subtask with agentId required" });
+    const pickAddr = (v: unknown) => (typeof v === "string" && /^0x[a-fA-F0-9]{40}$/.test(v) ? v : undefined);
+
+    if (chainFromRequest(req) === "magicblock") {
+      const a = (await listSolanaAgents()).find((x) => x.id === requested.agentId && x.active);
+      if (!a) return res.status(400).json({ error: `Agent #${requested.agentId} is not an active agent_market agent` });
+      const subtask = subtaskFor(a, { tokenAddress: pickAddr(requested.tokenAddress), contractAddress: pickAddr(requested.contractAddress) });
+      const step = await getChain("magicblock").payForCall(subtask, { mode: mode === "B" ? "B" : "A", authorization });
+      return res.json({ success: true, chain: "magicblock", subtask, settlement: step.settlement, result: step.result, durationMs: step.durationMs });
+    }
 
     // The target URL, skill and price come from the registry record, never from the request
     const reg = (await listRegistryAgents()).find((a) => a.id === requested.agentId);
