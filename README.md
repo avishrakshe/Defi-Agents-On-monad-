@@ -1,4 +1,4 @@
-# DeFi Agent Marketplace — Monad Testnet
+# DeFi Agent Marketplace — Monad Testnet · MagicBlock Ephemeral Rollups
 
 [![Live site](https://img.shields.io/badge/Live-frontend--eight--peach--71.vercel.app-16130F?style=flat-square)](https://frontend-eight-peach-71.vercel.app)
 [![Backend](https://img.shields.io/badge/API-defi--agents--backend.vercel.app-5B3DF5?style=flat-square)](https://defi-agents-backend.vercel.app/api/status)
@@ -6,7 +6,7 @@
 [![x402](https://img.shields.io/badge/x402-EIP--3009_USDC-FF5A1F?style=flat-square)](https://x402.org)
 [![ERC-8004](https://img.shields.io/badge/ERC--8004-identity_%2B_reputation-1E7A46?style=flat-square)](https://testnet.monadvision.com/address/0xfdeEE314eb3235a91e00a4EFFb76982F6F96e0C6)
 
-**Specialist AI agents that discover each other, check reputation onchain, pay per call in USDC and rate the result — all inside one request, on Monad.**
+**Specialist AI agents that discover each other, check reputation onchain, pay per call in USDC and rate the result — all inside one request.** Two networks, one switch in the header: **Monad testnet** (x402 / EIP-3009, every call settles in its own block) and **MagicBlock** (every call is paid, receipted and reputation-scored in one Ephemeral Rollup transaction on Solana devnet; tokens settle to Solana in batches — see [How this uses MagicBlock](#how-this-uses-magicblock)).
 
 Ask a question in plain language ("is this token safe, and is gas good right now?"). The orchestrator splits it into subtasks, verifies each specialist against the onchain registries, pays it **$0.001 USDC per call via x402 / EIP-3009** to that agent's own payee, collects real chain data, records the paid call onchain so it can be reviewed once, and returns one combined answer. No LLM sits in the money path.
 
@@ -25,15 +25,16 @@ Ask a question in plain language ("is this token safe, and is gas good right now
 1. [What happens when you run a task](#what-happens-when-you-run-a-task)
 2. [The four agents](#the-four-agents)
 3. [x402 payments, for real](#x402-payments-for-real)
-4. [Architecture](#architecture)
-5. [Contracts on Monad Testnet](#contracts-on-monad-testnet)
-6. [Run it locally](#run-it-locally)
-7. [Deploy to Vercel](#deploy-to-vercel)
-8. [Environment variables](#environment-variables)
-9. [Repository layout](#repository-layout)
-10. [Monad Academy & soulbound credential](#monad-academy--soulbound-credential)
-11. [Security notes & known limits](#security-notes--known-limits)
-12. [Event recap](#event-recap)
+4. [How this uses MagicBlock](#how-this-uses-magicblock)
+5. [Architecture](#architecture)
+6. [Contracts on Monad Testnet](#contracts-on-monad-testnet)
+7. [Run it locally](#run-it-locally)
+8. [Deploy to Vercel](#deploy-to-vercel)
+9. [Environment variables](#environment-variables)
+10. [Repository layout](#repository-layout)
+11. [Monad Academy & soulbound credential](#monad-academy--soulbound-credential)
+12. [Security notes & known limits](#security-notes--known-limits)
+13. [Event recap](#event-recap)
 
 ---
 
@@ -101,6 +102,103 @@ The marketplace uses Circle's testnet USDC on Monad (`0x534b…43A3`, a `FiatTok
 ### Reviews: independent vs operator
 
 `ReputationRegistryV2` ties every review to one paid call (`callId`, random bytes32) and allows one review per call. A review from the wallet that paid is stored as **Client** and counts as independent. The agent's own owner or payee can't write one, and neither can any operator or recorder wallet. The orchestrator can only review calls it paid for itself; those are stored as **Operator**. The UI shows the two scores separately and ranks agents by independent score once they have at least 3 independent reviews. Below that it says "not enough independent reviews yet".
+
+---
+
+## How this uses MagicBlock
+
+Switch the header to **MagicBlock** and the same four agents are paid on a **MagicBlock Ephemeral Rollup (ER)** on Solana devnet, by the Anchor program **`agent_market`**: [`AZox8uQ1sjG5KdorG4Y72w3tDT7eowJtxHdQRqMjUXVu`](https://explorer.solana.com/address/AZox8uQ1sjG5KdorG4Y72w3tDT7eowJtxHdQRqMjUXVu?cluster=devnet). All delegations are pinned to the devnet **US** ER (`MUS3hc9TCw4cGC12vHNoYcCGzJG1txjgQLZWVoeNHNd`, `devnet-us.magicblock.app`), the closest one to the Vercel backend (`iad1`).
+
+It works like a payment channel built on ER delegation. Per-call activity is pure ER state, which has no per-transaction fee today. Real tokens move only at checkpoints.
+
+```
+ Solana devnet (base)                                   MagicBlock Ephemeral Rollup (US)
+ ───────────────────                                    ────────────────────────────────
+ register_agent ─ AgentProfile (owner, payee, price)
+ stake ───────── stake vault (5 tUSDC per agent)
+ open_tab ────── USDC → vault, Tab created
+ delegate_tab / delegate_agent_stats / delegate_ledger ─────▶  Tab · AgentStats · Ledger cloned to the ER
+
+                                                       pay_for_call  (1 tx, ~0.1 s from the backend)
+                                                         · debit Tab, credit AgentStats.earned_total
+                                                         · create CallReceipt  ← ephemeral account,
+                                                           sponsored by the delegated Tab
+                                                       submit_feedback (client = independent,
+                                                         operator = operator) → closes the receipt
+                                                       checkpoint  ← every 20 calls, or every 60 s via the
+                                                         ER crank (ScheduleTask), or the backend auto-trigger
+ commit (AgentStats + Tabs) ◀────── MagicIntentBundleBuilder: delegated Ledger pays,
+ payout Magic Action ◀──────────────  magic_fee_vault path, + one post-commit action per agent
+   vault ──▶ each agent's payee: earned_total − paid_total   (idempotent)
+ undelegate_tab ◀────── commit_and_undelegate          close_tab: refund the unspent balance
+```
+
+**MagicBlock primitives used, all exercised on devnet:**
+
+| Primitive | Where |
+|---|---|
+| **Delegation** (`#[delegate]`, pinned validator) | `Tab`, `AgentStats` and `Ledger` are delegated to the US ER; `AgentProfile` and the vaults stay on base |
+| **Ephemeral Rollup execution** | `pay_for_call` and `submit_feedback` run on the ER: no fee, ~50–120 ms confirmations from the backend |
+| **Ephemeral accounts** (`#[ephemeral_accounts]`) | One `CallReceipt` per paid call, sponsored by the client's delegated Tab. Reviewing the call closes it and returns the rent to the Tab. Never committed |
+| **Commits** (`MagicIntentBundleBuilder`, delegated fee payer + `magic_fee_vault`) | `checkpoint` commits AgentStats and Tabs. The delegated `Ledger` PDA pays, so the market isn't capped at 10 commits per delegation |
+| **Magic Actions** (`#[action]`, post-commit) | `payout` pays every agent what it earned since the last checkpoint, from the vault to its payee. It's idempotent (`earned_total − paid_total`) and refuses direct calls: the injected `escrow` must be a signer bound to the Ledger PDA, and `source_program` must be this program |
+| **Cranks** (`ScheduleTask`) | The ER scheduler runs `checkpoint` every 60 s. It no-ops unless due, and the program rate-limits it, so it's safe to leave permissionless |
+| **Magic Router / ER RPC** | Delegated accounts are read from the ER (`isBlockhashValid` checks payment freshness); base accounts from Solana |
+
+**x402 over the ER (scheme `er-tab`).** An unpaid call to `/mb/agents/*` gets HTTP 402 with the agent's payee, its price, the program ID, the ER RPC and the validator. The payment is a base64 Solana transaction containing exactly one `pay_for_call`, signed by the client. [`agents/shared/x402ErMiddleware.ts`](agents/shared/x402ErMiddleware.ts) checks:
+- the program ID
+- the agent ID
+- that the amount covers the price
+- that `resource_hash` equals `sha256(method + path + body)` of *this* request
+- the signatures
+- that it carries a fresh ER blockhash
+
+Only then does it submit the transaction to the ER and wait for confirmation. Settlement failure means 402; there is no "serve anyway" path on this rail. Mode A pays from the operator's Tab. In Mode B, Phantom or Solflare signs each `pay_for_call` from the user's own Tab, and the user rates the call from the same wallet, which stores an independent review.
+
+**Evidence (devnet)**
+
+| What | Transaction |
+|---|---|
+| ER payment from the live UI (`pay_for_call`, fee ◎0, creates the ephemeral receipt) | [`ekkSdcqp…`](https://explorer.solana.com/tx/ekkSdcqpQX1ZyhjGdUrdc3Fe7wFqqnq2UmhuxmNZ2sdwWU8boM7NZx71y9aDfh45HQnvkZnWBj2JmCGXH1Bpvxe?cluster=custom&customUrl=https%3A%2F%2Fdevnet-us.magicblock.app) (Explorer asks once to connect to the ER RPC) |
+| Checkpoint commit + 4 `Payout` actions in one base tx (vault −3,000, three payees +1,000 each) | [`2QUckvAz…`](https://explorer.solana.com/tx/2QUckvAzVbqXMhGLieWvZFbxL5VVbWbudSesq9JhATMmziinccAc4VBc8Z1roWrRZPoiqresVuucFCGuVDSByRMf?cluster=devnet) |
+| Commit and payout landing as separate base txs (an earlier checkpoint) | commit [`4YF2u77M…`](https://explorer.solana.com/tx/4YF2u77MJkUNuiYcEY17fmaSEeGxjtwRtnZCRekirc95spXwBJyh72EZhJYB9jCdo66kvgLMELRpSvju3wNH3jKS?cluster=devnet) · payout [`4cAuobod…`](https://explorer.solana.com/tx/4cAuobodtSYmECbKNdPrniLjGQ2wbJxgY3N5miU9EVZ7L4kSo4A49XqYG8DZFqqKNC7CyYYGE283pGkdq3UmeRyM?cluster=devnet) |
+| Deployed accounts, agents, owners, payees, stake and seed transactions | [`solana/deployed.json`](solana/deployed.json) |
+
+**Measured latency** (`pay_for_call`, send → confirmed):
+
+| From | Median | Sample |
+|---|---|---|
+| Vercel backend (`iad1`) → US ER, live | **100 ms** (min 45, max 117) | 6 production payments, `/api/magicblock/metrics` |
+| Live UI run via the backend | 54 – 116 ms per call | 4 calls |
+| Test suite, local ER (`mb-stack`) | **23 ms** (min 15, max 447) | 50 calls, [`solana/test-results-localnet.json`](solana/test-results-localnet.json) |
+| Test suite, devnet, from a laptop in India → US ER | **1,357 ms** (min 1,082, max 1,451) | 50 calls, [`solana/test-results-devnet.json`](solana/test-results-devnet.json) — two intercontinental round trips per call |
+
+At the time of writing, 7.2 paid calls were folded into each base commit (`Ledger.total_calls ÷ checkpoints`). `/api/magicblock/metrics` serves these figures live. The "Why MagicBlock" section of the site shows only those live values.
+
+**Tests:** [`solana/tests/agent-market.ts`](solana/tests/agent-market.ts) passes 17/17 on the local ER and 17/17 on devnet:
+- the full lifecycle: register → stake → open_tab → delegate → 50× `pay_for_call` → client and operator reviews → checkpoint → payout observed on base → undelegate → refund
+- replay
+- insufficient tab balance
+- underpayment
+- feedback without a receipt
+- double feedback
+- the operator reviewing a client's call
+- non-owner `update_agent`
+- a direct call to the `payout` action
+
+**Parity with the Monad side:**
+- Every agent has its own owner and a payee token account, and ownership is transferable.
+- Stake is real (5 tUSDC each in the stake vault).
+- Reviews are split into independent and operator, and each is tied to one paid call.
+- Nothing is seeded.
+- **tUSDC** is a 6-decimal test mint created for this market. Circle's devnet USDC (`4zMMC9sr…`) works the same way, but needs faucet.circle.com.
+
+**What still runs on Monad:**
+- The agents' analysis: they audit Monad contracts, score Monad ERC-20s, read Monad gas and track Monad whales.
+- Monad mode in full: IdentityRegistryV2 / ReputationRegistryV2 / StakeManagerV2 and x402 EIP-3009.
+- The Academy credential.
+
+MagicBlock replaces the payment, receipt, reputation and payout loop, not the data the agents analyse.
 
 ---
 
@@ -270,6 +368,16 @@ vercel deploy --prod
 | `CONTRACT_AUDITOR_URL`, `TOKEN_RISK_URL`, `GAS_TIMING_URL`, `WHALE_AGENT_URL` | no | Override an agent's onchain endpoint (local development). Unset → the registry endpoint is used |
 | `AGENT_IDS` | no | Pin skills to agent ids, e.g. `contract-audit:1,token-risk-score:2,gas-timing:3,whale-tracker:4` |
 | `MAX_PRICE_UNITS` | no | Most the orchestrator will pay per call in Mode A (default `10000` = $0.01) |
+| `CHAIN` | no | Default network when a request has no `?chain=` (`monad` \| `magicblock`; default `monad`). Every API route accepts `?chain=magicblock` |
+| `SOLANA_RPC_URL` | MagicBlock | Solana devnet base RPC (`https://rpc.magicblock.app/devnet`; the public RPC rate-limits bursts) |
+| `MAGIC_ROUTER_URL` | MagicBlock | `https://devnet-router.magicblock.app` |
+| `ER_RPC_URL` | MagicBlock | The pinned ER, `https://devnet-us.magicblock.app` |
+| `ER_VALIDATOR` | MagicBlock | That ER's validator identity, `MUS3hc9TCw4cGC12vHNoYcCGzJG1txjgQLZWVoeNHNd` |
+| `AGENT_MARKET_PROGRAM_ID` | MagicBlock | `AZox8uQ1sjG5KdorG4Y72w3tDT7eowJtxHdQRqMjUXVu` |
+| `USDC_MINT` | MagicBlock | The market's payment mint (tUSDC `HB4x6Kf2mbiS8LzuZSykJu85qo3CDfFNCiDDps2pmp5f`) |
+| `SOLANA_OPERATOR_SECRET_KEY` | MagicBlock | JSON byte array of the market authority / Mode A operator. Secret — Vercel "sensitive" only |
+| `CHECKPOINT_ADMIN_TOKEN` | no | `POST /api/checkpoint` with header `x-admin-token` forces a checkpoint; without it the program's own rate limit decides |
+| `MB_AGENT_BASE_URL` | no | Local dev: reach MagicBlock agents at e.g. `http://localhost:8080/mb/agents` instead of their onchain endpoints |
 | `X402_REQUIRE_SETTLEMENT` | no | `true` = refuse calls whose USDC payment can't settle |
 | `SETTLEMENT_RELAYER_PRIVATE_KEY` | no | Separate key to pay gas for settlements (defaults to the operator) |
 | `ETHERSCAN_API_KEY` | no | Extra verified-source fallback for the auditor |
@@ -281,6 +389,8 @@ vercel deploy --prod
 |---|---|
 | `NEXT_PUBLIC_ORCHESTRATOR_URL` | Backend base URL |
 | `NEXT_PUBLIC_ORCHESTRATOR_ADDRESS` | Operator address (Mode A payer shown in the console, balance display) |
+| `NEXT_PUBLIC_DEFAULT_CHAIN` | `magicblock` makes MagicBlock the default network (the header switch is remembered per browser) |
+| `NEXT_PUBLIC_SOLANA_RPC_URL` | Solana RPC for the browser wallet (default devnet); writes go through the backend relay |
 | `NEXT_PUBLIC_MONAD_*`, contract addresses | Public chain configuration |
 
 ---
@@ -302,6 +412,10 @@ vercel deploy --prod
 │   ├── contract-auditor/      token-risk-scorer/      gas-timing-agent/
 │   └── sample-custom-agent.ts     # Whale & Liquidity Sentinel (agent 04)
 ├── contracts/                # Solidity, Hardhat tests & deploy scripts
+├── solana/                   # agent_market Anchor program (MagicBlock ER), IDL, tests, seed + WSL build/deploy scripts
+│   ├── programs/agent_market/src/   # lib.rs (instructions), state.rs (accounts)
+│   ├── tests/agent-market.ts        # local ER + devnet lifecycle and negative tests
+│   └── deployed.json                # devnet addresses + seed transactions
 └── frontend/src/
     ├── app/                  # pages
     ├── components/           # HeroSection, AgentLineup, TaskConsole, AgentResultCards, AgentPortrait, …
@@ -338,6 +452,15 @@ Three learning paths — **Monad Fundamentals**, **Tokenized Assets**, **x402 Pa
 - **`slash` has no dispute process** wired to it; only the owner or dispute resolver can call it.
 - **Public write endpoints** are rate-limited per IP but not authenticated; anyone can trigger Mode A runs that spend operator gas.
 - Agents read the public Monad RPC, which caps `eth_getLogs` at 100 blocks. Log scans are chunked and limited to recent windows (about 15 minutes).
+
+**MagicBlock mode — known limits**
+
+- **tUSDC, not Circle USDC.** Payments and stake use a test mint created for this market. The live site's faucet (`/api/magicblock/faucet`) gives 0.05 tUSDC per wallet every 6 hours.
+- **One team holds every key.** The market authority (which is also the Mode A operator) and the four owner keypairs live in git-ignored `solana/.keys/`. Ownership is transferable onchain, but none has been transferred.
+- **ER latency depends on distance.** The ~100 ms figure is backend (US) to US ER. A client far from the pinned region sees more: a laptop in India measured ~1.3 s.
+- **Per-instance latency stats.** The ER confirm median in `/api/magicblock/metrics` comes from an in-memory buffer per backend instance. Every other metric there is read from chain.
+- **The commit fee budget is finite.** Each commit after the first adds 1,000,000 lamports to the delegation's cleanup charge. The Ledger pays live fees from commit 26 onward and must be topped up eventually.
+- **Not built:** session keys, private (TEE) tabs, Solana-native specialists, VRF cross-checks and the base-vs-ER comparison (B7–B8). `slash` exists but has no dispute process behind it.
 
 ---
 
