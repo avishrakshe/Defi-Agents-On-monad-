@@ -1,0 +1,8 @@
+target/
+node_modules/
+test-ledger/
+magicblock-test-storage/
+mb-stack.log
+# Keypairs (program, owners, operator) — never commit
+.keys/
+*.keypair.json
