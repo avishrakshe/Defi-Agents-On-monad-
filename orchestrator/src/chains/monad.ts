@@ -33,7 +33,8 @@ export const monadChain: ChainAdapter = {
           stakeUnits: st === null ? null : st.toString(),
           independent: r ? { avg: Number(r[2]), count: Number(r[3]) } : { avg: 0, count: 0 },
           operator: op ? { avg: Number(op[0]), count: Number(op[1]) } : { avg: 0, count: 0 },
-          paidCalls: null
+          paidCalls: null,
+          metadataURI: a.metadataURI
         };
       })
     );

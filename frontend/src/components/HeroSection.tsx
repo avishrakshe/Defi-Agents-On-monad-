@@ -7,6 +7,8 @@ import { ethers } from "ethers";
 import { AgentData, MIN_INDEPENDENT_REVIEWS, MONAD_CONTRACTS, rankedScore, sortByIndependentScore } from "../lib/contracts";
 import { AgentPortrait, variantForSkill } from "./AgentPortrait";
 import { useChainMetrics, formatBlockTime } from "../lib/useChainMetrics";
+import { useNetwork } from "../lib/network";
+import { useMagicblockMetrics } from "../lib/magicblock";
 
 interface HeroSectionProps {
   agents: AgentData[];
@@ -38,6 +40,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ agents, onRunClick, on
   const reduce = useReducedMotion();
   const block = useBlockHeight();
   const chain = useChainMetrics();
+  const { network } = useNetwork();
+  const mb = network === "magicblock";
+  const mbMetrics = useMagicblockMetrics(mb, 15_000);
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
   const headY = useTransform(scrollYProgress, [0, 1], [0, -80]);
   const boardY = useTransform(scrollYProgress, [0, 1], [0, 40]);
@@ -52,10 +57,12 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ agents, onRunClick, on
       <div className="relative max-w-7xl mx-auto px-4 sm:px-8 pt-10 sm:pt-14 pb-16">
         {/* Front-page dateline */}
         <motion.div {...rise(0)} className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-ink/20 font-mono text-[11px] uppercase tracking-[0.16em] text-ink-2">
-          <span>No. 10143 — Agent economy desk</span>
+          <span>{mb ? "Solana devnet · MagicBlock ER" : "No. 10143"} — Agent economy desk</span>
           <span className="flex items-center gap-2">
             <span className="w-1.5 h-1.5 bg-flame animate-blink" />
-            Block {block ? `#${block.toLocaleString()}` : "syncing…"}
+            {mb
+              ? `ER calls ${mbMetrics ? mbMetrics.ledger.totalCalls.toLocaleString() : "…"} · checkpoints ${mbMetrics ? mbMetrics.ledger.checkpoints : "…"}`
+              : `Block ${block ? `#${block.toLocaleString()}` : "syncing…"}`}
           </span>
         </motion.div>
 
@@ -84,14 +91,29 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ agents, onRunClick, on
             </h1>
 
             <motion.div {...rise(0.55)} className="mt-8 grid sm:grid-cols-2 gap-6 border-t border-ink/20 pt-6">
-              <p className="text-[17px] leading-relaxed text-ink">
-                Specialist AI agents discover each other on Monad, check reputation onchain, and pay per call in USDC
-                — settled inside a single request.
-              </p>
-              <p className="text-[14px] leading-relaxed text-ink-2">
-                <span className="text-flame">*</span> No wallet required: the orchestrator signs EIP-3009 payments for you. Connect
-                MetaMask to pay from your own funds instead.
-              </p>
+              {mb ? (
+                <>
+                  <p className="text-[17px] leading-relaxed text-ink">
+                    Specialist AI agents are paid per call on a MagicBlock Ephemeral Rollup: payment, receipt and review in one ER
+                    transaction, with USDC settled to Solana in batches.
+                  </p>
+                  <p className="text-[14px] leading-relaxed text-ink-2">
+                    <span className="text-flame">*</span> No wallet required: the operator pays from its own Tab. Connect Phantom or
+                    Solflare (devnet) to pay from your own Tab instead.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-[17px] leading-relaxed text-ink">
+                    Specialist AI agents discover each other on Monad, check reputation onchain, and pay per call in USDC
+                    — settled inside a single request.
+                  </p>
+                  <p className="text-[14px] leading-relaxed text-ink-2">
+                    <span className="text-flame">*</span> No wallet required: the orchestrator signs EIP-3009 payments for you. Connect
+                    MetaMask to pay from your own funds instead.
+                  </p>
+                </>
+              )}
             </motion.div>
 
             <motion.div {...rise(0.7)} className="mt-8 flex flex-wrap items-center gap-4">
@@ -146,7 +168,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ agents, onRunClick, on
               </ul>
               <div className="px-4 py-2.5 border-t-[1.5px] border-ink font-mono text-[10.5px] uppercase tracking-wider text-ink-2 flex justify-between">
                 <span>Score shown after {MIN_INDEPENDENT_REVIEWS} independent reviews</span>
-                <span>Monad 10143</span>
+                <span>{mb ? "Solana devnet" : "Monad 10143"}</span>
               </div>
             </motion.div>
           </motion.aside>
@@ -155,7 +177,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ agents, onRunClick, on
         {/* Figures strip — broadsheet columns */}
         <motion.dl {...rise(0.9)} className="mt-14 grid grid-cols-2 md:grid-cols-4 border-y-[1.5px] border-ink">
           {[
-            [formatBlockTime(chain), "Block time · live"],
+            mb
+              ? [mbMetrics?.erConfirm.medianMs != null ? `${mbMetrics.erConfirm.medianMs} ms` : "—", "ER payment confirm · live"]
+              : [formatBlockTime(chain), "Block time · live"],
             ["$0.001", "Per agent call"],
             ["0", "LLMs in the money path"],
             ["ERC-8004", "Identity standard"]

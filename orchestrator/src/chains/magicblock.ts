@@ -155,10 +155,25 @@ export const magicblockChain: ChainAdapter = {
   id: "magicblock",
 
   async listAgents(): Promise<ChainAgent[]> {
+    const agents = await listSolanaAgents();
+    // Two batched reads: base tells us which AgentStats are delegated; those are read from the ER, the rest from base
+    const { base, er } = mbConnections();
+    const keys = agents.map((a) => mbPdas.stats(a.id));
+    const baseInfos = await base.getMultipleAccountsInfo(keys);
+    const delegatedIdx = baseInfos.map((info, i) => (info && !info.owner.equals(programId()) ? i : -1)).filter((i) => i >= 0);
+    const erInfos = delegatedIdx.length ? await er.getMultipleAccountsInfo(delegatedIdx.map((i) => keys[i])) : [];
+    const statsData = baseInfos.map((info, i) => {
+      const j = delegatedIdx.indexOf(i);
+      const src = j >= 0 ? erInfos[j] : info;
+      try {
+        return src ? coder.accounts.decode("AgentStats", src.data) : null;
+      } catch {
+        return null;
+      }
+    });
     return Promise.all(
-      (await listSolanaAgents()).map(async (a) => {
-        const stats = await readLive(mbPdas.stats(a.id), "AgentStats").catch(() => null);
-        const s = stats?.data;
+      agents.map(async (a, idx) => {
+        const s: any = statsData[idx];
         return {
           id: a.id,
           name: a.name,
@@ -171,7 +186,8 @@ export const magicblockChain: ChainAdapter = {
           stakeUnits: a.stake.toString(),
           independent: s ? split(pick(s, "client_score_sum"), pick(s, "client_reviews")) : { avg: 0, count: 0 },
           operator: s ? split(pick(s, "operator_score_sum"), pick(s, "operator_reviews")) : { avg: 0, count: 0 },
-          paidCalls: s ? num(pick(s, "paid_calls")) : null
+          paidCalls: s ? num(pick(s, "paid_calls")) : null,
+          metadataURI: a.metadataUri
         };
       })
     );

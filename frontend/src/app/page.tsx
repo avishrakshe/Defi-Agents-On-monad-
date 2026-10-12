@@ -5,7 +5,10 @@ import { Navbar } from "../components/Navbar";
 import { HeroSection } from "../components/HeroSection";
 import { AgentRegistry } from "../components/AgentRegistry";
 import { TaskModal } from "../components/TaskModal";
-import { AgentData, fetchLiveAgents } from "../lib/contracts";
+import { AgentData } from "../lib/contracts";
+import { fetchAgentsFor } from "../lib/agents";
+import { useNetwork } from "../lib/network";
+import { MagicBlockEdge } from "../components/MagicBlockEdge";
 import { scrollToId } from "../lib/smooth-scroll";
 
 import { TaskConsole } from "../components/TaskConsole";
@@ -34,16 +37,19 @@ export default function Home() {
   const [initialTaskPrompt, setInitialTaskPrompt] = useState("");
   const [loading, setLoading] = useState(true);
 
+  const { network } = useNetwork();
   const loadAgents = () => {
-    fetchLiveAgents().then((data) => {
+    fetchAgentsFor(network).then((data) => {
       setAgents(data);
       setLoading(false);
     });
   };
 
   useEffect(() => {
+    setAgents([]);
     loadAgents();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [network]);
 
   const handleOpenTask = (prompt?: string) => {
     if (prompt) setInitialTaskPrompt(prompt);
@@ -123,7 +129,7 @@ export default function Home() {
           onOpenRegisterModal={() => setIsRegisterModalOpen(true)}
         />
 
-        <MonadEdge />
+        {network === "magicblock" ? <MagicBlockEdge /> : <MonadEdge />}
 
         <JoinCTA onRegisterClick={() => setIsRegisterModalOpen(true)} />
       </main>

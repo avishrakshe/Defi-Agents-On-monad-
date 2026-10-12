@@ -21,6 +21,7 @@ export interface ChainAgent {
   independent: ReviewSplit;
   operator: ReviewSplit;
   paidCalls: number | null;
+  metadataURI: string;
 }
 
 /** One network's implementation of the marketplace loop. executor/router callers go through this. */

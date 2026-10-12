@@ -7,6 +7,10 @@ import { useActivityStore } from "../lib/activity-store";
 import { MONAD_CONTRACTS, ReviewSplit, splitLabel } from "../lib/contracts";
 import { AgentResultCards, AgentRun } from "./AgentResultCards";
 import { getOrchestratorUrl } from "../lib/orchestrator";
+import { useNetwork } from "../lib/network";
+import { useWallet } from "@solana/wallet-adapter-react";
+import { getMetrics, signPayForCall, MagicblockMetrics } from "../lib/magicblock";
+import { MagicBlockTabPanel } from "./MagicBlockTabPanel";
 
 interface Trust {
   registered: boolean;
@@ -32,6 +36,19 @@ interface StepLog {
   durationMs?: number;
   error?: string;
   trust?: Trust;
+  /** MagicBlock: ER payment signature, its explorer link and measured confirm ms */
+  erSig?: string;
+  erUrl?: string;
+  confirmMs?: number;
+  receiptPda?: string;
+  feedbackUrl?: string;
+}
+
+/** Commit + payout that carried a MagicBlock run to Solana, observed after the run */
+interface SettlementWatch {
+  state: "waiting" | "landed" | "timeout";
+  commit?: { signature: string; explorerUrl: string };
+  payouts?: { agentId: number; skill: string; signature: string; url: string; paidTotalUnits: number }[];
 }
 
 /** Same request body the orchestrator sends, so the 402 probe hits the same resource */
@@ -94,6 +111,26 @@ export const TaskConsole: React.FC<TaskConsoleProps> = ({ initialPrompt }) => {
 
   const logsContainerRef = useRef<HTMLDivElement>(null);
   const orchestratorAddress = ORCHESTRATOR_ADDRESS;
+  const { network } = useNetwork();
+  const mb = network === "magicblock";
+  const solana = useWallet();
+  const [settlement, setSettlement] = useState<SettlementWatch | null>(null);
+
+  /** After a MagicBlock run: wait for the next checkpoint commit (crank or auto-trigger) and the payouts it carried */
+  const watchSettlement = async (baseline: MagicblockMetrics | null, startedAt: number) => {
+    setSettlement({ state: "waiting" });
+    for (let i = 0; i < 30; i++) {
+      await sleep(5000);
+      const m = await getMetrics().catch(() => null);
+      if (!m?.lastCommit || m.lastCommit.signature === baseline?.lastCommit?.signature) continue;
+      const payouts = m.payouts
+        .filter((p) => p.lastPayoutSignature && p.lastPayoutAt && Date.parse(p.lastPayoutAt) >= startedAt - 5000)
+        .map((p) => ({ agentId: p.agentId, skill: p.skill, signature: p.lastPayoutSignature!, url: p.lastPayoutExplorerUrl!, paidTotalUnits: p.paidTotalUnits }));
+      setSettlement({ state: "landed", commit: { signature: m.lastCommit.signature, explorerUrl: m.lastCommit.explorerUrl }, payouts });
+      if (payouts.length) return;
+    }
+    setSettlement((s) => (s?.state === "landed" ? s : { state: "timeout" }));
+  };
 
   useEffect(() => {
     if (typeof window !== "undefined" && (window as any).ethereum) {
@@ -124,14 +161,18 @@ export const TaskConsole: React.FC<TaskConsoleProps> = ({ initialPrompt }) => {
     setRuns([]);
     setFatalError(null);
     setSynthesizedAnswer(null);
+    setSettlement(null);
     setStatusMessage("Decomposing task into specialist workflows...");
 
     const orchestratorUrl = getOrchestratorUrl();
+    const q = mb ? "?chain=magicblock" : "";
     let payer = orchestratorAddress;
+    const runStarted = Date.now();
+    const baselineMetrics = mb ? await getMetrics().catch(() => null) : null;
 
     try {
       // 1. Decompose (includes onchain discovery of community agents)
-      const decompRes = await fetch(`${orchestratorUrl}/api/decompose`, {
+      const decompRes = await fetch(`${orchestratorUrl}/api/decompose${q}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ taskText })
@@ -143,7 +184,10 @@ export const TaskConsole: React.FC<TaskConsoleProps> = ({ initialPrompt }) => {
         throw new Error("Could not decompose task. Include a token/contract address (0x...) or ask about gas, risk, audit or whales.");
       }
 
-      if (useUserWallet) {
+      if (useUserWallet && mb) {
+        if (!solana.publicKey || !solana.signTransaction) throw new Error("Connect a Solana wallet (devnet) and open a Tab first.");
+        payer = solana.publicKey.toBase58();
+      } else if (useUserWallet) {
         if (!userAddress) {
           setStatusMessage("Connecting wallet...");
           const wallet = await connectBrowserWallet();
@@ -165,7 +209,11 @@ export const TaskConsole: React.FC<TaskConsoleProps> = ({ initialPrompt }) => {
         try {
           // Mode B: real x402 round trip from the browser — read the agent's 402, then sign to *its* payee
           let authorization: any;
-          if (useUserWallet) {
+          if (useUserWallet && mb) {
+            // MagicBlock Mode B: the wallet signs one pay_for_call from the user's Tab, bound to this exact request
+            setStatusMessage(`[${i + 1}/${subtasks.length}] Sign ${subtask.priceUSDC} tUSDC for ${subtask.agentName} in your wallet (pays on the ER)...`);
+            ({ authorization } = await signPayForCall(payer, subtask.agentId, subtask.targetUrl, requestBodyFor(subtask), solana.signTransaction!));
+          } else if (useUserWallet) {
             setStatusMessage(`[${i + 1}/${subtasks.length}] Reading ${subtask.agentName}'s payment requirements (HTTP 402)...`);
             const quote = await quoteX402(subtask.targetUrl, requestBodyFor(subtask));
             if (quote.agentId !== undefined && quote.agentId !== subtask.agentId) {
@@ -183,7 +231,7 @@ export const TaskConsole: React.FC<TaskConsoleProps> = ({ initialPrompt }) => {
           patchStep(i, { state: "running" });
           setStatusMessage(`[${i + 1}/${subtasks.length}] ${subtask.agentName}: x402 payment → onchain analysis...`);
 
-          const stepRes = await fetch(`${orchestratorUrl}/api/execute-step`, {
+          const stepRes = await fetch(`${orchestratorUrl}/api/execute-step${q}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ subtask, mode: useUserWallet ? "B" : "A", authorization })
@@ -205,10 +253,12 @@ export const TaskConsole: React.FC<TaskConsoleProps> = ({ initialPrompt }) => {
             payee: st.payee,
             callId,
             recordTx,
-            durationMs
+            durationMs,
+            ...(mb ? { erSig: st.erSignature, erUrl: st.explorerUrl, confirmMs: st.confirmMs, receiptPda: st.receiptPda } : {})
           });
 
-          if (pay?.settled) {
+          // The activity log records Monad transactions; MagicBlock payments are linked in the dispatch log instead
+          if (pay?.settled && !mb) {
             useActivityStore.getState().addActivity({
               type: "x402_payment",
               title: `x402 call · ${subtask.agentName}`,
@@ -231,20 +281,24 @@ export const TaskConsole: React.FC<TaskConsoleProps> = ({ initialPrompt }) => {
           // 3. Mode A: the orchestrator rates the call it paid for — stored as an Operator review.
           //    Mode B: no automatic review; the user rates from their own wallet on the result card (independent).
           let feedbackTx: string | undefined;
+          let feedbackUrl: string | undefined;
           let score: number | undefined;
           if (!useUserWallet && callId) {
-            const q = qualityScore(subtask.skill, stepData.result, durationMs);
-            score = q.score;
+            const qs = qualityScore(subtask.skill, stepData.result, durationMs);
+            score = qs.score;
             setStatusMessage(`[${i + 1}/${subtasks.length}] Recording operator review for ${subtask.agentName} (${score}/100)...`);
             try {
-              const fbRes = await fetch(`${orchestratorUrl}/api/feedback`, {
+              const fbRes = await fetch(`${orchestratorUrl}/api/feedback${q}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ agentId: subtask.agentId, callId, score, note: q.note })
+                body: JSON.stringify({ agentId: subtask.agentId, callId, score, note: qs.note })
               });
               const fb = await fbRes.json();
               if (fbRes.ok && fb.txHash) {
                 feedbackTx = fb.txHash;
+                feedbackUrl = fb.explorerUrl;
+              }
+              if (fbRes.ok && fb.txHash && !mb) {
                 useActivityStore.getState().addActivity({
                   type: "reputation_feedback",
                   title: `Operator review · ${subtask.agentName}`,
@@ -259,7 +313,7 @@ export const TaskConsole: React.FC<TaskConsoleProps> = ({ initialPrompt }) => {
                   agentId: subtask.agentId,
                   agentName: subtask.agentName,
                   skill: subtask.skill,
-                  metadata: { scoreGiven: score, note: q.note, callId, reviewerKind: "Operator" }
+                  metadata: { scoreGiven: score, note: qs.note, callId, reviewerKind: "Operator" }
                 });
               }
             } catch {
@@ -275,10 +329,12 @@ export const TaskConsole: React.FC<TaskConsoleProps> = ({ initialPrompt }) => {
               skill: subtask.skill,
               result: stepData.result,
               durationMs,
-              review: callId ? { mode: useUserWallet ? "B" : "A", callId, operatorScore: score, operatorTx: feedbackTx } : undefined
+              review: callId
+                ? { mode: useUserWallet ? "B" : "A", chain: mb ? "magicblock" : "monad", callId, operatorScore: score, operatorTx: feedbackTx, operatorTxUrl: feedbackUrl }
+                : undefined
             }
           ]);
-          patchStep(i, { state: "done", feedbackTx, score });
+          patchStep(i, { state: "done", feedbackTx, feedbackUrl, score });
         } catch (stepErr: any) {
           patchStep(i, { state: "failed", error: stepErr.message, durationMs: Date.now() - t0 });
         }
@@ -306,7 +362,12 @@ export const TaskConsole: React.FC<TaskConsoleProps> = ({ initialPrompt }) => {
         if (tok.trim()) await sleep(18);
       }
 
-      setStatusMessage("Completed — every hash below is a real Monad Testnet transaction.");
+      if (mb) {
+        setStatusMessage("Completed — payments settled on the MagicBlock ER; waiting for the next checkpoint to commit them to Solana.");
+        watchSettlement(baselineMetrics, runStarted);
+      } else {
+        setStatusMessage("Completed — every hash below is a real Monad Testnet transaction.");
+      }
     } catch (err: any) {
       console.error("Task execution error:", err);
       setFatalError(err.message);
@@ -316,17 +377,23 @@ export const TaskConsole: React.FC<TaskConsoleProps> = ({ initialPrompt }) => {
     }
   };
 
-  const payingWith = useUserWallet
+  const solAddr = solana.publicKey?.toBase58();
+  const payingWith = mb
+    ? useUserWallet
+      ? `your Tab ${solAddr ? `${solAddr.slice(0, 4)}…${solAddr.slice(-4)}` : "(connect a Solana wallet)"}`
+      : "the operator's Tab (MagicBlock ER)"
+    : useUserWallet
     ? `your wallet ${userAddress ? `${userAddress.slice(0, 6)}…${userAddress.slice(-4)}` : "(not connected)"}`
     : `orchestrator ${orchestratorAddress.slice(0, 6)}…${orchestratorAddress.slice(-4)}`;
 
-  const TxLink: React.FC<{ label: string; hash?: string }> = ({ label, hash }) =>
+  const TxLink: React.FC<{ label: string; hash?: string; url?: string; suffix?: string }> = ({ label, hash, url, suffix }) =>
     hash ? (
       <div className="flex items-center gap-2">
         <span className="text-ink-3 w-20 shrink-0">{label}</span>
-        <a href={`${EXPLORER}/tx/${hash}`} target="_blank" rel="noreferrer" className="text-violet hover:underline truncate">
+        <a href={url || `${EXPLORER}/tx/${hash}`} target="_blank" rel="noreferrer" className="text-violet hover:underline truncate">
           {shortHash(hash)} ↗
         </a>
+        {suffix && <span className="text-ink-2 shrink-0">{suffix}</span>}
       </div>
     ) : null;
 
@@ -391,10 +458,17 @@ export const TaskConsole: React.FC<TaskConsoleProps> = ({ initialPrompt }) => {
             />
             <span className="relative w-11 h-6 border-[1.5px] border-ink bg-paper transition-colors peer-checked:bg-violet peer-focus-visible:ring-2 peer-focus-visible:ring-violet after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:w-[17px] after:h-[17px] after:bg-ink after:transition-transform peer-checked:after:translate-x-5 peer-checked:after:bg-paper" />
             <span className="text-[14px] text-ink">
-              Pay with my wallet <span className="text-ink-2 text-[12px]">(one USDC signature per agent)</span>
+              {mb ? "Pay from my own Tab" : "Pay with my wallet"}{" "}
+              <span className="text-ink-2 text-[12px]">{mb ? "(Solana wallet signs each pay_for_call)" : "(one USDC signature per agent)"}</span>
             </span>
           </label>
         </div>
+
+        {mb && useUserWallet && (
+          <div className="mt-4">
+            <MagicBlockTabPanel />
+          </div>
+        )}
 
         {statusMessage && (
           <div className={`mt-4 font-mono text-[12px] flex items-center gap-2 ${fatalError ? "text-flame" : "text-ink-2"}`}>
@@ -446,7 +520,7 @@ export const TaskConsole: React.FC<TaskConsoleProps> = ({ initialPrompt }) => {
                       {s.trust && (
                         <div className="text-ink-2">
                           {s.trust.active ? "✓ registered" : "✗ unregistered"} · stake{" "}
-                          {s.trust.stakeUSDC === null ? "—" : `${s.trust.stakeUSDC} USDC`} · indep{" "}
+                          {s.trust.stakeUSDC === null ? "—" : `${s.trust.stakeUSDC} ${mb ? "tUSDC" : "USDC"}`} · indep{" "}
                           {s.trust.independent ? splitLabel(s.trust.independent) : "—"} · operator{" "}
                           {s.trust.operator ? splitLabel(s.trust.operator) : "—"}
                         </div>
@@ -454,12 +528,26 @@ export const TaskConsole: React.FC<TaskConsoleProps> = ({ initialPrompt }) => {
                       {s.payee && (
                         <div className="flex items-center gap-2">
                           <span className="text-ink-3 w-20 shrink-0">payee</span>
-                          <a href={`${EXPLORER}/address/${s.payee}`} target="_blank" rel="noreferrer" className="text-ink hover:underline truncate">
+                          <a
+                            href={mb ? `https://explorer.solana.com/address/${s.payee}?cluster=devnet` : `${EXPLORER}/address/${s.payee}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-ink hover:underline truncate"
+                          >
                             {s.payee.slice(0, 6)}…{s.payee.slice(-4)} ↗
                           </a>
                         </div>
                       )}
-                      {s.payment && (
+                      {mb && s.erSig && <TxLink label="ER payment" hash={s.erSig} url={s.erUrl} suffix={s.confirmMs !== undefined ? `${s.confirmMs} ms` : undefined} />}
+                      {mb && s.receiptPda && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-ink-3 w-20 shrink-0">receipt</span>
+                          <span className="text-ink truncate" title="Ephemeral account on the ER; closed by its review">
+                            {s.receiptPda.slice(0, 6)}…{s.receiptPda.slice(-4)} (ephemeral)
+                          </span>
+                        </div>
+                      )}
+                      {!mb && s.payment && (
                         <div className="flex items-start gap-2">
                           <span className="text-ink-3 w-20 shrink-0">payment</span>
                           {s.payment.status === "settled" ? (
@@ -477,7 +565,7 @@ export const TaskConsole: React.FC<TaskConsoleProps> = ({ initialPrompt }) => {
                       {s.state === "done" && s.payment && !s.callId && (
                         <div className="text-ink-3">no paid call recorded (payment not settled) — not reviewable</div>
                       )}
-                      <TxLink label="op. review" hash={s.feedbackTx} />
+                      <TxLink label="op. review" hash={s.feedbackTx} url={s.feedbackUrl} />
                       {s.score !== undefined && (
                         <div className="flex items-center gap-2">
                           <span className="text-ink-3 w-20 shrink-0">score</span>
@@ -491,7 +579,21 @@ export const TaskConsole: React.FC<TaskConsoleProps> = ({ initialPrompt }) => {
                     </div>
                   ))}
                   {fatalError && <div className="text-flame font-semibold pt-3">{fatalError}</div>}
-                  {steps.some((s) => s.payment?.status === "unfunded") && (
+                  {mb && settlement && (
+                    <div className="mt-3 border-t-[1.5px] border-ink pt-3 space-y-1">
+                      <div className="kicker">Settlement to Solana</div>
+                      {settlement.state === "waiting" && (
+                        <div className="text-ink-2 animate-pulse">waiting for the next checkpoint (every 20 calls, or 60 s via the ER crank)…</div>
+                      )}
+                      {settlement.state === "timeout" && <div className="text-flame">no new checkpoint observed within 150 s — check /api/magicblock/metrics</div>}
+                      {settlement.commit && <TxLink label="commit" hash={settlement.commit.signature} url={settlement.commit.explorerUrl} />}
+                      {settlement.payouts?.map((p) => (
+                        <TxLink key={p.agentId} label={`payout #${p.agentId}`} hash={p.signature} url={p.url} suffix={`Σ ${(p.paidTotalUnits / 1e6).toFixed(3)} tUSDC`} />
+                      ))}
+                      {settlement.state === "landed" && !settlement.payouts?.length && <div className="text-ink-2">commit landed; payout actions pending…</div>}
+                    </div>
+                  )}
+                  {!mb && steps.some((s) => s.payment?.status === "unfunded") && (
                     <div className="mt-3 text-[11px] text-ink-2 leading-relaxed border border-ink/30 bg-sun-soft p-2.5">
                       The payer holds no testnet USDC, so payments are signed and verified but not transferred. Fund it at faucet.circle.com
                       and the same flow settles real USDC.
@@ -520,7 +622,7 @@ export const TaskConsole: React.FC<TaskConsoleProps> = ({ initialPrompt }) => {
               {synthesizedAnswer && (
                 <div className="mt-auto pt-5 border-t border-ink/20 flex flex-wrap items-center justify-between gap-2 font-mono text-[11px] uppercase tracking-wider text-ink-2">
                   <span>Deterministic · no LLM in the path</span>
-                  <span>{runs.length} agents · Monad 10143</span>
+                  <span>{runs.length} agents · {mb ? "paid on MagicBlock ER" : "Monad 10143"}</span>
                 </div>
               )}
             </div>

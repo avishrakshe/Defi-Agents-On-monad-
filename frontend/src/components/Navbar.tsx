@@ -7,6 +7,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { connectBrowserWallet, switchToMonadNetwork, MONAD_CHAIN_CONFIG } from "../lib/wallet";
 import { scrollToId } from "../lib/smooth-scroll";
 import { useBalances, ORCHESTRATOR_ADDRESS } from "../lib/useBalances";
+import { useNetwork } from "../lib/network";
+import { getOrchestratorUrl } from "../lib/orchestrator";
+import { NetworkSwitch } from "./NetworkSwitch";
+import { SolanaWalletButton } from "./SolanaWalletButton";
 
 interface NavbarProps {
   onOpenTaskModal?: () => void;
@@ -47,6 +51,19 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenTaskModal, onOpenRegisterM
   const [mobileActiveAccordion, setMobileActiveAccordion] = useState<string | null>(null);
   const [scrolled, setScrolled] = useState(false);
   const orchestratorBalances = useBalances(ORCHESTRATOR_ADDRESS);
+  const { network } = useNetwork();
+  const [mbStatus, setMbStatus] = useState<any>(null);
+  useEffect(() => {
+    if (network !== "magicblock") return;
+    let alive = true;
+    fetch(`${getOrchestratorUrl()}/api/status?chain=magicblock`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((s) => alive && setMbStatus(s))
+      .catch(() => alive && setMbStatus(null));
+    return () => {
+      alive = false;
+    };
+  }, [network]);
 
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const orchestratorAddress = `${ORCHESTRATOR_ADDRESS.slice(0, 6)}...${ORCHESTRATOR_ADDRESS.slice(-4)}`;
@@ -273,10 +290,22 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenTaskModal, onOpenRegisterM
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-8 h-8 flex items-center justify-between font-mono text-[10.5px] uppercase tracking-[0.14em] text-ink-2">
           <span className="hidden sm:inline">{today}</span>
-          <span>Monad Testnet edition · Chain 10143</span>
-          <span className="hidden md:inline">
-            Operator {orchestratorAddress} · {orchestratorBalances ? `${orchestratorBalances.usdc} USDC / ${orchestratorBalances.mon} MON` : "— USDC"}
-          </span>
+          {network === "magicblock" ? (
+            <>
+              <span>MagicBlock edition · Solana devnet + Ephemeral Rollup</span>
+              <span className="hidden md:inline">
+                Operator {mbStatus?.operatorAddress ? `${mbStatus.operatorAddress.slice(0, 4)}…${mbStatus.operatorAddress.slice(-4)}` : "—"} · Tab{" "}
+                {mbStatus?.tab ? `${mbStatus.tab.availableTUSDC} tUSDC` : "—"}
+              </span>
+            </>
+          ) : (
+            <>
+              <span>Monad Testnet edition · Chain 10143</span>
+              <span className="hidden md:inline">
+                Operator {orchestratorAddress} · {orchestratorBalances ? `${orchestratorBalances.usdc} USDC / ${orchestratorBalances.mon} MON` : "— USDC"}
+              </span>
+            </>
+          )}
         </div>
       </div>
 
@@ -291,7 +320,9 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenTaskModal, onOpenRegisterM
             </span>
             <span className="leading-none">
               <span className="block font-display text-[1.65rem] tracking-tight">DeFi Agents</span>
-              <span className="block font-mono text-[9px] uppercase tracking-[0.22em] text-ink-2 mt-0.5">Marketplace on Monad</span>
+              <span className="block font-mono text-[9px] uppercase tracking-[0.22em] text-ink-2 mt-0.5">
+                {network === "magicblock" ? "Marketplace on MagicBlock" : "Marketplace on Monad"}
+              </span>
             </span>
           </Link>
 
@@ -369,20 +400,21 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenTaskModal, onOpenRegisterM
 
           {/* Network + wallet */}
           <div className="flex items-center gap-3 shrink-0">
-            {isWrongNetwork ? (
-              <button onClick={handleSwitchNetwork} className="font-mono text-[11px] uppercase tracking-wider px-2.5 py-1.5 border-[1.5px] border-flame text-flame">
-                Switch to Monad
-              </button>
+            <NetworkSwitch className="hidden sm:inline-flex" />
+            {network === "magicblock" ? (
+              <SolanaWalletButton />
             ) : (
-              <span className="hidden xl:inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-wider text-ink-2">
-                <span className="w-2 h-2 rounded-full bg-moss animate-pulse" />
-                Monad live
-              </span>
+              <>
+                {isWrongNetwork && (
+                  <button onClick={handleSwitchNetwork} className="font-mono text-[11px] uppercase tracking-wider px-2.5 py-1.5 border-[1.5px] border-flame text-flame">
+                    Switch to Monad
+                  </button>
+                )}
+                <button onClick={handleConnect} disabled={connecting} className="btn-neon btn-sm disabled:opacity-50 whitespace-nowrap">
+                  <span>{connecting ? "Connecting…" : address ? formattedAddress : "Connect wallet"}</span>
+                </button>
+              </>
             )}
-
-            <button onClick={handleConnect} disabled={connecting} className="btn-neon btn-sm disabled:opacity-50 whitespace-nowrap">
-              <span>{connecting ? "Connecting…" : address ? formattedAddress : "Connect wallet"}</span>
-            </button>
 
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -407,6 +439,9 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenTaskModal, onOpenRegisterM
             className="lg:hidden overflow-hidden bg-paper-card border-b-[1.5px] border-ink"
           >
             <div className="max-h-[75vh] overflow-y-auto">
+              <div className="px-5 py-3 border-b border-ink/10 sm:hidden">
+                <NetworkSwitch />
+              </div>
               {NAV_TABS.map((tab) => {
                 const isAccordionOpen = mobileActiveAccordion === tab.id;
                 if (!tab.hasDropdown) {
