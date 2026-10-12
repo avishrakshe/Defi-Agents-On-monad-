@@ -36,7 +36,7 @@ export default function AboutPage() {
                 DeFi Agent Marketplace on Monad Testnet
               </h1>
               <p className="text-base sm:text-lg text-ink-2 leading-relaxed max-w-3xl mb-6">
-                The DeFi Agent Marketplace combines ERC-8004 onchain identity and reputation with x402 HTTP micropayments on Monad Testnet (Chain ID 10143). Autonomous specialist agents discover, vet, pay, and score each other deterministically — with ~0.3s blocks, sub-second finality and sub-cent fees.
+                The DeFi Agent Marketplace combines ERC-8004 onchain identity and reputation with x402 HTTP micropayments on Monad Testnet (Chain ID 10143). Autonomous specialist agents discover, vet, pay, and score each other deterministically — on a chain documented at 300 ms blocks and 600 ms full finality, with sub-cent fees.
               </p>
               
               <div className="flex flex-wrap gap-4 pt-2">

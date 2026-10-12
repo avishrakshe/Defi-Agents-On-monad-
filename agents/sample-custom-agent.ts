@@ -17,8 +17,8 @@ dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
 const app = express();
 const PORT = process.env.CUSTOM_AGENT_PORT || 4004;
-const NATIVE_BLOCKS = Number(process.env.WHALE_NATIVE_BLOCKS || 300); // ≈ 100s at ~0.33s blocks
-const TOKEN_BLOCKS = Number(process.env.WHALE_TOKEN_BLOCKS || 3000); // ≈ 16 min
+const NATIVE_BLOCKS = Number(process.env.WHALE_NATIVE_BLOCKS || 300); // ≈ 90s at Monad's documented 300 ms blocks
+const TOKEN_BLOCKS = Number(process.env.WHALE_TOKEN_BLOCKS || 3000); // ≈ 15 min
 const MIN_MON = Number(process.env.WHALE_MIN_MON || 5);
 
 app.use(cors());

@@ -32,7 +32,7 @@ const COURSES_DATA: Record<string, { title: string; storeKey: keyof AcademyProgr
         readTime: "4 min read",
         objectives: [
           "Understand Monad as a high-performance EVM-compatible Layer-1",
-          "Learn Monad's core metrics: 10,000 TPS, 300ms block times, 600ms finality",
+          "Learn Monad's documented metrics: 10,000 TPS target, 300 ms blocks, 600 ms full finality",
           "Distinguish Layer-1 execution performance from decentralization trade-offs"
         ],
         content: (
@@ -43,9 +43,10 @@ const COURSES_DATA: Record<string, { title: string; storeKey: keyof AcademyProgr
             <div className="p-4 bg-paper rounded-none border border-ink/20 my-3">
               <span className="font-bold text-ink block mb-1">Core Performance Specs:</span>
               <ul className="list-disc list-inside space-y-1 text-xs text-ink">
-                <li><strong>Throughput:</strong> 10,000 real-world transactions per second (TPS)</li>
+                <li><strong>Throughput:</strong> 10,000 transactions per second (design target)</li>
                 <li><strong>Block Frequency:</strong> 300 ms blocks (sub-second user experience)</li>
-                <li><strong>Single-Slot Finality:</strong> ~600 ms (two consecutive block confirmations)</li>
+                <li><strong>Speculative Finality:</strong> 300 ms (one slot; reverts only if the leader equivocates)</li>
+                <li><strong>Full Finality:</strong> 600 ms (two slots)</li>
                 <li><strong>Consensus:</strong> MonadBFT (pipelined Byzantine Fault Tolerance)</li>
               </ul>
             </div>
@@ -58,12 +59,12 @@ const COURSES_DATA: Record<string, { title: string; storeKey: keyof AcademyProgr
           question: "What is Monad's throughput target and block frequency?",
           options: [
             "100 TPS with 12-second blocks",
-            "10,000 TPS with 300ms blocks and 600ms finality",
+            "10,000 TPS with 300 ms blocks and 600 ms full finality",
             "5,000 TPS with 5-minute blocks",
             "1,000 TPS with zero finality"
           ],
           correctIndex: 1,
-          explanation: "Monad achieves 10,000 TPS with 300ms block times and ~600ms deterministic finality while preserving full EVM compatibility."
+          explanation: "Monad's docs list a 10,000 TPS target, 300 ms blocks, 300 ms speculative finality and 600 ms full finality (two slots), with full EVM compatibility."
         }
       },
       {
@@ -153,7 +154,7 @@ const COURSES_DATA: Record<string, { title: string; storeKey: keyof AcademyProgr
         content: (
           <div className="space-y-4 text-xs sm:text-sm text-ink leading-relaxed">
             <p>
-              Every transaction on Monad follows standard Ethereum transaction formatting (`eth_sendRawTransaction`). Due to Monad's 300ms block production, your transaction receipt arrives in under one second.
+              Every transaction on Monad follows standard Ethereum transaction formatting (`eth_sendRawTransaction`). With 300 ms blocks and 600 ms full finality (per Monad's docs), your transaction receipt arrives in under one second.
             </p>
             <div className="p-4 bg-moss-soft rounded-none border border-moss/40">
               <span className="font-bold text-moss block mb-1">Live Monad Testnet Verification:</span>
@@ -172,10 +173,10 @@ const COURSES_DATA: Record<string, { title: string; storeKey: keyof AcademyProgr
           </div>
         ),
         quiz: {
-          question: "How fast is single-slot finality on Monad?",
+          question: "How fast is full finality on Monad?",
           options: ["12 minutes", "10 seconds", "Approximately 600 ms", "1 hour"],
           correctIndex: 2,
-          explanation: "With 300ms block times, two consecutive confirmations take approximately 600ms, providing near-instant deterministic finality."
+          explanation: "Full finality takes two slots: 2 × 300 ms ≈ 600 ms. Speculative finality arrives after one slot (300 ms)."
         }
       },
       {

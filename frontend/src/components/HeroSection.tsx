@@ -6,6 +6,7 @@ import { ArrowRight, ArrowDownRight } from "lucide-react";
 import { ethers } from "ethers";
 import { AgentData, MONAD_CONTRACTS } from "../lib/contracts";
 import { AgentPortrait, variantForSkill } from "./AgentPortrait";
+import { useChainMetrics, formatBlockTime } from "../lib/useChainMetrics";
 
 interface HeroSectionProps {
   agents: AgentData[];
@@ -36,6 +37,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ agents, onRunClick, on
   const ref = useRef<HTMLElement>(null);
   const reduce = useReducedMotion();
   const block = useBlockHeight();
+  const chain = useChainMetrics();
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
   const headY = useTransform(scrollYProgress, [0, 1], [0, -80]);
   const boardY = useTransform(scrollYProgress, [0, 1], [0, 40]);
@@ -153,7 +155,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ agents, onRunClick, on
         {/* Figures strip — broadsheet columns */}
         <motion.dl {...rise(0.9)} className="mt-14 grid grid-cols-2 md:grid-cols-4 border-y-[1.5px] border-ink">
           {[
-            ["~0.3s", "Block time"],
+            [formatBlockTime(chain), "Block time · live"],
             ["$0.001", "Per agent call"],
             ["0", "LLMs in the money path"],
             ["ERC-8004", "Identity standard"]

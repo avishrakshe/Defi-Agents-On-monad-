@@ -2,15 +2,27 @@
 
 import React from "react";
 import { Sheet, SectionLabel, SplitHeading, CountUp, Reveal } from "./fx";
+import { useChainMetrics } from "../lib/useChainMetrics";
 
-const METRICS = [
-  { to: 10000, unit: "TPS", label: "Throughput target", note: "Dense agent-to-agent traffic without queueing.", fn: "1" },
-  { to: 0.3, decimals: 1, prefix: "~", unit: "sec", label: "Block time", note: "Measured live by the gas agent on every run.", fn: "2" },
-  { to: 0.001, prefix: "$", decimals: 3, unit: "USDC", label: "Per agent call", note: "Sub-cent pricing that is actually worth settling.", fn: "3" },
-  { to: 100, unit: "%", label: "EVM compatible", note: "Solidity, ethers, Hardhat — no new toolchain.", fn: "4" }
-];
+interface Metric {
+  to: number | null;
+  decimals?: number;
+  prefix?: string;
+  unit: string;
+  label: string;
+  note: string;
+  fn: string;
+}
 
-export const MonadEdge: React.FC = () => (
+export const MonadEdge: React.FC = () => {
+  const chain = useChainMetrics();
+  const METRICS: Metric[] = [
+    { to: 10000, unit: "TPS", label: "Throughput target", note: "Dense agent-to-agent traffic without queueing.", fn: "1" },
+    { to: chain ? chain.avgBlockTimeSec : null, decimals: 2, unit: "sec", label: "Block time", note: "Measured live from Monad Testnet block headers.", fn: "2" },
+    { to: 0.001, prefix: "$", decimals: 3, unit: "USDC", label: "Per agent call", note: "Sub-cent pricing that is actually worth settling.", fn: "3" },
+    { to: 100, unit: "%", label: "EVM compatible", note: "Solidity, ethers, Hardhat — no new toolchain.", fn: "4" }
+  ];
+  return (
   <Sheet tone="void" className="py-20 sm:py-28">
     <div className="max-w-7xl mx-auto px-4 sm:px-8">
       <div className="grid lg:grid-cols-12 gap-8 items-end">
@@ -33,7 +45,11 @@ export const MonadEdge: React.FC = () => (
         {METRICS.map((m, i) => (
           <Reveal key={m.label} delay={i * 0.07} className={`py-8 px-5 ${i > 0 ? "lg:border-l border-ink/20" : ""} ${i % 2 === 1 ? "sm:border-l border-ink/20" : ""} ${i >= 2 ? "border-t sm:border-t lg:border-t-0 border-ink/20" : ""} ${i === 1 ? "border-t sm:border-t-0" : ""}`}>
             <div className="flex items-baseline gap-2">
-              <CountUp to={m.to} prefix={m.prefix} decimals={m.decimals} className="font-display text-[3.6rem] leading-none" />
+              {m.to === null ? (
+                <span className="font-display text-[3.6rem] leading-none">—</span>
+              ) : (
+                <CountUp to={m.to} prefix={m.prefix} decimals={m.decimals} className="font-display text-[3.6rem] leading-none" />
+              )}
               <span className="font-mono text-[12px] text-ink-2">{m.unit}</span>
               <sup className="font-mono text-[10px] text-flame">{m.fn}</sup>
             </div>
@@ -43,8 +59,11 @@ export const MonadEdge: React.FC = () => (
         ))}
       </div>
       <p className="mt-4 font-mono text-[10.5px] text-ink-3">
-        ¹ Monad design target. ² Average over the last 200 blocks, measured by the Gas Oracle. ³ x402 price per specialist call. ⁴ Standard EVM bytecode.
+        ¹ Monad design target. ² Average over the last {chain?.windowBlocks ?? 200} blocks
+        {chain ? ` (to #${chain.latestBlock.toLocaleString()})` : ""}, measured by the backend every 30s; documented: 300 ms blocks, 600 ms
+        full finality. ³ x402 price per specialist call. ⁴ Standard EVM bytecode.
       </p>
     </div>
   </Sheet>
-);
+  );
+};

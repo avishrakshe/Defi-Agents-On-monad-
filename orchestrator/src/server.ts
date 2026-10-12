@@ -11,6 +11,7 @@ import { executeAll } from "./modeA";
 import { executeSubtask } from "./executor";
 import { buildSummary, polishSummary } from "./synthesizer";
 import { getBalances, getOrchestratorWallet, getProvider } from "./x402Client";
+import { measureBlockTime } from "../../agents/gas-timing-agent/gasAnalyzer";
 
 const app = express();
 const PORT = process.env.ORCHESTRATOR_PORT || 4000;
@@ -42,6 +43,24 @@ app.get("/health", (req, res) => {
     chainId: 10143,
     timestamp: new Date().toISOString()
   });
+});
+
+// Live chain metrics: average block time over the last 200 blocks, cached for 30s
+let chainMetricsCache: { at: number; body: any } | null = null;
+app.get("/api/chain-metrics", async (req, res) => {
+  try {
+    if (!chainMetricsCache || Date.now() - chainMetricsCache.at > 30_000) {
+      const { avgBlockTimeSec, latestBlock, windowBlocks } = await measureBlockTime();
+      chainMetricsCache = {
+        at: Date.now(),
+        body: { chainId: 10143, avgBlockTimeSec, avgBlockTimeMs: Math.round(avgBlockTimeSec * 1000), windowBlocks, latestBlock, measuredAt: new Date().toISOString() }
+      };
+    }
+    res.set("Cache-Control", "public, max-age=30");
+    return res.json({ ...chainMetricsCache.body, cacheAgeSec: Math.round((Date.now() - chainMetricsCache.at) / 1000) });
+  } catch (err: any) {
+    return res.status(502).json({ error: "Could not measure block time", details: err.message });
+  }
 });
 
 // Live orchestrator status: real balances + reachability of each specialist

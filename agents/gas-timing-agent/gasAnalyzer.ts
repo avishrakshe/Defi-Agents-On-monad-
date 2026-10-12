@@ -33,23 +33,32 @@ const median = (xs: number[]) => {
 };
 
 const SAMPLE_BLOCKS = 20;
-const BLOCK_TIME_WINDOW = 200;
+export const BLOCK_TIME_WINDOW = 200;
+
+export interface BlockTimeSample {
+  avgBlockTimeSec: number;
+  latestBlock: number;
+  windowBlocks: number;
+  head: any;
+}
+
+/** Average block time from two real block headers `windowBlocks` apart */
+export async function measureBlockTime(windowBlocks = BLOCK_TIME_WINDOW): Promise<BlockTimeSample> {
+  const head = await callMonadRpc("eth_getBlockByNumber", ["latest", false]);
+  const latestBlock = parseInt(head.number, 16);
+  const past = await callMonadRpc("eth_getBlockByNumber", ["0x" + (latestBlock - windowBlocks).toString(16), false]);
+  const avgBlockTimeSec =
+    Math.round(((parseInt(head.timestamp, 16) - parseInt(past.timestamp, 16)) / windowBlocks) * 1000) / 1000;
+  return { avgBlockTimeSec, latestBlock, windowBlocks, head };
+}
 
 export async function analyzeGasTiming(): Promise<GasTimingResult> {
-  const [gasPriceWei, feeHistory, latestHex] = await Promise.all([
+  const [gasPriceWei, feeHistory, blockTime] = await Promise.all([
     getLatestGasPrice(),
     getFeeHistory(SAMPLE_BLOCKS, "latest", [10, 50, 90]).catch(() => null),
-    callMonadRpc("eth_blockNumber", [])
+    measureBlockTime()
   ]);
-  const latestBlock = parseInt(latestHex, 16);
-
-  // Real block time + density from two block headers
-  const [head, past] = await Promise.all([
-    callMonadRpc("eth_getBlockByNumber", ["latest", false]),
-    callMonadRpc("eth_getBlockByNumber", ["0x" + (latestBlock - BLOCK_TIME_WINDOW).toString(16), false])
-  ]);
-  const avgBlockTimeSec =
-    Math.round(((parseInt(head.timestamp, 16) - parseInt(past.timestamp, 16)) / BLOCK_TIME_WINDOW) * 1000) / 1000;
+  const { latestBlock, avgBlockTimeSec, head } = blockTime;
   const txPerBlock = head.transactions?.length ?? 0;
 
   // Base fee trend: compare the newer half of the window with the older half

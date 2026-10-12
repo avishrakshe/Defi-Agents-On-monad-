@@ -136,7 +136,7 @@ export default function DashboardPage() {
 
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-ink-2">
-                      10k TPS • 300ms blocks • EVM compatibility • MonadVision
+                      10k TPS target • 300 ms blocks • 600 ms finality • EVM compatibility
                     </span>
                     <Link
                       href="/learn/monad-fundamentals"
