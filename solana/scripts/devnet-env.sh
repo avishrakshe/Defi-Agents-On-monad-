@@ -9,8 +9,9 @@ case "$ER_REGION" in
 esac
 export NETWORK_LABEL=devnet
 export VALIDATOR
-export PROVIDER_ENDPOINT="${PROVIDER_ENDPOINT:-https://api.devnet.solana.com}"
-export WS_ENDPOINT="${WS_ENDPOINT:-wss://api.devnet.solana.com}"
+# MagicBlock's devnet base RPC (the public api.devnet.solana.com rate-limits seed/test bursts with 429s)
+export PROVIDER_ENDPOINT="${PROVIDER_ENDPOINT:-https://rpc.magicblock.app/devnet}"
+export WS_ENDPOINT="${WS_ENDPOINT:-wss://rpc.magicblock.app/devnet}"
 export EPHEMERAL_PROVIDER_ENDPOINT="https://devnet-$ER_REGION.magicblock.app"
 export EPHEMERAL_WS_ENDPOINT="wss://devnet-$ER_REGION.magicblock.app"
 export ANCHOR_PROVIDER_URL=$PROVIDER_ENDPOINT

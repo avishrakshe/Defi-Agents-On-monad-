@@ -8,7 +8,7 @@ resolution = true
 skip-lint = false
 
 [programs.devnet]
-agent_market = "11111111111111111111111111111111"
+agent_market = "AZox8uQ1sjG5KdorG4Y72w3tDT7eowJtxHdQRqMjUXVu"
 
 [programs.localnet]
 agent_market = "AZox8uQ1sjG5KdorG4Y72w3tDT7eowJtxHdQRqMjUXVu"

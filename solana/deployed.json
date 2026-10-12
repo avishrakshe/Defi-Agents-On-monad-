@@ -1,0 +1,84 @@
+{
+  "network": "solana-devnet",
+  "programId": "AZox8uQ1sjG5KdorG4Y72w3tDT7eowJtxHdQRqMjUXVu",
+  "erRpc": "https://devnet-us.magicblock.app",
+  "validator": "MUS3hc9TCw4cGC12vHNoYcCGzJG1txjgQLZWVoeNHNd",
+  "router": "https://devnet-router.magicblock.app",
+  "usdcMint": "HB4x6Kf2mbiS8LzuZSykJu85qo3CDfFNCiDDps2pmp5f",
+  "usdcLabel": "tUSDC — 6-decimal test mint created for this market (Circle devnet USDC needs faucet.circle.com)",
+  "authority": "D4YWWBGLsAGT9o92nUCq74ui9apfk2YzkuGVVvZ4t4sR",
+  "accounts": {
+    "config": "GYLb9FstfeCVo6SZHSXfCAUuxi8yeRrWBPu7fAJU63L6",
+    "ledger": "6BT33kGTwxCXNctcdR1a7br8XM3JK2kTBFCBGouQzHoi",
+    "vault": "Gkx6dZrSQzSFrvx4tcQopPL55LDSTtDG4PjKfbCbXwqj",
+    "stakeVault": "2ALFrW2VBLJ7EJ9zWa3rNxFE22dxEAt59h6XWaF873Jm",
+    "operatorTab": "HpCGJq3poAjM9uqzwJV98ZpQVD55EwjAQMQfLFW6xHoP"
+  },
+  "checkpoint": {
+    "everyCalls": 20,
+    "everySecs": 60
+  },
+  "agents": [
+    {
+      "id": 1,
+      "skill": "contract-audit",
+      "name": "Smart Contract Auditor",
+      "owner": "GhLthmDE1qPHjoMovG3HKuY1fnnsjYajcScNMwX5dAMg",
+      "payee": "4g4CqjY3eApWVJthCJbkQ1Z8o3wsNrFLZvR65DqxsnT6",
+      "stakeUnits": 5000000,
+      "endpoint": "https://defi-agents-backend.vercel.app/mb/agents/auditor/api/audit",
+      "agentProfile": "CiNzV6xxux4ShetC4VUyvqoHASg1SxP2uZLTHY37DDZk",
+      "agentStats": "4LQkWjxkjEYuxL4Dx6PVUc9Kk4AtFqBi1gQgaRVnk45S",
+      "agentPayout": "GGJaMciuuVDGRfvcoKta3FnsxaScVW71pE4aGdzMMutx"
+    },
+    {
+      "id": 2,
+      "skill": "token-risk-score",
+      "name": "Token Risk Scorer",
+      "owner": "FMCF5tSmy7ZL7Rh5mfy6fgvhcvdQE8zYDBEmwfFrL8So",
+      "payee": "5E8H74C9KohNZNt7y3aV3AmugXhXYtsM3yYUQsVHdzSY",
+      "stakeUnits": 5000000,
+      "endpoint": "https://defi-agents-backend.vercel.app/mb/agents/risk/api/score",
+      "agentProfile": "H9e39EX7gRLXMm4bXKaHQBiBHutv572d6rooCa54SLTp",
+      "agentStats": "5hTEyh48cpdUf2nNuBNNp4G3xEQeuAnogXEvqKa4VvAN",
+      "agentPayout": "GSjcyq5QXH6CbeLCVCkMoMqTAAsNAoMbpCBZJz7jW3dP"
+    },
+    {
+      "id": 3,
+      "skill": "gas-timing",
+      "name": "Gas Price & Transaction Timing Agent",
+      "owner": "9H5Bnb4e6ps9X5HTGfAEXUu5yZ9fQYyzfv3nFZGdhk1a",
+      "payee": "Gf7hLQmA3do8xU4NhERZcynrXQKnj8JyXEN9wcV5bqzX",
+      "stakeUnits": 5000000,
+      "endpoint": "https://defi-agents-backend.vercel.app/mb/agents/gas/api/gas",
+      "agentProfile": "9kwYhbJ23Ev8BrQKZeYp8PLQdioB8wyHnK8Tqsjx8oEL",
+      "agentStats": "4updr8ydkeZo23pWMXP5eSTEydyNnTf7zNe8LkyjArnp",
+      "agentPayout": "9Xvw1LTTHMaziUwSzGetZxP7RwdPeyWeRpAoRfL14Brk"
+    },
+    {
+      "id": 4,
+      "skill": "whale-tracker",
+      "name": "Whale & Liquidity Sentinel",
+      "owner": "Bq8JoF9FBHVVqHUUJCZZ1rouTt3FJBCV937pD6bJf4V2",
+      "payee": "MR49R6qi3VzXPtsRNNFDqgK7U2HjyWvrzE9abGqr2Nd",
+      "stakeUnits": 5000000,
+      "endpoint": "https://defi-agents-backend.vercel.app/mb/agents/whale/api/whale",
+      "agentProfile": "9q64hTq1Fcy8P6zGcdJ8RYUcZrn8AssXNVZLZup38T7v",
+      "agentStats": "9uX3gYnrA4JwNtJmJwmGMfPhQt8MH7GUk72kNDjFKdRk",
+      "agentPayout": "5Ctvf3WgcmpnERnHw3iiA2L9WmwSjH2ZPCKPQ8ZnujoV"
+    }
+  ],
+  "crank": {
+    "taskId": 692269851090,
+    "intervalMs": 60000,
+    "iterations": 1440,
+    "scheduleSig": "64r5BCMNgQ4ZdfxJWRw28XsUTKUGnqLcoskdaU2Sr7MrpRwuQWfmX6dwFm2zBN3K3kGkQiAA3moAygiU2dDzqQfe"
+  },
+  "transactions": {
+    "mintOperator": "31Yi1AvEr8sdN8HLg9LLeciNhMQbR73D7bkJ9rLbbchw2ykSy2NqioFe7gx7HZRDS71VmneuDggrHtyMCndZKJ7r",
+    "openOperatorTab": "xHMhdZgm7WgrUpHoDYEsmTuRp9yvJkMEr2rRDhSrrPLDhfToRV7FbdmQ3LKLJXbYsxU7FLMUdG1iYY7GNHqetBJ",
+    "delegateOperatorTab": "5bfoooSwy1h1zBrBVvAJNQMmr9XtkwnTwBbE5uaddpeYtubYumw3ZAXBd4p3ymkLA2teasKyjCP4TF3ecAY9YTDk"
+  },
+  "seededAt": "2026-10-12T05:04:40.963Z",
+  "reviewsSeeded": 0
+}
